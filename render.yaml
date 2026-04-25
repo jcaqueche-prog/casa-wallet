@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: casa-wallet
+    runtime: static
+    branch: main
+    buildCommand: echo "Static site ready"
+    staticPublishPath: .
+    autoDeployTrigger: commit
+    previews:
+      generation: automatic
