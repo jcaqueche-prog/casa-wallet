@@ -621,10 +621,10 @@ textarea {
 
 .expense-item {
   padding: 10px 12px;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   gap: 10px;
-  align-items: center;
+  align-items: end;
   box-shadow: var(--shadow-soft);
   border-left: 4px solid rgba(20, 33, 43, 0.08);
 }
@@ -643,32 +643,9 @@ textarea {
 }
 
 .expense-item__top {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 0.8fr 1.4fr 0.8fr;
   gap: 10px;
-  align-items: baseline;
-}
-
-.expense-title {
-  margin: 0;
-  font-size: 0.97rem;
-}
-
-.expense-amount {
-  font-family: "Space Grotesk", sans-serif;
-  font-size: 1.05rem;
-  color: var(--brand-dark);
-}
-
-.expense-amount--income {
-  color: var(--success);
-}
-
-.expense-meta,
-.expense-notes {
-  margin: 6px 0 0;
-  line-height: 1.5;
-  font-size: 0.84rem;
 }
 
 .expense-edit-row {
@@ -911,10 +888,15 @@ textarea {
   .entry-card__header,
   .category-manager-header,
   .subcategory-row,
-  .expense-item,
-  .expense-item__top {
+  .expense-item {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .expense-item,
+  .expense-item__top,
+  .expense-edit-row {
+    grid-template-columns: 1fr;
   }
 
   .delete-button,

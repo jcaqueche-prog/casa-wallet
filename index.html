@@ -494,10 +494,19 @@
       <article class="expense-item">
         <div class="expense-item__main">
           <div class="expense-item__top">
-            <h3 class="expense-title"></h3>
-            <span class="expense-amount"></span>
+            <label>
+              Fecha
+              <input class="expense-edit-date" type="date" />
+            </label>
+            <label>
+              Descripcion
+              <input class="expense-edit-description" type="text" />
+            </label>
+            <label>
+              Monto
+              <input class="expense-edit-amount" type="number" min="0.01" step="0.01" />
+            </label>
           </div>
-          <div class="expense-meta"></div>
           <div class="expense-edit-row">
             <label>
               Categoria
@@ -511,7 +520,6 @@
         </div>
         <div class="expense-actions">
           <button class="primary-button expense-save-button" type="button">Guardar</button>
-          <button class="delete-button" type="button">Eliminar</button>
         </div>
       </article>
     </template>

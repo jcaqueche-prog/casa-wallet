@@ -718,46 +718,46 @@ function renderExpenseList(expenses) {
   expenses.forEach((expense) => {
     const fragment = expenseItemTemplate.content.cloneNode(true);
     const item = fragment.querySelector(".expense-item");
+    const descriptionInput = fragment.querySelector(".expense-edit-description");
+    const amountInput = fragment.querySelector(".expense-edit-amount");
+    const dateInput = fragment.querySelector(".expense-edit-date");
     const categorySelect = fragment.querySelector(".expense-edit-category");
     const subcategorySelect = fragment.querySelector(".expense-edit-subcategory");
-    const meta = fragment.querySelector(".expense-meta");
-    const title = fragment.querySelector(".expense-title");
-    const amount = fragment.querySelector(".expense-amount");
 
     item.classList.add(
       expense.entryType === "ingreso" ? "expense-item--income" : "expense-item--expense"
     );
 
-    title.textContent = expense.description;
-    amount.textContent = `${expense.entryType === "ingreso" ? "+" : "-"} ${formatCurrency(
-      expense.amount
-    )}`;
+    descriptionInput.value = expense.description;
+    amountInput.value = String(expense.amount);
+    dateInput.value = expense.date;
     categorySelect.innerHTML = buildCategoryOptions();
     categorySelect.value = hasCategory(expense.category)
       ? expense.category
       : state.categoryDefinitions[0]?.name || "Otros";
     renderSubcategoryOptions(categorySelect.value, subcategorySelect, expense.subcategory);
-    meta.textContent = `${formatDate(expense.date)} · ${capitalizeEntryType(
-      expense.entryType
-    )} · ${expense.paymentMethod}`;
 
     categorySelect.addEventListener("change", () => {
       renderSubcategoryOptions(categorySelect.value, subcategorySelect);
     });
 
     fragment.querySelector(".expense-save-button").addEventListener("click", () => {
+      const nextAmount = Number(amountInput.value);
+      if (!descriptionInput.value.trim() || !dateInput.value || Number.isNaN(nextAmount) || nextAmount <= 0) {
+        return;
+      }
+
       const nextCategory = categorySelect.value;
       const nextSubcategory = subcategorySelect.value;
 
       handleUpdateExpense(expense.id, {
+        description: descriptionInput.value.trim(),
+        amount: nextAmount,
+        date: dateInput.value,
         category: nextCategory,
         subcategory: nextSubcategory,
       });
     });
-
-    fragment
-      .querySelector(".delete-button")
-      .addEventListener("click", () => handleDeleteExpense(expense.id));
 
     expenseList.appendChild(fragment);
   });
