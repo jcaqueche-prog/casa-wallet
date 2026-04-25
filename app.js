@@ -1,7 +1,11 @@
 const STORAGE_KEY = "hogar-expenses-app";
 const AUTH_STORAGE_KEY = "hogar-expenses-auth";
+const AUTH_USER_STORAGE_KEY = "hogar-expenses-auth-user";
 const PAYMENT_OPTIONS = ["Efectivo", "Tarjeta", "Transferencia"];
-const AUTH_PASSWORD = "Dios2026";
+const AUTH_USERS = {
+  JCAE: "jcae2026",
+  CLFE: "clfe2026",
+};
 
 const defaultCategoryDefinitions = [
   { name: "Alimentacion", subcategories: ["Supermercado", "Restaurante", "Despensa"] },
@@ -77,6 +81,7 @@ const incomeDateInput = document.getElementById("incomeDate");
 const authScreen = document.getElementById("authScreen");
 const appShell = document.getElementById("appShell");
 const loginForm = document.getElementById("loginForm");
+const loginUsername = document.getElementById("loginUsername");
 const loginError = document.getElementById("loginError");
 
 expenseDateInput.value = new Date().toISOString().split("T")[0];
@@ -128,6 +133,8 @@ initializeAuth();
 
 function initializeAuth() {
   const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === "true";
+  const savedUser = localStorage.getItem(AUTH_USER_STORAGE_KEY) || "";
+  loginUsername.value = AUTH_USERS[savedUser] ? savedUser : "";
   authScreen.classList.toggle("hidden", isAuthenticated);
   appShell.classList.toggle("hidden", !isAuthenticated);
 }
@@ -135,9 +142,10 @@ function initializeAuth() {
 function handleLogin(event) {
   event.preventDefault();
   const formData = new FormData(loginForm);
+  const username = String(formData.get("username") || "").trim();
   const password = String(formData.get("password") || "");
 
-  const success = password === AUTH_PASSWORD;
+  const success = Boolean(username) && AUTH_USERS[username] === password;
   loginError.classList.toggle("hidden", success);
 
   if (!success) {
@@ -145,6 +153,7 @@ function handleLogin(event) {
   }
 
   localStorage.setItem(AUTH_STORAGE_KEY, "true");
+  localStorage.setItem(AUTH_USER_STORAGE_KEY, username);
   initializeAuth();
 }
 

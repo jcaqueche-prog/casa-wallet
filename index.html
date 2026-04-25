@@ -18,23 +18,31 @@
         <p class="eyebrow">Acceso privado</p>
         <h1 class="auth-title">GASTOS PARA EL HOGAR</h1>
         <p class="auth-text">
-          Ingresa la clave privada para acceder al panel financiero.
+          Ingresa con tu usuario y contraseña para acceder al panel financiero.
         </p>
         <form id="loginForm" class="expense-form">
+          <label>
+            Usuario
+            <select id="loginUsername" name="username" required>
+              <option value="">Selecciona un usuario</option>
+              <option value="JCAE">JCAE</option>
+              <option value="CLFE">CLFE</option>
+            </select>
+          </label>
           <label>
             Clave de acceso
             <input
               id="loginPassword"
               name="password"
               type="password"
-              placeholder="Ingresa la clave privada"
+              placeholder="Ingresa tu clave"
               required
             />
           </label>
           <button type="submit" class="primary-button">Entrar</button>
         </form>
         <div id="loginError" class="login-error hidden">
-          La clave es incorrecta.
+          Usuario o clave incorrectos.
         </div>
       </div>
     </div>
