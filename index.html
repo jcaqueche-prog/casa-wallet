@@ -22,19 +22,19 @@
         </p>
         <form id="loginForm" class="expense-form">
           <label>
-            Usuario guardado
-            <select id="loginUsername" name="username" required>
-              <option value="Fam Aqueche Martinez">Fam Aqueche Martinez</option>
-            </select>
-          </label>
-          <label>
-            Contraseña
-            <input id="loginPassword" name="password" type="password" required />
+            Clave de acceso
+            <input
+              id="loginPassword"
+              name="password"
+              type="password"
+              placeholder="Ingresa la clave privada"
+              required
+            />
           </label>
           <button type="submit" class="primary-button">Entrar</button>
         </form>
         <div id="loginError" class="login-error hidden">
-          Usuario o contraseña incorrectos.
+          La clave es incorrecta.
         </div>
       </div>
     </div>
