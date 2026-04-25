@@ -227,6 +227,9 @@
             <button type="submit" class="secondary-button">Crear subcategoria</button>
           </form>
 
+          <div class="manager-note">
+            Edita nombres, agrega nuevas opciones y elimina las que ya no uses.
+          </div>
           <div id="categoryManagerList" class="category-manager-list"></div>
         </section>
 
@@ -254,7 +257,9 @@
           </div>
 
           <div id="importMessage" class="import-message hidden"></div>
-          <div id="importPreview" class="import-preview hidden"></div>
+          <div class="import-preview-shell hidden" id="importPreviewShell">
+            <div id="importPreview" class="import-preview"></div>
+          </div>
         </section>
 
         <section class="panel panel--wide">

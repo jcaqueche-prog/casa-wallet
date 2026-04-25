@@ -41,6 +41,7 @@ const searchInput = document.getElementById("searchInput");
 const statementFile = document.getElementById("statementFile");
 const importAllButton = document.getElementById("importAllButton");
 const importPreview = document.getElementById("importPreview");
+const importPreviewShell = document.getElementById("importPreviewShell");
 const importMessage = document.getElementById("importMessage");
 const categorySelect = document.getElementById("category");
 const subcategorySelect = document.getElementById("subcategory");
@@ -201,6 +202,110 @@ function handleCreateSubcategory(event) {
   renderApp();
 }
 
+function handleRenameCategory(previousName, nextName) {
+  const cleanName = String(nextName || "").trim();
+  if (!cleanName || (cleanName !== previousName && findCategoryDefinition(cleanName))) {
+    return;
+  }
+
+  const categoryDefinition = findCategoryDefinition(previousName);
+  if (!categoryDefinition) {
+    return;
+  }
+
+  categoryDefinition.name = cleanName;
+  state.expenses = state.expenses.map((expense) =>
+    expense.category === previousName ? { ...expense, category: cleanName } : expense
+  );
+  importedExpenses = importedExpenses.map((expense) =>
+    expense.category === previousName ? { ...expense, category: cleanName } : expense
+  );
+  saveState();
+  renderApp();
+}
+
+function handleDeleteCategory(categoryName) {
+  if (state.categoryDefinitions.length <= 1) {
+    return;
+  }
+
+  const fallbackCategory = state.categoryDefinitions.find((category) => category.name !== categoryName);
+  if (!fallbackCategory) {
+    return;
+  }
+
+  state.categoryDefinitions = state.categoryDefinitions.filter((category) => category.name !== categoryName);
+  state.expenses = state.expenses.map((expense) =>
+    expense.category === categoryName
+      ? { ...expense, category: fallbackCategory.name, subcategory: fallbackCategory.subcategories[0] || "General" }
+      : expense
+  );
+  importedExpenses = importedExpenses.map((expense) =>
+    expense.category === categoryName
+      ? { ...expense, category: fallbackCategory.name, subcategory: fallbackCategory.subcategories[0] || "General" }
+      : expense
+  );
+  saveState();
+  renderApp();
+}
+
+function handleRenameSubcategory(categoryName, previousName, nextName) {
+  const cleanName = String(nextName || "").trim();
+  if (!cleanName) {
+    return;
+  }
+
+  const categoryDefinition = findCategoryDefinition(categoryName);
+  if (!categoryDefinition || categoryDefinition.subcategories.includes(cleanName)) {
+    if (cleanName !== previousName) {
+      return;
+    }
+  }
+
+  categoryDefinition.subcategories = categoryDefinition.subcategories.map((subcategory) =>
+    subcategory === previousName ? cleanName : subcategory
+  );
+  state.expenses = state.expenses.map((expense) =>
+    expense.category === categoryName && expense.subcategory === previousName
+      ? { ...expense, subcategory: cleanName }
+      : expense
+  );
+  importedExpenses = importedExpenses.map((expense) =>
+    expense.category === categoryName && expense.subcategory === previousName
+      ? { ...expense, subcategory: cleanName }
+      : expense
+  );
+  saveState();
+  renderApp();
+}
+
+function handleDeleteSubcategory(categoryName, subcategoryName) {
+  const categoryDefinition = findCategoryDefinition(categoryName);
+  if (!categoryDefinition || categoryDefinition.subcategories.length <= 1) {
+    return;
+  }
+
+  const fallbackSubcategory = categoryDefinition.subcategories.find(
+    (subcategory) => subcategory !== subcategoryName
+  );
+  categoryDefinition.subcategories = categoryDefinition.subcategories.filter(
+    (subcategory) => subcategory !== subcategoryName
+  );
+
+  state.expenses = state.expenses.map((expense) =>
+    expense.category === categoryName && expense.subcategory === subcategoryName
+      ? { ...expense, subcategory: fallbackSubcategory || "General" }
+      : expense
+  );
+  importedExpenses = importedExpenses.map((expense) =>
+    expense.category === categoryName && expense.subcategory === subcategoryName
+      ? { ...expense, subcategory: fallbackSubcategory || "General" }
+      : expense
+  );
+  saveState();
+  renderApp();
+}
+
 function handleDeleteExpense(id) {
   state.expenses = state.expenses.filter((expense) => expense.id !== id);
   saveState();
@@ -352,20 +457,78 @@ function renderCategorySummary() {
 }
 
 function renderCategoryManager() {
-  categoryManagerList.innerHTML = state.categoryDefinitions
-    .map(
-      (category) => `
-        <article class="category-manager-card">
-          <strong>${escapeHtml(category.name)}</strong>
-          <div class="subcategory-chips">
-            ${category.subcategories
-              .map((subcategory) => `<span class="subcategory-chip">${escapeHtml(subcategory)}</span>`)
-              .join("")}
-          </div>
-        </article>
-      `
-    )
-    .join("");
+  categoryManagerList.innerHTML = "";
+
+  state.categoryDefinitions.forEach((category) => {
+    const card = document.createElement("article");
+    card.className = "category-manager-card";
+
+    const header = document.createElement("div");
+    header.className = "category-manager-header";
+
+    const categoryInput = document.createElement("input");
+    categoryInput.type = "text";
+    categoryInput.value = category.name;
+
+    const saveCategoryButton = document.createElement("button");
+    saveCategoryButton.type = "button";
+    saveCategoryButton.className = "mini-button";
+    saveCategoryButton.textContent = "Guardar";
+    saveCategoryButton.addEventListener("click", () =>
+      handleRenameCategory(category.name, categoryInput.value)
+    );
+
+    const deleteCategoryButton = document.createElement("button");
+    deleteCategoryButton.type = "button";
+    deleteCategoryButton.className = "ghost-button";
+    deleteCategoryButton.textContent = "Eliminar";
+    deleteCategoryButton.disabled = state.categoryDefinitions.length <= 1;
+    deleteCategoryButton.addEventListener("click", () => handleDeleteCategory(category.name));
+
+    header.append(categoryInput, saveCategoryButton, deleteCategoryButton);
+
+    const actions = document.createElement("div");
+    actions.className = "category-actions";
+    const actionsLabel = document.createElement("span");
+    actionsLabel.textContent = "Subcategorias";
+    actionsLabel.className = "manager-note";
+    actions.append(actionsLabel);
+
+    const subcategoryList = document.createElement("div");
+    subcategoryList.className = "subcategory-chips";
+
+    category.subcategories.forEach((subcategory) => {
+      const row = document.createElement("div");
+      row.className = "subcategory-row";
+
+      const subcategoryInput = document.createElement("input");
+      subcategoryInput.type = "text";
+      subcategoryInput.value = subcategory;
+
+      const saveSubcategoryButton = document.createElement("button");
+      saveSubcategoryButton.type = "button";
+      saveSubcategoryButton.className = "mini-button";
+      saveSubcategoryButton.textContent = "Guardar";
+      saveSubcategoryButton.addEventListener("click", () =>
+        handleRenameSubcategory(category.name, subcategory, subcategoryInput.value)
+      );
+
+      const deleteSubcategoryButton = document.createElement("button");
+      deleteSubcategoryButton.type = "button";
+      deleteSubcategoryButton.className = "ghost-button";
+      deleteSubcategoryButton.textContent = "Eliminar";
+      deleteSubcategoryButton.disabled = category.subcategories.length <= 1;
+      deleteSubcategoryButton.addEventListener("click", () =>
+        handleDeleteSubcategory(category.name, subcategory)
+      );
+
+      row.append(subcategoryInput, saveSubcategoryButton, deleteSubcategoryButton);
+      subcategoryList.appendChild(row);
+    });
+
+    card.append(header, actions, subcategoryList);
+    categoryManagerList.appendChild(card);
+  });
 }
 
 async function handleImportFile(event) {
@@ -608,7 +771,7 @@ function suggestCategory(description) {
 
 function renderImportedExpenses() {
   importPreview.innerHTML = "";
-  importPreview.classList.toggle("hidden", importedExpenses.length === 0);
+  importPreviewShell.classList.toggle("hidden", importedExpenses.length === 0);
   importAllButton.disabled = importedExpenses.length === 0;
 
   importedExpenses.forEach((expense) => {
