@@ -257,25 +257,6 @@
                     Categoria
                     <select id="expenseCategory" name="category" required></select>
                   </label>
-                  <button
-                    type="button"
-                    class="secondary-button inline-action-button"
-                    id="expenseAddCategoryButton"
-                  >
-                    Nueva categoria
-                  </button>
-
-                  <label>
-                    Subcategoria
-                    <select id="expenseSubcategory" name="subcategory" required></select>
-                  </label>
-                  <button
-                    type="button"
-                    class="secondary-button inline-action-button"
-                    id="expenseAddSubcategoryButton"
-                  >
-                    Nueva subcategoria
-                  </button>
                 </div>
 
                   <label>
@@ -283,7 +264,6 @@
                     <select id="expensePaymentMethod" name="paymentMethod" required>
                       <option value="Efectivo">Efectivo</option>
                       <option value="Tarjeta">Tarjeta</option>
-                      <option value="Transferencia">Transferencia</option>
                     </select>
                   </label>
 
@@ -343,25 +323,6 @@
                     Categoria
                     <select id="incomeCategory" name="category" required></select>
                   </label>
-                  <button
-                    type="button"
-                    class="secondary-button inline-action-button"
-                    id="incomeAddCategoryButton"
-                  >
-                    Nueva categoria
-                  </button>
-
-                  <label>
-                    Subcategoria
-                    <select id="incomeSubcategory" name="subcategory" required></select>
-                  </label>
-                  <button
-                    type="button"
-                    class="secondary-button inline-action-button"
-                    id="incomeAddSubcategoryButton"
-                  >
-                    Nueva subcategoria
-                  </button>
                 </div>
 
                   <label>
@@ -369,7 +330,6 @@
                     <select id="incomePaymentMethod" name="paymentMethod" required>
                       <option value="Efectivo">Efectivo</option>
                       <option value="Tarjeta">Tarjeta</option>
-                      <option value="Transferencia">Transferencia</option>
                     </select>
                   </label>
 
@@ -392,46 +352,12 @@
         <section class="view" data-view="categorias">
           <section class="panel">
             <div class="panel__header">
-              <h2>Categorias y subcategorias</h2>
-              <p>Crea tu propia estructura para clasificar gastos del hogar.</p>
-            </div>
-
-            <div class="category-layout">
-              <form id="categoryForm" class="budget-form">
-                <label>
-                  Nueva categoria
-                  <input
-                    id="newCategoryName"
-                    name="newCategoryName"
-                    type="text"
-                    placeholder="Ej. Mascotas"
-                    required
-                  />
-                </label>
-                <button type="submit" class="secondary-button">Crear categoria</button>
-              </form>
-
-              <form id="subcategoryForm" class="budget-form category-form-spaced">
-                <label>
-                  Categoria padre
-                  <select id="parentCategory" name="parentCategory" required></select>
-                </label>
-                <label>
-                  Nueva subcategoria
-                  <input
-                    id="newSubcategoryName"
-                    name="newSubcategoryName"
-                    type="text"
-                    placeholder="Ej. Veterinaria"
-                    required
-                  />
-                </label>
-                <button type="submit" class="secondary-button">Crear subcategoria</button>
-              </form>
+              <h2>Categorias</h2>
+              <p>La app ahora trabaja con categorias fijas para que todo sea mas rapido y uniforme.</p>
             </div>
 
             <div class="manager-note">
-              Edita nombres, agrega nuevas opciones y elimina las que ya no uses.
+              Categorias activas para registrar e importar: Oficina, Casa y Gastos Externos.
             </div>
             <div id="categoryManagerList" class="category-manager-list"></div>
           </section>
@@ -473,18 +399,12 @@
             <div class="panel__header panel__header--split">
               <div>
                 <h2>Historial de movimientos</h2>
-                <p>Filtra por fechas y ajusta categoria o subcategoria en una sola lista compacta.</p>
+                <p>Filtra por fechas y ajusta categoria o metodo en una sola lista compacta.</p>
               </div>
               <div class="filters">
                 <label>
                   Categoria
                   <select id="filterCategory">
-                    <option value="Todas">Todas</option>
-                  </select>
-                </label>
-                <label>
-                  Subcategoria
-                  <select id="filterSubcategory">
                     <option value="Todas">Todas</option>
                   </select>
                 </label>
@@ -520,7 +440,7 @@
               <span>Descripcion</span>
               <span>Monto</span>
               <span>Categoria</span>
-              <span>Subcategoria</span>
+              <span>Metodo</span>
               <span>Acciones</span>
             </div>
             <div id="expenseList" class="expense-list"></div>
@@ -544,7 +464,7 @@
           <select class="expense-edit-category"></select>
         </div>
         <div class="history-cell">
-          <select class="expense-edit-subcategory"></select>
+          <select class="expense-edit-method"></select>
         </div>
         <div class="history-cell history-cell--action">
           <button class="primary-button expense-save-button" type="button">Guardar</button>

@@ -3,20 +3,16 @@ const AUTH_STORAGE_KEY = "hogar-expenses-auth";
 const AUTH_USER_STORAGE_KEY = "hogar-expenses-auth-user";
 const AUTH_VERSION_KEY = "hogar-expenses-auth-version";
 const AUTH_VERSION = "2";
-const PAYMENT_OPTIONS = ["Efectivo", "Tarjeta", "Transferencia"];
+const PAYMENT_OPTIONS = ["Efectivo", "Tarjeta"];
 const AUTH_USERS = {
   JCAE: "jcae2026",
   CLFE: "clfe2026",
 };
 
 const defaultCategoryDefinitions = [
-  { name: "Alimentacion", subcategories: ["Supermercado", "Restaurante", "Despensa"] },
-  { name: "Servicios", subcategories: ["Agua", "Luz", "Internet"] },
-  { name: "Limpieza", subcategories: ["Higiene", "Articulos de limpieza"] },
-  { name: "Transporte", subcategories: ["Gasolina", "Parqueo", "Transporte publico"] },
-  { name: "Salud", subcategories: ["Farmacia", "Consulta", "Emergencias"] },
-  { name: "Educacion", subcategories: ["Colegiatura", "Utiles", "Cursos"] },
-  { name: "Otros", subcategories: ["General"] },
+  { name: "Oficina", subcategories: ["General"] },
+  { name: "Casa", subcategories: ["General"] },
+  { name: "Gastos Externos", subcategories: ["General"] },
 ];
 
 const defaultState = {
@@ -37,8 +33,6 @@ const currencyFormatter = new Intl.NumberFormat("es-GT", {
 const expenseForm = document.getElementById("expenseForm");
 const incomeForm = document.getElementById("incomeForm");
 const budgetForm = document.getElementById("budgetForm");
-const categoryForm = document.getElementById("categoryForm");
-const subcategoryForm = document.getElementById("subcategoryForm");
 const expenseList = document.getElementById("expenseList");
 const emptyState = document.getElementById("emptyState");
 const historyTableHeader = document.getElementById("historyTableHeader");
@@ -57,7 +51,6 @@ const cashSummary = document.getElementById("cashSummary");
 const cardMethodTotal = document.getElementById("cardMethodTotal");
 const cashMethodTotal = document.getElementById("cashMethodTotal");
 const filterCategory = document.getElementById("filterCategory");
-const filterSubcategory = document.getElementById("filterSubcategory");
 const filterStartDate = document.getElementById("filterStartDate");
 const filterEndDate = document.getElementById("filterEndDate");
 const searchInput = document.getElementById("searchInput");
@@ -67,14 +60,7 @@ const importPreview = document.getElementById("importPreview");
 const importPreviewShell = document.getElementById("importPreviewShell");
 const importMessage = document.getElementById("importMessage");
 const expenseCategorySelect = document.getElementById("expenseCategory");
-const expenseSubcategorySelect = document.getElementById("expenseSubcategory");
 const incomeCategorySelect = document.getElementById("incomeCategory");
-const incomeSubcategorySelect = document.getElementById("incomeSubcategory");
-const expenseAddCategoryButton = document.getElementById("expenseAddCategoryButton");
-const expenseAddSubcategoryButton = document.getElementById("expenseAddSubcategoryButton");
-const incomeAddCategoryButton = document.getElementById("incomeAddCategoryButton");
-const incomeAddSubcategoryButton = document.getElementById("incomeAddSubcategoryButton");
-const parentCategory = document.getElementById("parentCategory");
 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const views = Array.from(document.querySelectorAll(".view"));
 
@@ -101,31 +87,7 @@ incomeDateInput.value = new Date().toISOString().split("T")[0];
 expenseForm.addEventListener("submit", handleCreateEntry);
 incomeForm.addEventListener("submit", handleCreateEntry);
 budgetForm.addEventListener("submit", handleUpdateBudget);
-categoryForm.addEventListener("submit", handleCreateCategory);
-subcategoryForm.addEventListener("submit", handleCreateSubcategory);
-expenseCategorySelect.addEventListener("change", () => {
-  renderSubcategoryOptions(expenseCategorySelect.value, expenseSubcategorySelect);
-});
-incomeCategorySelect.addEventListener("change", () => {
-  renderSubcategoryOptions(incomeCategorySelect.value, incomeSubcategorySelect);
-});
-expenseAddCategoryButton.addEventListener("click", () =>
-  handleQuickCreateCategory(expenseCategorySelect, expenseSubcategorySelect)
-);
-incomeAddCategoryButton.addEventListener("click", () =>
-  handleQuickCreateCategory(incomeCategorySelect, incomeSubcategorySelect)
-);
-expenseAddSubcategoryButton.addEventListener("click", () =>
-  handleQuickCreateSubcategory(expenseCategorySelect, expenseSubcategorySelect)
-);
-incomeAddSubcategoryButton.addEventListener("click", () =>
-  handleQuickCreateSubcategory(incomeCategorySelect, incomeSubcategorySelect)
-);
-filterCategory.addEventListener("change", () => {
-  renderFilterSubcategories(filterCategory.value);
-  renderApp();
-});
-filterSubcategory.addEventListener("change", renderApp);
+filterCategory.addEventListener("change", renderApp);
 cardStartDate.addEventListener("change", renderApp);
 cardEndDate.addEventListener("change", renderApp);
 cashStartDate.addEventListener("change", renderApp);
@@ -196,7 +158,7 @@ function loadState() {
     const parsed = JSON.parse(savedState);
     return {
       monthlyBudget: Number(parsed.monthlyBudget) || 0,
-      expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+      expenses: Array.isArray(parsed.expenses) ? parsed.expenses.map(normalizeStoredExpense) : [],
       categoryDefinitions: normalizeCategoryDefinitions(parsed.categoryDefinitions),
     };
   } catch (error) {
@@ -205,27 +167,21 @@ function loadState() {
 }
 
 function normalizeCategoryDefinitions(value) {
-  if (!Array.isArray(value) || value.length === 0) {
-    return structuredClone(defaultCategoryDefinitions);
-  }
+  return structuredClone(defaultCategoryDefinitions);
+}
 
-  const cleaned = value
-    .map((item) => ({
-      name: String(item?.name || "").trim(),
-      subcategories: Array.isArray(item?.subcategories)
-        ? item.subcategories.map((sub) => String(sub).trim()).filter(Boolean)
-        : [],
-    }))
-    .filter((item) => item.name);
+function normalizeStoredExpense(expense) {
+  const safeCategory = hasCategory(expense?.category) ? expense.category : "Casa";
+  const safeMethod = PAYMENT_OPTIONS.includes(expense?.paymentMethod)
+    ? expense.paymentMethod
+    : "Efectivo";
 
-  if (cleaned.length === 0) {
-    return structuredClone(defaultCategoryDefinitions);
-  }
-
-  return cleaned.map((item) => ({
-    ...item,
-    subcategories: item.subcategories.length ? item.subcategories : ["General"],
-  }));
+  return {
+    ...expense,
+    category: safeCategory,
+    subcategory: "General",
+    paymentMethod: safeMethod,
+  };
 }
 
 function saveState() {
@@ -241,8 +197,7 @@ function handleCreateEntry(event) {
   const amount = Number(formData.get("amount"));
   const date = String(formData.get("date") || "");
   const entryType = String(formData.get("entryType") || "gasto");
-  const category = String(formData.get("category") || "Otros");
-  const subcategory = String(formData.get("subcategory") || "General");
+  const category = String(formData.get("category") || "Casa");
   const paymentMethod = String(formData.get("paymentMethod") || "Efectivo");
   const notes = String(formData.get("notes") || "").trim();
 
@@ -257,7 +212,7 @@ function handleCreateEntry(event) {
     date,
     entryType,
     category,
-    subcategory,
+    subcategory: "General",
     paymentMethod,
     notes,
   });
@@ -280,131 +235,12 @@ function handleUpdateBudget(event) {
   renderApp();
 }
 
-function handleCreateCategory(event) {
-  event.preventDefault();
-  const formData = new FormData(categoryForm);
-  const name = String(formData.get("newCategoryName") || "").trim();
-  if (!name || findCategoryDefinition(name)) {
-    return;
-  }
-
-  state.categoryDefinitions.push({
-    name,
-    subcategories: ["General"],
-  });
-
-  saveState();
-  categoryForm.reset();
-  renderCategoryControls();
-  renderApp();
-}
-
-function handleCreateSubcategory(event) {
-  event.preventDefault();
-  const formData = new FormData(subcategoryForm);
-  const categoryName = String(formData.get("parentCategory") || "").trim();
-  const subcategoryName = String(formData.get("newSubcategoryName") || "").trim();
-  const categoryDefinition = findCategoryDefinition(categoryName);
-
-  if (!categoryDefinition || !subcategoryName) {
-    return;
-  }
-
-  if (!categoryDefinition.subcategories.includes(subcategoryName)) {
-    categoryDefinition.subcategories.push(subcategoryName);
-    saveState();
-  }
-
-  subcategoryForm.reset();
-  renderCategoryControls();
-  renderApp();
-}
-
-function handleQuickCreateCategory(categorySelect, subcategorySelect) {
-  const name = window.prompt("Escribe el nombre de la nueva categoria:");
-  const cleanName = String(name || "").trim();
-  if (!cleanName || findCategoryDefinition(cleanName)) {
-    return;
-  }
-
-  state.categoryDefinitions.push({
-    name: cleanName,
-    subcategories: ["General"],
-  });
-
-  saveState();
-  renderCategoryControls();
-  categorySelect.value = cleanName;
-  renderSubcategoryOptions(cleanName, subcategorySelect, "General");
-  renderApp();
-}
-
-function handleQuickCreateSubcategory(categorySelect, subcategorySelect) {
-  const categoryName = categorySelect.value;
-  const categoryDefinition = findCategoryDefinition(categoryName);
-  if (!categoryDefinition) {
-    return;
-  }
-
-  const name = window.prompt(`Escribe la nueva subcategoria para ${categoryName}:`);
-  const cleanName = String(name || "").trim();
-  if (!cleanName || categoryDefinition.subcategories.includes(cleanName)) {
-    return;
-  }
-
-  categoryDefinition.subcategories.push(cleanName);
-  saveState();
-  renderCategoryControls();
-  categorySelect.value = categoryName;
-  renderSubcategoryOptions(categoryName, subcategorySelect, cleanName);
-  renderApp();
-}
-
 function handleRenameCategory(previousName, nextName) {
-  const cleanName = String(nextName || "").trim();
-  if (!cleanName || (cleanName !== previousName && findCategoryDefinition(cleanName))) {
-    return;
-  }
-
-  const categoryDefinition = findCategoryDefinition(previousName);
-  if (!categoryDefinition) {
-    return;
-  }
-
-  categoryDefinition.name = cleanName;
-  state.expenses = state.expenses.map((expense) =>
-    expense.category === previousName ? { ...expense, category: cleanName } : expense
-  );
-  importedExpenses = importedExpenses.map((expense) =>
-    expense.category === previousName ? { ...expense, category: cleanName } : expense
-  );
-  saveState();
-  renderApp();
+  return;
 }
 
 function handleDeleteCategory(categoryName) {
-  if (state.categoryDefinitions.length <= 1) {
-    return;
-  }
-
-  const fallbackCategory = state.categoryDefinitions.find((category) => category.name !== categoryName);
-  if (!fallbackCategory) {
-    return;
-  }
-
-  state.categoryDefinitions = state.categoryDefinitions.filter((category) => category.name !== categoryName);
-  state.expenses = state.expenses.map((expense) =>
-    expense.category === categoryName
-      ? { ...expense, category: fallbackCategory.name, subcategory: fallbackCategory.subcategories[0] || "General" }
-      : expense
-  );
-  importedExpenses = importedExpenses.map((expense) =>
-    expense.category === categoryName
-      ? { ...expense, category: fallbackCategory.name, subcategory: fallbackCategory.subcategories[0] || "General" }
-      : expense
-  );
-  saveState();
-  renderApp();
+  return;
 }
 
 function handleRenameSubcategory(categoryName, previousName, nextName) {
@@ -486,7 +322,6 @@ function handleUpdateExpense(id, updates) {
 
 function getFilteredExpenses() {
   const selectedCategory = filterCategory.value;
-  const selectedSubcategory = filterSubcategory.value;
   const startDate = filterStartDate.value;
   const endDate = filterEndDate.value;
   const query = searchInput.value.trim().toLowerCase();
@@ -494,8 +329,6 @@ function getFilteredExpenses() {
   return state.expenses.filter((expense) => {
     const matchesCategory =
       selectedCategory === "Todas" || expense.category === selectedCategory;
-    const matchesSubcategory =
-      selectedSubcategory === "Todas" || expense.subcategory === selectedSubcategory;
     const matchesStartDate = !startDate || expense.date >= startDate;
     const matchesEndDate = !endDate || expense.date <= endDate;
 
@@ -510,7 +343,7 @@ function getFilteredExpenses() {
       .toLowerCase();
 
     const matchesQuery = !query || searchableText.includes(query);
-    return matchesCategory && matchesSubcategory && matchesStartDate && matchesEndDate && matchesQuery;
+    return matchesCategory && matchesStartDate && matchesEndDate && matchesQuery;
   });
 }
 
@@ -608,68 +441,23 @@ function renderCategoryControls() {
   const previousExpenseCategory = expenseCategorySelect.value;
   const previousIncomeCategory = incomeCategorySelect.value;
   const previousFilterCategory = filterCategory.value;
-  const previousParentCategory = parentCategory.value;
 
   expenseCategorySelect.innerHTML = buildCategoryOptions();
   incomeCategorySelect.innerHTML = buildCategoryOptions();
   filterCategory.innerHTML = `<option value="Todas">Todas</option>${buildCategoryOptions()}`;
-  parentCategory.innerHTML = buildCategoryOptions();
 
   expenseCategorySelect.value = hasCategory(previousExpenseCategory)
     ? previousExpenseCategory
-    : state.categoryDefinitions[0]?.name || "Otros";
+    : state.categoryDefinitions[0]?.name || "Casa";
   incomeCategorySelect.value = hasCategory(previousIncomeCategory)
     ? previousIncomeCategory
-    : state.categoryDefinitions[0]?.name || "Otros";
+    : state.categoryDefinitions[0]?.name || "Casa";
   filterCategory.value =
     previousFilterCategory === "Todas" || hasCategory(previousFilterCategory)
       ? previousFilterCategory
       : "Todas";
-  parentCategory.value = hasCategory(previousParentCategory)
-    ? previousParentCategory
-    : state.categoryDefinitions[0]?.name || "Otros";
-
-  renderSubcategoryOptions(
-    expenseCategorySelect.value,
-    expenseSubcategorySelect,
-    expenseSubcategorySelect.value
-  );
-  renderSubcategoryOptions(
-    incomeCategorySelect.value,
-    incomeSubcategorySelect,
-    incomeSubcategorySelect.value
-  );
-  renderFilterSubcategories(filterCategory.value, filterSubcategory.value);
   renderMethodCategoryChecklist(cardCategoryList);
   renderMethodCategoryChecklist(cashCategoryList);
-}
-
-function renderSubcategoryOptions(categoryName, targetSelect, preferredValue = "") {
-  const categoryDefinition = findCategoryDefinition(categoryName);
-  const subcategories = categoryDefinition?.subcategories || ["General"];
-  targetSelect.innerHTML = subcategories
-    .map((sub) => `<option value="${escapeHtml(sub)}">${escapeHtml(sub)}</option>`)
-    .join("");
-  targetSelect.value = subcategories.includes(preferredValue) ? preferredValue : subcategories[0];
-}
-
-function renderFilterSubcategories(categoryName, preferredValue = "") {
-  let subcategories = [];
-  if (categoryName === "Todas") {
-    subcategories = Array.from(
-      new Set(state.categoryDefinitions.flatMap((category) => category.subcategories))
-    ).sort();
-  } else {
-    subcategories = findCategoryDefinition(categoryName)?.subcategories || [];
-  }
-
-  filterSubcategory.innerHTML = `<option value="Todas">Todas</option>${subcategories
-    .map((sub) => `<option value="${escapeHtml(sub)}">${escapeHtml(sub)}</option>`)
-    .join("")}`;
-  filterSubcategory.value =
-    preferredValue === "Todas" || subcategories.includes(preferredValue)
-      ? preferredValue
-      : "Todas";
 }
 
 function renderExpenseList(expenses) {
@@ -684,7 +472,7 @@ function renderExpenseList(expenses) {
     const amountInput = fragment.querySelector(".expense-edit-amount");
     const dateInput = fragment.querySelector(".expense-edit-date");
     const categorySelect = fragment.querySelector(".expense-edit-category");
-    const subcategorySelect = fragment.querySelector(".expense-edit-subcategory");
+    const methodSelect = fragment.querySelector(".expense-edit-method");
 
     item.classList.add(
       expense.entryType === "ingreso" ? "expense-item--income" : "expense-item--expense"
@@ -696,12 +484,13 @@ function renderExpenseList(expenses) {
     categorySelect.innerHTML = buildCategoryOptions();
     categorySelect.value = hasCategory(expense.category)
       ? expense.category
-      : state.categoryDefinitions[0]?.name || "Otros";
-    renderSubcategoryOptions(categorySelect.value, subcategorySelect, expense.subcategory);
-
-    categorySelect.addEventListener("change", () => {
-      renderSubcategoryOptions(categorySelect.value, subcategorySelect);
-    });
+      : state.categoryDefinitions[0]?.name || "Casa";
+    methodSelect.innerHTML = PAYMENT_OPTIONS.map(
+      (option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`
+    ).join("");
+    methodSelect.value = PAYMENT_OPTIONS.includes(expense.paymentMethod)
+      ? expense.paymentMethod
+      : "Efectivo";
 
     fragment.querySelector(".expense-save-button").addEventListener("click", () => {
       const nextAmount = Number(amountInput.value);
@@ -710,14 +499,13 @@ function renderExpenseList(expenses) {
       }
 
       const nextCategory = categorySelect.value;
-      const nextSubcategory = subcategorySelect.value;
-
       handleUpdateExpense(expense.id, {
         description: descriptionInput.value.trim(),
         amount: nextAmount,
         date: dateInput.value,
         category: nextCategory,
-        subcategory: nextSubcategory,
+        subcategory: "General",
+        paymentMethod: methodSelect.value,
       });
     });
 
@@ -831,20 +619,14 @@ function renderMethodSummary(expenses, targetElement, totalElement, methodLabel)
 
   const grouped = expenseOnly.reduce((accumulator, expense) => {
     if (!accumulator[expense.category]) {
-      accumulator[expense.category] = {
-        total: 0,
-        subcategories: {},
-      };
+      accumulator[expense.category] = 0;
     }
 
-    accumulator[expense.category].total += Number(expense.amount);
-    accumulator[expense.category].subcategories[expense.subcategory] =
-      (accumulator[expense.category].subcategories[expense.subcategory] || 0) + Number(expense.amount);
-
+    accumulator[expense.category] += Number(expense.amount);
     return accumulator;
   }, {});
 
-  const categoryEntries = Object.entries(grouped).sort((a, b) => b[1].total - a[1].total);
+  const categoryEntries = Object.entries(grouped).sort((a, b) => b[1] - a[1]);
 
   targetElement.innerHTML = `
     <article class="category-summary-total">
@@ -852,19 +634,7 @@ function renderMethodSummary(expenses, targetElement, totalElement, methodLabel)
       <strong>${formatCurrency(methodTotal)}</strong>
     </article>
     ${categoryEntries
-      .map(([category, details]) => {
-        const subcategoryRows = Object.entries(details.subcategories)
-          .sort((a, b) => b[1] - a[1])
-          .map(
-            ([subcategory, total]) => `
-              <div class="category-summary-row">
-                <span>${escapeHtml(subcategory)}</span>
-                <strong>${formatCurrency(total)}</strong>
-              </div>
-            `
-          )
-          .join("");
-
+      .map(([category, total]) => {
         return `
           <article class="category-group-card">
             <div class="category-group-card__header">
@@ -872,10 +642,7 @@ function renderMethodSummary(expenses, targetElement, totalElement, methodLabel)
                 <span>Categoria</span>
                 <h4>${escapeHtml(category)}</h4>
               </div>
-              <strong>${formatCurrency(details.total)}</strong>
-            </div>
-            <div class="category-group-card__body">
-              ${subcategoryRows}
+              <strong>${formatCurrency(total)}</strong>
             </div>
           </article>
         `;
@@ -904,6 +671,18 @@ function renderCombinedPaymentSummary(cardExpenses, cashExpenses) {
       `
     )
     .join("");
+  const splitCategoryRows = Object.entries(totalsByCategory)
+    .sort((a, b) => b[1] - a[1])
+    .map(
+      ([category, total]) => `
+        <div class="payment-total-card__row">
+          <span>${escapeHtml(category)}</span>
+          <strong>${formatCurrency(total / 2)}</strong>
+        </div>
+      `
+    )
+    .join("");
+  const splitTotal = combinedTotal / 2;
 
   categorySummary.innerHTML = `
     <article class="payment-total-card">
@@ -921,6 +700,20 @@ function renderCombinedPaymentSummary(cardExpenses, cashExpenses) {
       </div>
       ${categoryRows}
     </article>
+    <article class="payment-total-card">
+      <div class="payment-total-card__row payment-total-card__row--grand">
+        <span>Tabla de pagos JC</span>
+        <strong>${formatCurrency(splitTotal)}</strong>
+      </div>
+      ${splitCategoryRows}
+    </article>
+    <article class="payment-total-card">
+      <div class="payment-total-card__row payment-total-card__row--grand">
+        <span>Tabla de pagos</span>
+        <strong>${formatCurrency(splitTotal)}</strong>
+      </div>
+      ${splitCategoryRows}
+    </article>
   `;
 }
 
@@ -930,71 +723,10 @@ function renderCategoryManager() {
   state.categoryDefinitions.forEach((category) => {
     const card = document.createElement("article");
     card.className = "category-manager-card";
-
-    const header = document.createElement("div");
-    header.className = "category-manager-header";
-
-    const categoryInput = document.createElement("input");
-    categoryInput.type = "text";
-    categoryInput.value = category.name;
-
-    const saveCategoryButton = document.createElement("button");
-    saveCategoryButton.type = "button";
-    saveCategoryButton.className = "mini-button";
-    saveCategoryButton.textContent = "Guardar";
-    saveCategoryButton.addEventListener("click", () =>
-      handleRenameCategory(category.name, categoryInput.value)
-    );
-
-    const deleteCategoryButton = document.createElement("button");
-    deleteCategoryButton.type = "button";
-    deleteCategoryButton.className = "ghost-button";
-    deleteCategoryButton.textContent = "Eliminar";
-    deleteCategoryButton.disabled = state.categoryDefinitions.length <= 1;
-    deleteCategoryButton.addEventListener("click", () => handleDeleteCategory(category.name));
-
-    header.append(categoryInput, saveCategoryButton, deleteCategoryButton);
-
-    const actions = document.createElement("div");
-    actions.className = "category-actions";
-    const actionsLabel = document.createElement("span");
-    actionsLabel.textContent = "Subcategorias";
-    actionsLabel.className = "manager-note";
-    actions.append(actionsLabel);
-
-    const subcategoryList = document.createElement("div");
-    subcategoryList.className = "subcategory-chips";
-
-    category.subcategories.forEach((subcategory) => {
-      const row = document.createElement("div");
-      row.className = "subcategory-row";
-
-      const subcategoryInput = document.createElement("input");
-      subcategoryInput.type = "text";
-      subcategoryInput.value = subcategory;
-
-      const saveSubcategoryButton = document.createElement("button");
-      saveSubcategoryButton.type = "button";
-      saveSubcategoryButton.className = "mini-button";
-      saveSubcategoryButton.textContent = "Guardar";
-      saveSubcategoryButton.addEventListener("click", () =>
-        handleRenameSubcategory(category.name, subcategory, subcategoryInput.value)
-      );
-
-      const deleteSubcategoryButton = document.createElement("button");
-      deleteSubcategoryButton.type = "button";
-      deleteSubcategoryButton.className = "ghost-button";
-      deleteSubcategoryButton.textContent = "Eliminar";
-      deleteSubcategoryButton.disabled = category.subcategories.length <= 1;
-      deleteSubcategoryButton.addEventListener("click", () =>
-        handleDeleteSubcategory(category.name, subcategory)
-      );
-
-      row.append(subcategoryInput, saveSubcategoryButton, deleteSubcategoryButton);
-      subcategoryList.appendChild(row);
-    });
-
-    card.append(header, actions, subcategoryList);
+    card.innerHTML = `
+      <strong>${escapeHtml(category.name)}</strong>
+      <div class="manager-note">Categoria fija activa para registro, historial, importacion y resumen.</div>
+    `;
     categoryManagerList.appendChild(card);
   });
 }
@@ -1116,7 +848,7 @@ function mapBankRow(row, index) {
     date: parsedDate,
     entryType: "gasto",
     category,
-    subcategory: getDefaultSubcategory(category),
+    subcategory: "General",
     paymentMethod: "Tarjeta",
     notes: "Importado desde estado de cuenta",
   };
@@ -1229,13 +961,9 @@ function parseImportedDate(value) {
 function suggestCategory(description) {
   const text = description.toLowerCase();
 
-  if (/(super|market|despensa|walmart|paiz|maxi)/.test(text)) return "Alimentacion";
-  if (/(agua|luz|energia|electric|internet|telefono|gas|servicio|tigo)/.test(text)) return "Servicios";
-  if (/(farmacia|medic|hospital|clinica|salud)/.test(text)) return "Salud";
-  if (/(uber|gasolina|combustible|bus|taxi|peaje|parqueo)/.test(text)) return "Transporte";
-  if (/(colegio|escuela|universidad|curso|educa)/.test(text)) return "Educacion";
-  if (/(limpieza|detergente|jabon|papel|dollarcity)/.test(text)) return "Limpieza";
-  return "Otros";
+  if (/(office|papeleria|copias|toner|impresion|computadora|software)/.test(text)) return "Oficina";
+  if (/(super|market|despensa|walmart|paiz|maxi|agua|luz|energia|electric|internet|telefono|gas|servicio|tigo|limpieza|detergente|jabon|papel)/.test(text)) return "Casa";
+  return "Gastos Externos";
 }
 
 function renderImportedExpenses() {
@@ -1271,23 +999,16 @@ function renderImportedExpenses() {
 
     const categoryField = document.createElement("div");
     const categoryPicker = document.createElement("select");
-    const subcategoryPicker = document.createElement("select");
 
     categoryPicker.innerHTML = buildCategoryOptions();
-    categoryPicker.value = hasCategory(expense.category) ? expense.category : "Otros";
-    renderSubcategoryOptions(categoryPicker.value, subcategoryPicker, expense.subcategory);
+    categoryPicker.value = hasCategory(expense.category) ? expense.category : "Casa";
 
     categoryPicker.addEventListener("change", (event) => {
       expense.category = event.target.value;
-      expense.subcategory = getDefaultSubcategory(expense.category);
-      renderSubcategoryOptions(expense.category, subcategoryPicker, expense.subcategory);
+      expense.subcategory = "General";
     });
 
-    subcategoryPicker.addEventListener("change", (event) => {
-      expense.subcategory = event.target.value;
-    });
-
-    categoryField.append(categoryPicker, subcategoryPicker);
+    categoryField.append(categoryPicker);
     categoryField.style.display = "grid";
     categoryField.style.gap = "10px";
 
