@@ -594,6 +594,9 @@ function renderExpenseList(expenses) {
 
   expenses.forEach((expense) => {
     const fragment = expenseItemTemplate.content.cloneNode(true);
+    fragment
+      .querySelector(".expense-item")
+      .classList.add(expense.entryType === "ingreso" ? "expense-item--income" : "expense-item--expense");
     fragment.querySelector(".expense-title").textContent = expense.description;
     fragment.querySelector(".expense-amount").textContent = `${
       expense.entryType === "ingreso" ? "+" : "-"
