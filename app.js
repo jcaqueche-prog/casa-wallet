@@ -253,10 +253,31 @@ async function readStatementRows(file) {
 
 function readFirstSheet(workbook) {
   const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+  const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
+  const firstRow = rawRows[0] || [];
+  const isHeaderlessBankFormat =
+    firstRow.length >= 3 &&
+    (firstRow[0] instanceof Date || typeof firstRow[0] === "number") &&
+    typeof firstRow[1] === "string" &&
+    (typeof firstRow[2] === "number" || typeof firstRow[2] === "string");
+
+  if (isHeaderlessBankFormat) {
+    return rawRows.map((row) => mapHeaderlessRow(row)).filter(Boolean);
+  }
+
+  const objectRows = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
+  return objectRows;
 }
 
 function mapBankRow(row, index) {
+  if (Array.isArray(row)) {
+    row = mapHeaderlessRow(row);
+  }
+
+  if (!row) {
+    return null;
+  }
+
   const normalizedEntries = Object.entries(row).reduce((accumulator, [key, value]) => {
     accumulator[normalizeHeader(key)] = value;
     return accumulator;
@@ -308,6 +329,24 @@ function mapBankRow(row, index) {
   };
 }
 
+function mapHeaderlessRow(row) {
+  if (!Array.isArray(row) || row.length < 3) {
+    return null;
+  }
+
+  const [date, description, amount, extra] = row;
+  if (!date && !description && !amount) {
+    return null;
+  }
+
+  return {
+    fecha: date,
+    descripcion: description,
+    monto: amount,
+    nota: extra,
+  };
+}
+
 function normalizeHeader(value) {
   return String(value || "")
     .normalize("NFD")
@@ -352,6 +391,12 @@ function parseAmount(value) {
 }
 
 function parseImportedDate(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(
+      value.getDate()
+    ).padStart(2, "0")}`;
+  }
+
   if (typeof value === "number") {
     const dateCode = XLSX.SSF.parse_date_code(value);
     if (!dateCode) {
