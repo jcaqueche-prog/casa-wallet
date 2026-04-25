@@ -407,7 +407,7 @@ textarea {
 }
 
 .stats-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .stat-card,
@@ -460,6 +460,10 @@ textarea {
   font-family: "Space Grotesk", sans-serif;
   font-size: 1.1rem;
   color: var(--brand-dark);
+}
+
+.expense-amount--income {
+  color: var(--success);
 }
 
 .expense-meta,

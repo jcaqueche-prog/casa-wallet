@@ -126,6 +126,16 @@
 
                 <div class="grid-two">
                   <label>
+                    Tipo de movimiento
+                    <select id="entryType" name="entryType" required>
+                      <option value="gasto">Gasto</option>
+                      <option value="ingreso">Ingreso</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="grid-two">
+                  <label>
                     Categoria
                     <select id="category" name="category" required></select>
                   </label>
@@ -186,15 +196,23 @@
 
               <div class="stats-grid">
                 <article class="stat-card">
-                  <span>Gasto total</span>
+                  <span>Total de gastos</span>
                   <strong id="totalSpent">Q0.00</strong>
                 </article>
                 <article class="stat-card">
-                  <span>Numero de gastos</span>
+                  <span>Total de ingresos</span>
+                  <strong id="totalIncome">Q0.00</strong>
+                </article>
+                <article class="stat-card">
+                  <span>Movimientos registrados</span>
                   <strong id="expenseCount">0</strong>
                 </article>
                 <article class="stat-card">
-                  <span>Promedio por gasto</span>
+                  <span>Balance neto</span>
+                  <strong id="netBalance">Q0.00</strong>
+                </article>
+                <article class="stat-card">
+                  <span>Promedio por movimiento</span>
                   <strong id="averageExpense">Q0.00</strong>
                 </article>
               </div>

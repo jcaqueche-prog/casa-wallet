@@ -46,13 +46,16 @@ const importMessage = document.getElementById("importMessage");
 const categorySelect = document.getElementById("category");
 const subcategorySelect = document.getElementById("subcategory");
 const parentCategory = document.getElementById("parentCategory");
+const entryTypeSelect = document.getElementById("entryType");
 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const views = Array.from(document.querySelectorAll(".view"));
 
 const monthlyBudgetValue = document.getElementById("monthlyBudgetValue");
 const availableBudgetValue = document.getElementById("availableBudgetValue");
 const totalSpent = document.getElementById("totalSpent");
+const totalIncome = document.getElementById("totalIncome");
 const expenseCount = document.getElementById("expenseCount");
+const netBalance = document.getElementById("netBalance");
 const averageExpense = document.getElementById("averageExpense");
 const monthlyBudgetInput = document.getElementById("monthlyBudgetInput");
 
@@ -133,6 +136,7 @@ function handleCreateExpense(event) {
   const description = String(formData.get("description") || "").trim();
   const amount = Number(formData.get("amount"));
   const date = String(formData.get("date") || "");
+  const entryType = String(formData.get("entryType") || "gasto");
   const category = String(formData.get("category") || "Otros");
   const subcategory = String(formData.get("subcategory") || "General");
   const paymentMethod = String(formData.get("paymentMethod") || "Efectivo");
@@ -147,6 +151,7 @@ function handleCreateExpense(event) {
     description,
     amount,
     date,
+    entryType,
     category,
     subcategory,
     paymentMethod,
@@ -156,6 +161,7 @@ function handleCreateExpense(event) {
   saveState();
   expenseForm.reset();
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
+  entryTypeSelect.value = "gasto";
   renderCategoryControls();
   renderApp();
 }
@@ -346,15 +352,24 @@ function getFilteredExpenses() {
 
 function renderApp() {
   const filteredExpenses = getFilteredExpenses();
-  const total = state.expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const totalExpenses = state.expenses
+    .filter((expense) => expense.entryType !== "ingreso")
+    .reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const totalIncomes = state.expenses
+    .filter((expense) => expense.entryType === "ingreso")
+    .reduce((sum, expense) => sum + Number(expense.amount), 0);
   const count = state.expenses.length;
-  const average = count ? total / count : 0;
-  const available = state.monthlyBudget - total;
+  const volume = totalExpenses + totalIncomes;
+  const average = count ? volume / count : 0;
+  const balance = totalIncomes - totalExpenses;
+  const available = state.monthlyBudget + totalIncomes - totalExpenses;
 
   monthlyBudgetValue.textContent = formatCurrency(state.monthlyBudget);
   availableBudgetValue.textContent = formatCurrency(available);
-  totalSpent.textContent = formatCurrency(total);
+  totalSpent.textContent = formatCurrency(totalExpenses);
+  totalIncome.textContent = formatCurrency(totalIncomes);
   expenseCount.textContent = String(count);
+  netBalance.textContent = formatCurrency(balance);
   averageExpense.textContent = formatCurrency(average);
   monthlyBudgetInput.value = state.monthlyBudget ? String(state.monthlyBudget) : "";
 
@@ -434,10 +449,15 @@ function renderExpenseList(expenses) {
   expenses.forEach((expense) => {
     const fragment = expenseItemTemplate.content.cloneNode(true);
     fragment.querySelector(".expense-title").textContent = expense.description;
-    fragment.querySelector(".expense-amount").textContent = formatCurrency(expense.amount);
+    fragment.querySelector(".expense-amount").textContent = `${
+      expense.entryType === "ingreso" ? "+" : "-"
+    } ${formatCurrency(expense.amount)}`;
     fragment.querySelector(".expense-meta").textContent =
-      `${formatDate(expense.date)} · ${expense.category} · ${expense.subcategory} · ${expense.paymentMethod}`;
+      `${formatDate(expense.date)} · ${capitalizeEntryType(expense.entryType)} · ${expense.category} · ${expense.subcategory} · ${expense.paymentMethod}`;
     fragment.querySelector(".expense-notes").textContent = expense.notes;
+    fragment
+      .querySelector(".expense-amount")
+      .classList.toggle("expense-amount--income", expense.entryType === "ingreso");
     fragment
       .querySelector(".delete-button")
       .addEventListener("click", () => handleDeleteExpense(expense.id));
@@ -447,10 +467,12 @@ function renderExpenseList(expenses) {
 }
 
 function renderCategorySummary() {
-  const totalsByCategory = state.expenses.reduce((accumulator, expense) => {
+  const totalsByCategory = state.expenses
+    .filter((expense) => expense.entryType !== "ingreso")
+    .reduce((accumulator, expense) => {
     accumulator[expense.category] = (accumulator[expense.category] || 0) + Number(expense.amount);
     return accumulator;
-  }, {});
+    }, {});
 
   const categoryEntries = Object.entries(totalsByCategory).sort((a, b) => b[1] - a[1]);
 
@@ -662,6 +684,7 @@ function mapBankRow(row, index) {
     description: String(description).trim(),
     amount: Math.abs(amount),
     date: parsedDate,
+    entryType: "gasto",
     category,
     subcategory: getDefaultSubcategory(category),
     paymentMethod: "Tarjeta",
@@ -929,4 +952,8 @@ function formatDate(value) {
     month: "short",
     year: "numeric",
   }).format(new Date(`${value}T12:00:00`));
+}
+
+function capitalizeEntryType(value) {
+  return value === "ingreso" ? "Ingreso" : "Gasto";
 }
