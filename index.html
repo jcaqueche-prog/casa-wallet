@@ -68,237 +68,263 @@
         </article>
       </section>
 
-      <main class="dashboard">
-        <section class="panel panel--form">
-          <div class="panel__header">
-            <h2>Nuevo gasto</h2>
-            <p>Registra un movimiento nuevo con la informacion esencial.</p>
-          </div>
+      <nav class="tabbar">
+        <button class="tab-button is-active" type="button" data-view-target="registro">
+          Registro
+        </button>
+        <button class="tab-button" type="button" data-view-target="categorias">
+          Categorias
+        </button>
+        <button class="tab-button" type="button" data-view-target="importar">
+          Importar
+        </button>
+        <button class="tab-button" type="button" data-view-target="historial">
+          Historial
+        </button>
+      </nav>
 
-          <form id="expenseForm" class="expense-form">
-            <label>
-              Descripcion
-              <input
-                id="description"
-                name="description"
-                type="text"
-                placeholder="Ej. Supermercado de la semana"
-                required
-              />
-            </label>
+      <main class="views">
+        <section class="view view--active" data-view="registro">
+          <div class="dashboard">
+            <section class="panel panel--form">
+              <div class="panel__header">
+                <h2>Nuevo gasto</h2>
+                <p>Registra un movimiento nuevo con la informacion esencial.</p>
+              </div>
 
-            <div class="grid-two">
-              <label>
-                Monto
-                <input
-                  id="amount"
-                  name="amount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  placeholder="0.00"
-                  required
-                />
-              </label>
+              <form id="expenseForm" class="expense-form">
+                <label>
+                  Descripcion
+                  <input
+                    id="description"
+                    name="description"
+                    type="text"
+                    placeholder="Ej. Supermercado de la semana"
+                    required
+                  />
+                </label>
 
-              <label>
-                Fecha
-                <input id="date" name="date" type="date" required />
-              </label>
-            </div>
+                <div class="grid-two">
+                  <label>
+                    Monto
+                    <input
+                      id="amount"
+                      name="amount"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      placeholder="0.00"
+                      required
+                    />
+                  </label>
 
-            <div class="grid-two">
-              <label>
-                Categoria
-                <select id="category" name="category" required>
-                </select>
-              </label>
+                  <label>
+                    Fecha
+                    <input id="date" name="date" type="date" required />
+                  </label>
+                </div>
 
-              <label>
-                Subcategoria
-                <select id="subcategory" name="subcategory" required></select>
-              </label>
-            </div>
+                <div class="grid-two">
+                  <label>
+                    Categoria
+                    <select id="category" name="category" required></select>
+                  </label>
 
-            <div class="grid-two">
-              <label>
-                Metodo
-                <select id="paymentMethod" name="paymentMethod" required>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Tarjeta">Tarjeta</option>
-                  <option value="Transferencia">Transferencia</option>
-                </select>
-              </label>
-            </div>
+                  <label>
+                    Subcategoria
+                    <select id="subcategory" name="subcategory" required></select>
+                  </label>
+                </div>
 
-            <label>
-              Nota opcional
-              <textarea
-                id="notes"
-                name="notes"
-                rows="3"
-                placeholder="Algo importante sobre este gasto"
-              ></textarea>
-            </label>
+                <div class="grid-two">
+                  <label>
+                    Metodo
+                    <select id="paymentMethod" name="paymentMethod" required>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Transferencia">Transferencia</option>
+                    </select>
+                  </label>
+                </div>
 
-            <button type="submit" class="primary-button">Guardar gasto</button>
-          </form>
-        </section>
+                <label>
+                  Nota opcional
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    rows="3"
+                    placeholder="Algo importante sobre este gasto"
+                  ></textarea>
+                </label>
 
-        <section class="panel">
-          <div class="panel__header">
-            <h2>Presupuesto y resumen</h2>
-            <p>Visualiza rapidamente lo que ya gastaste y lo que te queda.</p>
-          </div>
+                <button type="submit" class="primary-button">Guardar gasto</button>
+              </form>
+            </section>
 
-          <form id="budgetForm" class="budget-form">
-            <label>
-              Presupuesto mensual
-              <input
-                id="monthlyBudgetInput"
-                name="monthlyBudgetInput"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Ej. 3500"
-              />
-            </label>
-            <button type="submit" class="secondary-button">
-              Actualizar presupuesto
-            </button>
-          </form>
+            <section class="panel">
+              <div class="panel__header">
+                <h2>Presupuesto y resumen</h2>
+                <p>Visualiza rapidamente lo que ya gastaste y lo que te queda.</p>
+              </div>
 
-          <div class="stats-grid">
-            <article class="stat-card">
-              <span>Gasto total</span>
-              <strong id="totalSpent">Q0.00</strong>
-            </article>
-            <article class="stat-card">
-              <span>Numero de gastos</span>
-              <strong id="expenseCount">0</strong>
-            </article>
-            <article class="stat-card">
-              <span>Promedio por gasto</span>
-              <strong id="averageExpense">Q0.00</strong>
-            </article>
-          </div>
+              <form id="budgetForm" class="budget-form">
+                <label>
+                  Presupuesto mensual
+                  <input
+                    id="monthlyBudgetInput"
+                    name="monthlyBudgetInput"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="Ej. 3500"
+                  />
+                </label>
+                <button type="submit" class="secondary-button">
+                  Actualizar presupuesto
+                </button>
+              </form>
 
-          <div class="panel__header panel__header--compact">
-            <h3>Distribucion por categoria</h3>
-          </div>
-          <div id="categorySummary" class="category-summary"></div>
-        </section>
+              <div class="stats-grid">
+                <article class="stat-card">
+                  <span>Gasto total</span>
+                  <strong id="totalSpent">Q0.00</strong>
+                </article>
+                <article class="stat-card">
+                  <span>Numero de gastos</span>
+                  <strong id="expenseCount">0</strong>
+                </article>
+                <article class="stat-card">
+                  <span>Promedio por gasto</span>
+                  <strong id="averageExpense">Q0.00</strong>
+                </article>
+              </div>
 
-        <section class="panel">
-          <div class="panel__header">
-            <h2>Categorias y subcategorias</h2>
-            <p>Crea tu propia estructura para clasificar gastos del hogar.</p>
-          </div>
-
-          <form id="categoryForm" class="budget-form">
-            <label>
-              Nueva categoria
-              <input
-                id="newCategoryName"
-                name="newCategoryName"
-                type="text"
-                placeholder="Ej. Mascotas"
-                required
-              />
-            </label>
-            <button type="submit" class="secondary-button">Crear categoria</button>
-          </form>
-
-          <form id="subcategoryForm" class="budget-form category-form-spaced">
-            <label>
-              Categoria padre
-              <select id="parentCategory" name="parentCategory" required></select>
-            </label>
-            <label>
-              Nueva subcategoria
-              <input
-                id="newSubcategoryName"
-                name="newSubcategoryName"
-                type="text"
-                placeholder="Ej. Veterinaria"
-                required
-              />
-            </label>
-            <button type="submit" class="secondary-button">Crear subcategoria</button>
-          </form>
-
-          <div class="manager-note">
-            Edita nombres, agrega nuevas opciones y elimina las que ya no uses.
-          </div>
-          <div id="categoryManagerList" class="category-manager-list"></div>
-        </section>
-
-        <section class="panel panel--wide">
-          <div class="panel__header panel__header--split">
-            <div>
-              <h2>Importar estado de cuenta</h2>
-              <p>
-                Carga un archivo Excel o CSV del banco. La app intentara detectar
-                fecha, descripcion y monto para que solo revises las categorias
-                antes de guardar los movimientos.
-              </p>
-            </div>
-            <div class="panel-pill">Carga masiva asistida</div>
-          </div>
-
-          <div class="import-toolbar">
-            <label class="file-input">
-              Archivo Excel o CSV
-              <input id="statementFile" type="file" accept=".xlsx,.xls,.csv" />
-            </label>
-            <button id="importAllButton" type="button" class="secondary-button" disabled>
-              Guardar importados
-            </button>
-          </div>
-
-          <div id="importMessage" class="import-message hidden"></div>
-          <div class="import-preview-shell hidden" id="importPreviewShell">
-            <div id="importPreview" class="import-preview"></div>
+              <div class="panel__header panel__header--compact">
+                <h3>Distribucion por categoria</h3>
+              </div>
+              <div id="categorySummary" class="category-summary"></div>
+            </section>
           </div>
         </section>
 
-        <section class="panel panel--wide">
-          <div class="panel__header panel__header--split">
-            <div>
-              <h2>Historial de gastos</h2>
-              <p>Filtra, busca y revisa cada movimiento del hogar.</p>
+        <section class="view" data-view="categorias">
+          <section class="panel">
+            <div class="panel__header">
+              <h2>Categorias y subcategorias</h2>
+              <p>Crea tu propia estructura para clasificar gastos del hogar.</p>
             </div>
-            <div class="filters">
-              <label>
-                Categoria
-                <select id="filterCategory">
-                  <option value="Todas">Todas</option>
-                </select>
-              </label>
-              <label>
-                Subcategoria
-                <select id="filterSubcategory">
-                  <option value="Todas">Todas</option>
-                </select>
-              </label>
-            </div>
-            <div class="filters filters--single">
-              <label>
-                Buscar
-                <input
-                  id="searchInput"
-                  type="search"
-                  placeholder="Ej. agua, renta, mercado"
-                />
-              </label>
-            </div>
-          </div>
 
-          <div id="emptyState" class="empty-state">
-            Todavia no hay gastos registrados. Agrega el primero para comenzar.
-          </div>
+            <div class="category-layout">
+              <form id="categoryForm" class="budget-form">
+                <label>
+                  Nueva categoria
+                  <input
+                    id="newCategoryName"
+                    name="newCategoryName"
+                    type="text"
+                    placeholder="Ej. Mascotas"
+                    required
+                  />
+                </label>
+                <button type="submit" class="secondary-button">Crear categoria</button>
+              </form>
 
-          <div id="expenseList" class="expense-list"></div>
+              <form id="subcategoryForm" class="budget-form category-form-spaced">
+                <label>
+                  Categoria padre
+                  <select id="parentCategory" name="parentCategory" required></select>
+                </label>
+                <label>
+                  Nueva subcategoria
+                  <input
+                    id="newSubcategoryName"
+                    name="newSubcategoryName"
+                    type="text"
+                    placeholder="Ej. Veterinaria"
+                    required
+                  />
+                </label>
+                <button type="submit" class="secondary-button">Crear subcategoria</button>
+              </form>
+            </div>
+
+            <div class="manager-note">
+              Edita nombres, agrega nuevas opciones y elimina las que ya no uses.
+            </div>
+            <div id="categoryManagerList" class="category-manager-list"></div>
+          </section>
+        </section>
+
+        <section class="view" data-view="importar">
+          <section class="panel">
+            <div class="panel__header panel__header--split">
+              <div>
+                <h2>Importar estado de cuenta</h2>
+                <p>
+                  Carga un archivo Excel o CSV del banco. La app intentara detectar
+                  fecha, descripcion y monto para que solo revises las categorias
+                  antes de guardar los movimientos.
+                </p>
+              </div>
+              <div class="panel-pill">Carga masiva asistida</div>
+            </div>
+
+            <div class="import-toolbar">
+              <label class="file-input">
+                Archivo Excel o CSV
+                <input id="statementFile" type="file" accept=".xlsx,.xls,.csv" />
+              </label>
+              <button id="importAllButton" type="button" class="secondary-button" disabled>
+                Guardar importados
+              </button>
+            </div>
+
+            <div id="importMessage" class="import-message hidden"></div>
+            <div class="import-preview-shell hidden" id="importPreviewShell">
+              <div id="importPreview" class="import-preview"></div>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" data-view="historial">
+          <section class="panel">
+            <div class="panel__header panel__header--split">
+              <div>
+                <h2>Historial de gastos</h2>
+                <p>Filtra, busca y revisa cada movimiento del hogar.</p>
+              </div>
+              <div class="filters">
+                <label>
+                  Categoria
+                  <select id="filterCategory">
+                    <option value="Todas">Todas</option>
+                  </select>
+                </label>
+                <label>
+                  Subcategoria
+                  <select id="filterSubcategory">
+                    <option value="Todas">Todas</option>
+                  </select>
+                </label>
+              </div>
+              <div class="filters filters--single">
+                <label>
+                  Buscar
+                  <input
+                    id="searchInput"
+                    type="search"
+                    placeholder="Ej. agua, renta, mercado"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div id="emptyState" class="empty-state">
+              Todavia no hay gastos registrados. Agrega el primero para comenzar.
+            </div>
+
+            <div id="expenseList" class="expense-list"></div>
+          </section>
         </section>
       </main>
     </div>

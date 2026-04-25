@@ -46,6 +46,8 @@ const importMessage = document.getElementById("importMessage");
 const categorySelect = document.getElementById("category");
 const subcategorySelect = document.getElementById("subcategory");
 const parentCategory = document.getElementById("parentCategory");
+const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+const views = Array.from(document.querySelectorAll(".view"));
 
 const monthlyBudgetValue = document.getElementById("monthlyBudgetValue");
 const availableBudgetValue = document.getElementById("availableBudgetValue");
@@ -71,8 +73,12 @@ filterSubcategory.addEventListener("change", renderApp);
 searchInput.addEventListener("input", renderApp);
 statementFile.addEventListener("change", handleImportFile);
 importAllButton.addEventListener("click", handleSaveImportedExpenses);
+tabButtons.forEach((button) => {
+  button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
+});
 
 renderApp();
+setActiveView("registro");
 
 function loadState() {
   try {
@@ -357,6 +363,16 @@ function renderApp() {
   renderCategorySummary();
   renderImportedExpenses();
   renderCategoryManager();
+}
+
+function setActiveView(viewName) {
+  tabButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.viewTarget === viewName);
+  });
+
+  views.forEach((view) => {
+    view.classList.toggle("view--active", view.dataset.view === viewName);
+  });
 }
 
 function renderCategoryControls() {
