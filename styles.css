@@ -604,6 +604,24 @@ textarea {
   max-height: 430px;
   overflow: auto;
   padding-right: 6px;
+  align-content: start;
+}
+
+.history-table-header {
+  display: grid;
+  grid-template-columns: 0.9fr 1.55fr 0.8fr 1fr 1fr 0.8fr;
+  gap: 10px;
+  padding: 0 8px 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(244, 239, 231, 0.98), rgba(244, 239, 231, 0.85));
+  backdrop-filter: blur(12px);
 }
 
 .expense-list::-webkit-scrollbar,
@@ -620,11 +638,11 @@ textarea {
 }
 
 .expense-item {
-  padding: 10px 12px;
+  padding: 8px 10px;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 0.9fr 1.55fr 0.8fr 1fr 1fr 0.8fr;
   gap: 10px;
-  align-items: end;
+  align-items: center;
   box-shadow: var(--shadow-soft);
   border-left: 4px solid rgba(20, 33, 43, 0.08);
 }
@@ -637,28 +655,27 @@ textarea {
   border-left-color: rgba(178, 107, 66, 0.34);
 }
 
-.expense-item__main {
+.history-cell {
   min-width: 0;
-  flex: 1;
 }
 
-.expense-item__top {
-  display: grid;
-  grid-template-columns: 0.8fr 1.4fr 0.8fr;
-  gap: 10px;
+.history-cell input,
+.history-cell select {
+  padding: 10px 12px;
+  min-height: 42px;
+  font-size: 0.92rem;
 }
 
-.expense-edit-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 8px;
+.history-cell--action {
+  display: flex;
+  justify-content: flex-end;
 }
 
-.expense-actions {
-  display: grid;
-  gap: 8px;
-  min-width: 110px;
+.expense-save-button {
+  padding: 10px 14px;
+  min-height: 42px;
+  width: 100%;
+  white-space: nowrap;
 }
 
 .delete-button {
@@ -887,16 +904,22 @@ textarea {
 
   .entry-card__header,
   .category-manager-header,
-  .subcategory-row,
-  .expense-item {
+  .subcategory-row {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .expense-item,
-  .expense-item__top,
-  .expense-edit-row {
+  .history-table-header,
+  .expense-item {
     grid-template-columns: 1fr;
+  }
+
+  .history-table-header {
+    display: none;
+  }
+
+  .history-cell--action {
+    justify-content: stretch;
   }
 
   .delete-button,

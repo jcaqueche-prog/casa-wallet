@@ -41,6 +41,7 @@ const categoryForm = document.getElementById("categoryForm");
 const subcategoryForm = document.getElementById("subcategoryForm");
 const expenseList = document.getElementById("expenseList");
 const emptyState = document.getElementById("emptyState");
+const historyTableHeader = document.getElementById("historyTableHeader");
 const categorySummary = document.getElementById("categorySummary");
 const categoryManagerList = document.getElementById("categoryManagerList");
 const expenseItemTemplate = document.getElementById("expenseItemTemplate");
@@ -714,6 +715,7 @@ function renderSummarySubcategories(categoryName, preferredValue = "") {
 function renderExpenseList(expenses) {
   expenseList.innerHTML = "";
   emptyState.classList.toggle("hidden", expenses.length > 0);
+  historyTableHeader.classList.toggle("hidden", expenses.length === 0);
 
   expenses.forEach((expense) => {
     const fragment = expenseItemTemplate.content.cloneNode(true);

@@ -441,8 +441,8 @@
           <section class="panel">
             <div class="panel__header panel__header--split">
               <div>
-                <h2>Historial de gastos</h2>
-                <p>Filtra, busca y revisa cada movimiento del hogar.</p>
+                <h2>Historial de movimientos</h2>
+                <p>Filtra por fechas y ajusta categoria o subcategoria en una sola lista compacta.</p>
               </div>
               <div class="filters">
                 <label>
@@ -484,6 +484,14 @@
               Todavia no hay gastos registrados. Agrega el primero para comenzar.
             </div>
 
+            <div id="historyTableHeader" class="history-table-header">
+              <span>Fecha</span>
+              <span>Descripcion</span>
+              <span>Monto</span>
+              <span>Categoria</span>
+              <span>Subcategoria</span>
+              <span>Guardar</span>
+            </div>
             <div id="expenseList" class="expense-list"></div>
           </section>
         </section>
@@ -492,33 +500,22 @@
 
     <template id="expenseItemTemplate">
       <article class="expense-item">
-        <div class="expense-item__main">
-          <div class="expense-item__top">
-            <label>
-              Fecha
-              <input class="expense-edit-date" type="date" />
-            </label>
-            <label>
-              Descripcion
-              <input class="expense-edit-description" type="text" />
-            </label>
-            <label>
-              Monto
-              <input class="expense-edit-amount" type="number" min="0.01" step="0.01" />
-            </label>
-          </div>
-          <div class="expense-edit-row">
-            <label>
-              Categoria
-              <select class="expense-edit-category"></select>
-            </label>
-            <label>
-              Subcategoria
-              <select class="expense-edit-subcategory"></select>
-            </label>
-          </div>
+        <div class="history-cell">
+          <input class="expense-edit-date" type="date" />
         </div>
-        <div class="expense-actions">
+        <div class="history-cell">
+          <input class="expense-edit-description" type="text" />
+        </div>
+        <div class="history-cell">
+          <input class="expense-edit-amount" type="number" min="0.01" step="0.01" />
+        </div>
+        <div class="history-cell">
+          <select class="expense-edit-category"></select>
+        </div>
+        <div class="history-cell">
+          <select class="expense-edit-subcategory"></select>
+        </div>
+        <div class="history-cell history-cell--action">
           <button class="primary-button expense-save-button" type="button">Guardar</button>
         </div>
       </article>
