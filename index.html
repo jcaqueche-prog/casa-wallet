@@ -88,87 +88,155 @@
           <div class="dashboard">
             <section class="panel panel--form">
               <div class="panel__header">
-                <h2>Nuevo gasto</h2>
-                <p>Registra un movimiento nuevo con la informacion esencial.</p>
+                <h2>Registro de movimientos</h2>
+                <p>Usa un espacio para gastos y otro para ingresos. Ambos se conectan al mismo resumen.</p>
               </div>
 
-              <form id="expenseForm" class="expense-form">
-                <label>
-                  Descripcion
-                  <input
-                    id="description"
-                    name="description"
-                    type="text"
-                    placeholder="Ej. Supermercado de la semana"
-                    required
-                  />
-                </label>
+              <div class="entry-panels">
+                <form id="expenseForm" class="expense-form entry-card entry-card--expense">
+                  <div class="entry-card__header">
+                    <h3>Solo gastos</h3>
+                    <span class="entry-chip">Resta en la tabla</span>
+                  </div>
+                  <input type="hidden" name="entryType" value="gasto" />
 
-                <div class="grid-two">
                   <label>
-                    Monto
+                    Descripcion
                     <input
-                      id="amount"
-                      name="amount"
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      placeholder="0.00"
+                      id="expenseDescription"
+                      name="description"
+                      type="text"
+                      placeholder="Ej. Supermercado de la semana"
                       required
                     />
                   </label>
 
-                  <label>
-                    Fecha
-                    <input id="date" name="date" type="date" required />
-                  </label>
-                </div>
+                  <div class="grid-two">
+                    <label>
+                      Monto
+                      <input
+                        id="expenseAmount"
+                        name="amount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="0.00"
+                        required
+                      />
+                    </label>
 
-                <div class="grid-two">
-                  <label>
-                    Tipo de movimiento
-                    <select id="entryType" name="entryType" required>
-                      <option value="gasto">Gasto</option>
-                      <option value="ingreso">Ingreso</option>
-                    </select>
-                  </label>
-                </div>
+                    <label>
+                      Fecha
+                      <input id="expenseDate" name="date" type="date" required />
+                    </label>
+                  </div>
 
-                <div class="grid-two">
-                  <label>
-                    Categoria
-                    <select id="category" name="category" required></select>
-                  </label>
+                  <div class="grid-two">
+                    <label>
+                      Categoria
+                      <select id="expenseCategory" name="category" required></select>
+                    </label>
 
-                  <label>
-                    Subcategoria
-                    <select id="subcategory" name="subcategory" required></select>
-                  </label>
-                </div>
+                    <label>
+                      Subcategoria
+                      <select id="expenseSubcategory" name="subcategory" required></select>
+                    </label>
+                  </div>
 
-                <div class="grid-two">
                   <label>
                     Metodo
-                    <select id="paymentMethod" name="paymentMethod" required>
+                    <select id="expensePaymentMethod" name="paymentMethod" required>
                       <option value="Efectivo">Efectivo</option>
                       <option value="Tarjeta">Tarjeta</option>
                       <option value="Transferencia">Transferencia</option>
                     </select>
                   </label>
-                </div>
 
-                <label>
-                  Nota opcional
-                  <textarea
-                    id="notes"
-                    name="notes"
-                    rows="3"
-                    placeholder="Algo importante sobre este gasto"
-                  ></textarea>
-                </label>
+                  <label>
+                    Nota opcional
+                    <textarea
+                      id="expenseNotes"
+                      name="notes"
+                      rows="3"
+                      placeholder="Algo importante sobre este gasto"
+                    ></textarea>
+                  </label>
 
-                <button type="submit" class="primary-button">Guardar gasto</button>
-              </form>
+                  <button type="submit" class="primary-button">Guardar gasto</button>
+                </form>
+
+                <form id="incomeForm" class="expense-form entry-card entry-card--income">
+                  <div class="entry-card__header">
+                    <h3>Solo ingresos</h3>
+                    <span class="entry-chip entry-chip--income">Suma en la tabla</span>
+                  </div>
+                  <input type="hidden" name="entryType" value="ingreso" />
+
+                  <label>
+                    Descripcion
+                    <input
+                      id="incomeDescription"
+                      name="description"
+                      type="text"
+                      placeholder="Ej. Sueldo mensual"
+                      required
+                    />
+                  </label>
+
+                  <div class="grid-two">
+                    <label>
+                      Monto
+                      <input
+                        id="incomeAmount"
+                        name="amount"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="0.00"
+                        required
+                      />
+                    </label>
+
+                    <label>
+                      Fecha
+                      <input id="incomeDate" name="date" type="date" required />
+                    </label>
+                  </div>
+
+                  <div class="grid-two">
+                    <label>
+                      Categoria
+                      <select id="incomeCategory" name="category" required></select>
+                    </label>
+
+                    <label>
+                      Subcategoria
+                      <select id="incomeSubcategory" name="subcategory" required></select>
+                    </label>
+                  </div>
+
+                  <label>
+                    Metodo
+                    <select id="incomePaymentMethod" name="paymentMethod" required>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Transferencia">Transferencia</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Nota opcional
+                    <textarea
+                      id="incomeNotes"
+                      name="notes"
+                      rows="3"
+                      placeholder="Ej. sueldo, bono o deposito"
+                    ></textarea>
+                  </label>
+
+                  <button type="submit" class="primary-button">Guardar ingreso</button>
+                </form>
+              </div>
             </section>
 
             <section class="panel">

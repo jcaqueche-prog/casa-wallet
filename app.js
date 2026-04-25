@@ -27,6 +27,7 @@ const currencyFormatter = new Intl.NumberFormat("es-GT", {
 });
 
 const expenseForm = document.getElementById("expenseForm");
+const incomeForm = document.getElementById("incomeForm");
 const budgetForm = document.getElementById("budgetForm");
 const categoryForm = document.getElementById("categoryForm");
 const subcategoryForm = document.getElementById("subcategoryForm");
@@ -43,10 +44,11 @@ const importAllButton = document.getElementById("importAllButton");
 const importPreview = document.getElementById("importPreview");
 const importPreviewShell = document.getElementById("importPreviewShell");
 const importMessage = document.getElementById("importMessage");
-const categorySelect = document.getElementById("category");
-const subcategorySelect = document.getElementById("subcategory");
+const expenseCategorySelect = document.getElementById("expenseCategory");
+const expenseSubcategorySelect = document.getElementById("expenseSubcategory");
+const incomeCategorySelect = document.getElementById("incomeCategory");
+const incomeSubcategorySelect = document.getElementById("incomeSubcategory");
 const parentCategory = document.getElementById("parentCategory");
-const entryTypeSelect = document.getElementById("entryType");
 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const views = Array.from(document.querySelectorAll(".view"));
 
@@ -58,15 +60,22 @@ const expenseCount = document.getElementById("expenseCount");
 const netBalance = document.getElementById("netBalance");
 const averageExpense = document.getElementById("averageExpense");
 const monthlyBudgetInput = document.getElementById("monthlyBudgetInput");
+const expenseDateInput = document.getElementById("expenseDate");
+const incomeDateInput = document.getElementById("incomeDate");
 
-document.getElementById("date").value = new Date().toISOString().split("T")[0];
+expenseDateInput.value = new Date().toISOString().split("T")[0];
+incomeDateInput.value = new Date().toISOString().split("T")[0];
 
-expenseForm.addEventListener("submit", handleCreateExpense);
+expenseForm.addEventListener("submit", handleCreateEntry);
+incomeForm.addEventListener("submit", handleCreateEntry);
 budgetForm.addEventListener("submit", handleUpdateBudget);
 categoryForm.addEventListener("submit", handleCreateCategory);
 subcategoryForm.addEventListener("submit", handleCreateSubcategory);
-categorySelect.addEventListener("change", () => {
-  renderSubcategoryOptions(categorySelect.value, subcategorySelect);
+expenseCategorySelect.addEventListener("change", () => {
+  renderSubcategoryOptions(expenseCategorySelect.value, expenseSubcategorySelect);
+});
+incomeCategorySelect.addEventListener("change", () => {
+  renderSubcategoryOptions(incomeCategorySelect.value, incomeSubcategorySelect);
 });
 filterCategory.addEventListener("change", () => {
   renderFilterSubcategories(filterCategory.value);
@@ -129,10 +138,11 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function handleCreateExpense(event) {
+function handleCreateEntry(event) {
   event.preventDefault();
 
-  const formData = new FormData(expenseForm);
+  const form = event.currentTarget;
+  const formData = new FormData(form);
   const description = String(formData.get("description") || "").trim();
   const amount = Number(formData.get("amount"));
   const date = String(formData.get("date") || "");
@@ -159,9 +169,11 @@ function handleCreateExpense(event) {
   });
 
   saveState();
-  expenseForm.reset();
-  document.getElementById("date").value = new Date().toISOString().split("T")[0];
-  entryTypeSelect.value = "gasto";
+  form.reset();
+  const dateInput = form.querySelector('input[name="date"]');
+  if (dateInput) {
+    dateInput.value = new Date().toISOString().split("T")[0];
+  }
   renderCategoryControls();
   renderApp();
 }
@@ -391,16 +403,21 @@ function setActiveView(viewName) {
 }
 
 function renderCategoryControls() {
-  const previousCategory = categorySelect.value;
+  const previousExpenseCategory = expenseCategorySelect.value;
+  const previousIncomeCategory = incomeCategorySelect.value;
   const previousFilterCategory = filterCategory.value;
   const previousParentCategory = parentCategory.value;
 
-  categorySelect.innerHTML = buildCategoryOptions();
+  expenseCategorySelect.innerHTML = buildCategoryOptions();
+  incomeCategorySelect.innerHTML = buildCategoryOptions();
   filterCategory.innerHTML = `<option value="Todas">Todas</option>${buildCategoryOptions()}`;
   parentCategory.innerHTML = buildCategoryOptions();
 
-  categorySelect.value = hasCategory(previousCategory)
-    ? previousCategory
+  expenseCategorySelect.value = hasCategory(previousExpenseCategory)
+    ? previousExpenseCategory
+    : state.categoryDefinitions[0]?.name || "Otros";
+  incomeCategorySelect.value = hasCategory(previousIncomeCategory)
+    ? previousIncomeCategory
     : state.categoryDefinitions[0]?.name || "Otros";
   filterCategory.value =
     previousFilterCategory === "Todas" || hasCategory(previousFilterCategory)
@@ -410,7 +427,16 @@ function renderCategoryControls() {
     ? previousParentCategory
     : state.categoryDefinitions[0]?.name || "Otros";
 
-  renderSubcategoryOptions(categorySelect.value, subcategorySelect, subcategorySelect.value);
+  renderSubcategoryOptions(
+    expenseCategorySelect.value,
+    expenseSubcategorySelect,
+    expenseSubcategorySelect.value
+  );
+  renderSubcategoryOptions(
+    incomeCategorySelect.value,
+    incomeSubcategorySelect,
+    incomeSubcategorySelect.value
+  );
   renderFilterSubcategories(filterCategory.value, filterSubcategory.value);
 }
 
