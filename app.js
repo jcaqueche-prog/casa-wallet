@@ -38,6 +38,9 @@ const emptyState = document.getElementById("emptyState");
 const categorySummary = document.getElementById("categorySummary");
 const categoryManagerList = document.getElementById("categoryManagerList");
 const expenseItemTemplate = document.getElementById("expenseItemTemplate");
+const summaryStartDate = document.getElementById("summaryStartDate");
+const summaryEndDate = document.getElementById("summaryEndDate");
+const summaryRangeLabel = document.getElementById("summaryRangeLabel");
 const filterCategory = document.getElementById("filterCategory");
 const filterSubcategory = document.getElementById("filterSubcategory");
 const filterStartDate = document.getElementById("filterStartDate");
@@ -107,6 +110,8 @@ filterCategory.addEventListener("change", () => {
   renderApp();
 });
 filterSubcategory.addEventListener("change", renderApp);
+summaryStartDate.addEventListener("change", renderApp);
+summaryEndDate.addEventListener("change", renderApp);
 filterStartDate.addEventListener("change", renderApp);
 filterEndDate.addEventListener("change", renderApp);
 searchInput.addEventListener("input", renderApp);
@@ -118,7 +123,7 @@ tabButtons.forEach((button) => {
 loginForm.addEventListener("submit", handleLogin);
 
 renderApp();
-setActiveView("registro");
+setActiveView("resumen");
 initializeAuth();
 
 function initializeAuth() {
@@ -459,17 +464,24 @@ function getFilteredExpenses() {
 
 function renderApp() {
   const filteredExpenses = getFilteredExpenses();
-  const totalExpenses = state.expenses
+  const summaryExpenses = getSummaryExpenses();
+  const totalExpenses = summaryExpenses
     .filter((expense) => expense.entryType !== "ingreso")
     .reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const totalIncomes = state.expenses
+  const totalIncomes = summaryExpenses
     .filter((expense) => expense.entryType === "ingreso")
     .reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const count = state.expenses.length;
+  const count = summaryExpenses.length;
   const volume = totalExpenses + totalIncomes;
   const average = count ? volume / count : 0;
   const balance = totalIncomes - totalExpenses;
-  const available = state.monthlyBudget + totalIncomes - totalExpenses;
+  const overallIncomes = state.expenses
+    .filter((expense) => expense.entryType === "ingreso")
+    .reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const overallExpenses = state.expenses
+    .filter((expense) => expense.entryType !== "ingreso")
+    .reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const available = state.monthlyBudget + overallIncomes - overallExpenses;
 
   monthlyBudgetValue.textContent = formatCurrency(state.monthlyBudget);
   availableBudgetValue.textContent = formatCurrency(available);
@@ -481,11 +493,45 @@ function renderApp() {
   monthlyBudgetInput.value = state.monthlyBudget ? String(state.monthlyBudget) : "";
 
   renderCategoryControls();
+  renderSummaryRangeLabel();
   renderBudgetAlerts(totalExpenses);
   renderExpenseList(filteredExpenses);
-  renderCategorySummary();
+  renderCategorySummary(summaryExpenses);
   renderImportedExpenses();
   renderCategoryManager();
+}
+
+function getSummaryExpenses() {
+  const startDate = summaryStartDate.value;
+  const endDate = summaryEndDate.value;
+
+  return state.expenses.filter((expense) => {
+    const matchesStartDate = !startDate || expense.date >= startDate;
+    const matchesEndDate = !endDate || expense.date <= endDate;
+    return matchesStartDate && matchesEndDate;
+  });
+}
+
+function renderSummaryRangeLabel() {
+  const startDate = summaryStartDate.value;
+  const endDate = summaryEndDate.value;
+
+  if (!startDate && !endDate) {
+    summaryRangeLabel.textContent = "Rango actual: todos los movimientos registrados.";
+    return;
+  }
+
+  if (startDate && endDate) {
+    summaryRangeLabel.textContent = `Rango actual: ${formatDate(startDate)} al ${formatDate(endDate)}.`;
+    return;
+  }
+
+  if (startDate) {
+    summaryRangeLabel.textContent = `Rango actual: desde ${formatDate(startDate)}.`;
+    return;
+  }
+
+  summaryRangeLabel.textContent = `Rango actual: hasta ${formatDate(endDate)}.`;
 }
 
 function renderBudgetAlerts(totalExpenses) {
@@ -615,8 +661,8 @@ function renderExpenseList(expenses) {
   });
 }
 
-function renderCategorySummary() {
-  const totalsByCategory = state.expenses
+function renderCategorySummary(expenses) {
+  const totalsByCategory = expenses
     .filter((expense) => expense.entryType !== "ingreso")
     .reduce((accumulator, expense) => {
     accumulator[expense.category] = (accumulator[expense.category] || 0) + Number(expense.amount);
@@ -627,7 +673,7 @@ function renderCategorySummary() {
 
   if (categoryEntries.length === 0) {
     categorySummary.innerHTML =
-      '<div class="category-card"><span>Sin datos</span><strong>Agrega tu primer gasto</strong></div>';
+      '<div class="category-card"><span>Sin datos</span><strong>No hay gastos en el rango seleccionado</strong></div>';
     return;
   }
 

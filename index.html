@@ -18,7 +18,7 @@
         <p class="eyebrow">Acceso privado</p>
         <h1 class="auth-title">GASTOS PARA EL HOGAR</h1>
         <p class="auth-text">
-          Ingresa con tu usuario y contraseña para acceder al panel financiero.
+          Ingresa la clave privada para acceder al panel financiero.
         </p>
         <form id="loginForm" class="expense-form">
           <label>
@@ -42,18 +42,12 @@
     <div id="appShell" class="page-shell hidden">
       <header class="hero">
         <div class="hero__copy">
-          <p class="eyebrow">Gastos para el hogar</p>
-          <h1>GASTOS PARA EL HOGAR</h1>
-          <p class="hero__text">
-            Registra compras, pagos y servicios en un solo tablero. Organiza tus
-            movimientos, importa estados de cuenta y mantén tu presupuesto bajo
-            control mes a mes.
+          <p class="eyebrow">Panel privado familiar</p>
+          <h1>GASTOS FAMILIA AQUECHE</h1>
+          <p class="hero__text hero__verse">
+            "Mi Dios, pues, suplirá todo lo que os falta conforme a sus riquezas
+            en gloria en Cristo Jesús." Filipenses 4:19
           </p>
-          <div class="hero__badges">
-            <span class="hero-badge">Resumen mensual</span>
-            <span class="hero-badge">Importacion bancaria</span>
-            <span class="hero-badge">Categorias rapidas</span>
-          </div>
         </div>
         <div class="hero__summary">
           <div class="summary-header">
@@ -75,27 +69,11 @@
         </div>
       </header>
 
-      <section class="trust-strip">
-        <article class="trust-card">
-          <span>Enfoque</span>
-          <strong>Gastos del hogar</strong>
-        </article>
-        <article class="trust-card">
-          <span>Entrada</span>
-          <strong>Manual y desde Excel</strong>
-        </article>
-        <article class="trust-card">
-          <span>Organizacion</span>
-          <strong>Por categorias</strong>
-        </article>
-        <article class="trust-card">
-          <span>Seguimiento</span>
-          <strong>Presupuesto mensual</strong>
-        </article>
-      </section>
-
       <nav class="tabbar">
-        <button class="tab-button is-active" type="button" data-view-target="registro">
+        <button class="tab-button is-active" type="button" data-view-target="resumen">
+          Resumen
+        </button>
+        <button class="tab-button" type="button" data-view-target="registro">
           Registro
         </button>
         <button class="tab-button" type="button" data-view-target="categorias">
@@ -110,9 +88,76 @@
       </nav>
 
       <main class="views">
-        <section class="view view--active" data-view="registro">
-          <div class="dashboard">
-            <section class="panel panel--form">
+        <section class="view view--active" data-view="resumen">
+          <section class="panel">
+            <div class="panel__header">
+              <h2>Resumen general</h2>
+              <p>Selecciona un rango de fechas para ver los totales y el resumen por categoria.</p>
+            </div>
+
+            <div class="filters">
+              <label>
+                Desde
+                <input id="summaryStartDate" type="date" />
+              </label>
+              <label>
+                Hasta
+                <input id="summaryEndDate" type="date" />
+              </label>
+            </div>
+
+            <div id="summaryRangeLabel" class="manager-note"></div>
+            <div id="budgetAlerts" class="budget-alerts"></div>
+
+            <form id="budgetForm" class="budget-form">
+              <label>
+                Presupuesto mensual
+                <input
+                  id="monthlyBudgetInput"
+                  name="monthlyBudgetInput"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ej. 3500"
+                />
+              </label>
+              <button type="submit" class="secondary-button">
+                Actualizar presupuesto
+              </button>
+            </form>
+
+            <div class="stats-grid">
+              <article class="stat-card">
+                <span>Total de gastos</span>
+                <strong id="totalSpent">Q0.00</strong>
+              </article>
+              <article class="stat-card">
+                <span>Total de ingresos</span>
+                <strong id="totalIncome">Q0.00</strong>
+              </article>
+              <article class="stat-card">
+                <span>Movimientos registrados</span>
+                <strong id="expenseCount">0</strong>
+              </article>
+              <article class="stat-card">
+                <span>Balance neto</span>
+                <strong id="netBalance">Q0.00</strong>
+              </article>
+              <article class="stat-card">
+                <span>Promedio por movimiento</span>
+                <strong id="averageExpense">Q0.00</strong>
+              </article>
+            </div>
+
+            <div class="panel__header panel__header--compact">
+              <h3>Resumen por categoria</h3>
+            </div>
+            <div id="categorySummary" class="category-summary"></div>
+          </section>
+        </section>
+
+        <section class="view" data-view="registro">
+          <section class="panel panel--wide">
               <div class="panel__header">
                 <h2>Registro de movimientos</h2>
                 <p>Usa un espacio para gastos y otro para ingresos. Ambos se conectan al mismo resumen.</p>
@@ -291,62 +336,7 @@
                   <button type="submit" class="primary-button">Guardar ingreso</button>
                 </form>
               </div>
-            </section>
-
-            <section class="panel">
-              <div class="panel__header">
-                <h2>Presupuesto y resumen</h2>
-                <p>Visualiza rapidamente lo que ya gastaste y lo que te queda.</p>
-              </div>
-
-              <div id="budgetAlerts" class="budget-alerts"></div>
-
-              <form id="budgetForm" class="budget-form">
-                <label>
-                  Presupuesto mensual
-                  <input
-                    id="monthlyBudgetInput"
-                    name="monthlyBudgetInput"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="Ej. 3500"
-                  />
-                </label>
-                <button type="submit" class="secondary-button">
-                  Actualizar presupuesto
-                </button>
-              </form>
-
-              <div class="stats-grid">
-                <article class="stat-card">
-                  <span>Total de gastos</span>
-                  <strong id="totalSpent">Q0.00</strong>
-                </article>
-                <article class="stat-card">
-                  <span>Total de ingresos</span>
-                  <strong id="totalIncome">Q0.00</strong>
-                </article>
-                <article class="stat-card">
-                  <span>Movimientos registrados</span>
-                  <strong id="expenseCount">0</strong>
-                </article>
-                <article class="stat-card">
-                  <span>Balance neto</span>
-                  <strong id="netBalance">Q0.00</strong>
-                </article>
-                <article class="stat-card">
-                  <span>Promedio por movimiento</span>
-                  <strong id="averageExpense">Q0.00</strong>
-                </article>
-              </div>
-
-              <div class="panel__header panel__header--compact">
-                <h3>Distribucion por categoria</h3>
-              </div>
-              <div id="categorySummary" class="category-summary"></div>
-            </section>
-          </div>
+          </section>
         </section>
 
         <section class="view" data-view="categorias">
