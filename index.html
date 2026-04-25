@@ -299,6 +299,8 @@
                 <p>Visualiza rapidamente lo que ya gastaste y lo que te queda.</p>
               </div>
 
+              <div id="budgetAlerts" class="budget-alerts"></div>
+
               <form id="budgetForm" class="budget-form">
                 <label>
                   Presupuesto mensual
@@ -417,6 +419,12 @@
               <button id="importAllButton" type="button" class="secondary-button" disabled>
                 Guardar importados
               </button>
+              <button id="importAddCategoryButton" type="button" class="secondary-button">
+                Nueva categoria
+              </button>
+              <button id="importAddSubcategoryButton" type="button" class="secondary-button">
+                Nueva subcategoria
+              </button>
             </div>
 
             <div id="importMessage" class="import-message hidden"></div>
@@ -445,6 +453,16 @@
                   <select id="filterSubcategory">
                     <option value="Todas">Todas</option>
                   </select>
+                </label>
+              </div>
+              <div class="filters">
+                <label>
+                  Desde
+                  <input id="filterStartDate" type="date" />
+                </label>
+                <label>
+                  Hasta
+                  <input id="filterEndDate" type="date" />
                 </label>
               </div>
               <div class="filters filters--single">

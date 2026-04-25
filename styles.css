@@ -416,6 +416,26 @@ label {
   grid-template-columns: 1fr;
 }
 
+.budget-alerts {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.budget-alert {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(167, 59, 45, 0.18);
+  background: rgba(167, 59, 45, 0.08);
+  color: var(--danger);
+  box-shadow: var(--shadow-soft);
+}
+
+.budget-alert--high {
+  border-color: rgba(167, 59, 45, 0.3);
+  background: rgba(167, 59, 45, 0.14);
+}
+
 label {
   display: grid;
   gap: 8px;
@@ -521,6 +541,18 @@ textarea {
 .expense-list {
   display: grid;
   gap: 14px;
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+.expense-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.expense-list::-webkit-scrollbar-thumb {
+  background: rgba(23, 33, 43, 0.16);
+  border-radius: 999px;
 }
 
 .expense-item {

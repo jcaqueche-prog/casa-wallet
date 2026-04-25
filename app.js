@@ -42,9 +42,13 @@ const categoryManagerList = document.getElementById("categoryManagerList");
 const expenseItemTemplate = document.getElementById("expenseItemTemplate");
 const filterCategory = document.getElementById("filterCategory");
 const filterSubcategory = document.getElementById("filterSubcategory");
+const filterStartDate = document.getElementById("filterStartDate");
+const filterEndDate = document.getElementById("filterEndDate");
 const searchInput = document.getElementById("searchInput");
 const statementFile = document.getElementById("statementFile");
 const importAllButton = document.getElementById("importAllButton");
+const importAddCategoryButton = document.getElementById("importAddCategoryButton");
+const importAddSubcategoryButton = document.getElementById("importAddSubcategoryButton");
 const importPreview = document.getElementById("importPreview");
 const importPreviewShell = document.getElementById("importPreviewShell");
 const importMessage = document.getElementById("importMessage");
@@ -62,6 +66,7 @@ const views = Array.from(document.querySelectorAll(".view"));
 
 const monthlyBudgetValue = document.getElementById("monthlyBudgetValue");
 const availableBudgetValue = document.getElementById("availableBudgetValue");
+const budgetAlerts = document.getElementById("budgetAlerts");
 const totalSpent = document.getElementById("totalSpent");
 const totalIncome = document.getElementById("totalIncome");
 const expenseCount = document.getElementById("expenseCount");
@@ -107,9 +112,17 @@ filterCategory.addEventListener("change", () => {
   renderApp();
 });
 filterSubcategory.addEventListener("change", renderApp);
+filterStartDate.addEventListener("change", renderApp);
+filterEndDate.addEventListener("change", renderApp);
 searchInput.addEventListener("input", renderApp);
 statementFile.addEventListener("change", handleImportFile);
 importAllButton.addEventListener("click", handleSaveImportedExpenses);
+importAddCategoryButton.addEventListener("click", () =>
+  handleQuickCreateCategoryFromImport()
+);
+importAddSubcategoryButton.addEventListener("click", () =>
+  handleQuickCreateSubcategoryFromImport()
+);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
 });
@@ -319,6 +332,46 @@ function handleQuickCreateSubcategory(categorySelect, subcategorySelect) {
   renderApp();
 }
 
+function handleQuickCreateCategoryFromImport() {
+  const name = window.prompt("Escribe el nombre de la nueva categoria para importar:");
+  const cleanName = String(name || "").trim();
+  if (!cleanName || findCategoryDefinition(cleanName)) {
+    return;
+  }
+
+  state.categoryDefinitions.push({
+    name: cleanName,
+    subcategories: ["General"],
+  });
+
+  importedExpenses = importedExpenses.map((expense) => ({
+    ...expense,
+    category: expense.category || cleanName,
+    subcategory: expense.subcategory || "General",
+  }));
+  saveState();
+  renderApp();
+}
+
+function handleQuickCreateSubcategoryFromImport() {
+  const categoryName = window.prompt("Escribe la categoria donde quieres agregar la subcategoria:");
+  const cleanCategoryName = String(categoryName || "").trim();
+  const categoryDefinition = findCategoryDefinition(cleanCategoryName);
+  if (!categoryDefinition) {
+    return;
+  }
+
+  const subcategoryName = window.prompt(`Escribe la nueva subcategoria para ${cleanCategoryName}:`);
+  const cleanSubcategoryName = String(subcategoryName || "").trim();
+  if (!cleanSubcategoryName || categoryDefinition.subcategories.includes(cleanSubcategoryName)) {
+    return;
+  }
+
+  categoryDefinition.subcategories.push(cleanSubcategoryName);
+  saveState();
+  renderApp();
+}
+
 function handleRenameCategory(previousName, nextName) {
   const cleanName = String(nextName || "").trim();
   if (!cleanName || (cleanName !== previousName && findCategoryDefinition(cleanName))) {
@@ -432,6 +485,8 @@ function handleDeleteExpense(id) {
 function getFilteredExpenses() {
   const selectedCategory = filterCategory.value;
   const selectedSubcategory = filterSubcategory.value;
+  const startDate = filterStartDate.value;
+  const endDate = filterEndDate.value;
   const query = searchInput.value.trim().toLowerCase();
 
   return state.expenses.filter((expense) => {
@@ -439,6 +494,8 @@ function getFilteredExpenses() {
       selectedCategory === "Todas" || expense.category === selectedCategory;
     const matchesSubcategory =
       selectedSubcategory === "Todas" || expense.subcategory === selectedSubcategory;
+    const matchesStartDate = !startDate || expense.date >= startDate;
+    const matchesEndDate = !endDate || expense.date <= endDate;
 
     const searchableText = [
       expense.description,
@@ -451,7 +508,7 @@ function getFilteredExpenses() {
       .toLowerCase();
 
     const matchesQuery = !query || searchableText.includes(query);
-    return matchesCategory && matchesSubcategory && matchesQuery;
+    return matchesCategory && matchesSubcategory && matchesStartDate && matchesEndDate && matchesQuery;
   });
 }
 
@@ -479,10 +536,35 @@ function renderApp() {
   monthlyBudgetInput.value = state.monthlyBudget ? String(state.monthlyBudget) : "";
 
   renderCategoryControls();
+  renderBudgetAlerts(totalExpenses);
   renderExpenseList(filteredExpenses);
   renderCategorySummary();
   renderImportedExpenses();
   renderCategoryManager();
+}
+
+function renderBudgetAlerts(totalExpenses) {
+  const alerts = [];
+  if (totalExpenses >= 24000) {
+    alerts.push({
+      level: "high",
+      message: "Alerta critica: tus gastos acumulados ya llegaron a Q24,000 o mas.",
+    });
+  } else if (totalExpenses >= 20000) {
+    alerts.push({
+      level: "normal",
+      message: "Alerta: tus gastos acumulados ya llegaron a Q20,000 o mas.",
+    });
+  }
+
+  budgetAlerts.innerHTML = alerts
+    .map(
+      (alert) =>
+        `<div class="budget-alert${alert.level === "high" ? " budget-alert--high" : ""}">${escapeHtml(
+          alert.message
+        )}</div>`
+    )
+    .join("");
 }
 
 function setActiveView(viewName) {
