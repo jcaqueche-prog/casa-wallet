@@ -1,6 +1,8 @@
 const STORAGE_KEY = "hogar-expenses-app";
 const AUTH_STORAGE_KEY = "hogar-expenses-auth";
 const AUTH_USER_STORAGE_KEY = "hogar-expenses-auth-user";
+const AUTH_VERSION_KEY = "hogar-expenses-auth-version";
+const AUTH_VERSION = "2";
 const PAYMENT_OPTIONS = ["Efectivo", "Tarjeta", "Transferencia"];
 const AUTH_USERS = {
   JCAE: "jcae2026",
@@ -82,6 +84,7 @@ const authScreen = document.getElementById("authScreen");
 const appShell = document.getElementById("appShell");
 const loginForm = document.getElementById("loginForm");
 const loginUsername = document.getElementById("loginUsername");
+const logoutButton = document.getElementById("logoutButton");
 const loginError = document.getElementById("loginError");
 
 expenseDateInput.value = new Date().toISOString().split("T")[0];
@@ -126,12 +129,20 @@ tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
 });
 loginForm.addEventListener("submit", handleLogin);
+logoutButton.addEventListener("click", handleLogout);
 
 renderApp();
 setActiveView("resumen");
 initializeAuth();
 
 function initializeAuth() {
+  const storedVersion = localStorage.getItem(AUTH_VERSION_KEY);
+  if (storedVersion !== AUTH_VERSION) {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+    localStorage.setItem(AUTH_VERSION_KEY, AUTH_VERSION);
+  }
+
   const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === "true";
   const savedUser = localStorage.getItem(AUTH_USER_STORAGE_KEY) || "";
   loginUsername.value = AUTH_USERS[savedUser] ? savedUser : "";
@@ -154,6 +165,12 @@ function handleLogin(event) {
 
   localStorage.setItem(AUTH_STORAGE_KEY, "true");
   localStorage.setItem(AUTH_USER_STORAGE_KEY, username);
+  localStorage.setItem(AUTH_VERSION_KEY, AUTH_VERSION);
+  initializeAuth();
+}
+
+function handleLogout() {
+  localStorage.removeItem(AUTH_STORAGE_KEY);
   initializeAuth();
 }
 
