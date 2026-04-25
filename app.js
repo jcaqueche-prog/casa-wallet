@@ -1,18 +1,20 @@
 const STORAGE_KEY = "hogar-expenses-app";
-const CATEGORY_OPTIONS = [
-  "Alimentacion",
-  "Servicios",
-  "Limpieza",
-  "Transporte",
-  "Salud",
-  "Educacion",
-  "Otros",
-];
 const PAYMENT_OPTIONS = ["Efectivo", "Tarjeta", "Transferencia"];
+
+const defaultCategoryDefinitions = [
+  { name: "Alimentacion", subcategories: ["Supermercado", "Restaurante", "Despensa"] },
+  { name: "Servicios", subcategories: ["Agua", "Luz", "Internet"] },
+  { name: "Limpieza", subcategories: ["Higiene", "Articulos de limpieza"] },
+  { name: "Transporte", subcategories: ["Gasolina", "Parqueo", "Transporte publico"] },
+  { name: "Salud", subcategories: ["Farmacia", "Consulta", "Emergencias"] },
+  { name: "Educacion", subcategories: ["Colegiatura", "Utiles", "Cursos"] },
+  { name: "Otros", subcategories: ["General"] },
+];
 
 const defaultState = {
   monthlyBudget: 0,
   expenses: [],
+  categoryDefinitions: defaultCategoryDefinitions,
 };
 
 const state = loadState();
@@ -26,16 +28,23 @@ const currencyFormatter = new Intl.NumberFormat("es-GT", {
 
 const expenseForm = document.getElementById("expenseForm");
 const budgetForm = document.getElementById("budgetForm");
+const categoryForm = document.getElementById("categoryForm");
+const subcategoryForm = document.getElementById("subcategoryForm");
 const expenseList = document.getElementById("expenseList");
 const emptyState = document.getElementById("emptyState");
 const categorySummary = document.getElementById("categorySummary");
+const categoryManagerList = document.getElementById("categoryManagerList");
 const expenseItemTemplate = document.getElementById("expenseItemTemplate");
 const filterCategory = document.getElementById("filterCategory");
+const filterSubcategory = document.getElementById("filterSubcategory");
 const searchInput = document.getElementById("searchInput");
 const statementFile = document.getElementById("statementFile");
 const importAllButton = document.getElementById("importAllButton");
 const importPreview = document.getElementById("importPreview");
 const importMessage = document.getElementById("importMessage");
+const categorySelect = document.getElementById("category");
+const subcategorySelect = document.getElementById("subcategory");
+const parentCategory = document.getElementById("parentCategory");
 
 const monthlyBudgetValue = document.getElementById("monthlyBudgetValue");
 const availableBudgetValue = document.getElementById("availableBudgetValue");
@@ -48,7 +57,16 @@ document.getElementById("date").value = new Date().toISOString().split("T")[0];
 
 expenseForm.addEventListener("submit", handleCreateExpense);
 budgetForm.addEventListener("submit", handleUpdateBudget);
-filterCategory.addEventListener("change", renderApp);
+categoryForm.addEventListener("submit", handleCreateCategory);
+subcategoryForm.addEventListener("submit", handleCreateSubcategory);
+categorySelect.addEventListener("change", () => {
+  renderSubcategoryOptions(categorySelect.value, subcategorySelect);
+});
+filterCategory.addEventListener("change", () => {
+  renderFilterSubcategories(filterCategory.value);
+  renderApp();
+});
+filterSubcategory.addEventListener("change", renderApp);
 searchInput.addEventListener("input", renderApp);
 statementFile.addEventListener("change", handleImportFile);
 importAllButton.addEventListener("click", handleSaveImportedExpenses);
@@ -66,10 +84,35 @@ function loadState() {
     return {
       monthlyBudget: Number(parsed.monthlyBudget) || 0,
       expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+      categoryDefinitions: normalizeCategoryDefinitions(parsed.categoryDefinitions),
     };
   } catch (error) {
     return structuredClone(defaultState);
   }
+}
+
+function normalizeCategoryDefinitions(value) {
+  if (!Array.isArray(value) || value.length === 0) {
+    return structuredClone(defaultCategoryDefinitions);
+  }
+
+  const cleaned = value
+    .map((item) => ({
+      name: String(item?.name || "").trim(),
+      subcategories: Array.isArray(item?.subcategories)
+        ? item.subcategories.map((sub) => String(sub).trim()).filter(Boolean)
+        : [],
+    }))
+    .filter((item) => item.name);
+
+  if (cleaned.length === 0) {
+    return structuredClone(defaultCategoryDefinitions);
+  }
+
+  return cleaned.map((item) => ({
+    ...item,
+    subcategories: item.subcategories.length ? item.subcategories : ["General"],
+  }));
 }
 
 function saveState() {
@@ -84,6 +127,7 @@ function handleCreateExpense(event) {
   const amount = Number(formData.get("amount"));
   const date = String(formData.get("date") || "");
   const category = String(formData.get("category") || "Otros");
+  const subcategory = String(formData.get("subcategory") || "General");
   const paymentMethod = String(formData.get("paymentMethod") || "Efectivo");
   const notes = String(formData.get("notes") || "").trim();
 
@@ -97,6 +141,7 @@ function handleCreateExpense(event) {
     amount,
     date,
     category,
+    subcategory,
     paymentMethod,
     notes,
   });
@@ -104,15 +149,55 @@ function handleCreateExpense(event) {
   saveState();
   expenseForm.reset();
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
+  renderCategoryControls();
   renderApp();
 }
 
 function handleUpdateBudget(event) {
   event.preventDefault();
   const nextBudget = Number(monthlyBudgetInput.value);
-
   state.monthlyBudget = Number.isNaN(nextBudget) || nextBudget < 0 ? 0 : nextBudget;
   saveState();
+  renderApp();
+}
+
+function handleCreateCategory(event) {
+  event.preventDefault();
+  const formData = new FormData(categoryForm);
+  const name = String(formData.get("newCategoryName") || "").trim();
+  if (!name || findCategoryDefinition(name)) {
+    return;
+  }
+
+  state.categoryDefinitions.push({
+    name,
+    subcategories: ["General"],
+  });
+
+  saveState();
+  categoryForm.reset();
+  renderCategoryControls();
+  renderApp();
+}
+
+function handleCreateSubcategory(event) {
+  event.preventDefault();
+  const formData = new FormData(subcategoryForm);
+  const categoryName = String(formData.get("parentCategory") || "").trim();
+  const subcategoryName = String(formData.get("newSubcategoryName") || "").trim();
+  const categoryDefinition = findCategoryDefinition(categoryName);
+
+  if (!categoryDefinition || !subcategoryName) {
+    return;
+  }
+
+  if (!categoryDefinition.subcategories.includes(subcategoryName)) {
+    categoryDefinition.subcategories.push(subcategoryName);
+    saveState();
+  }
+
+  subcategoryForm.reset();
+  renderCategoryControls();
   renderApp();
 }
 
@@ -124,15 +209,19 @@ function handleDeleteExpense(id) {
 
 function getFilteredExpenses() {
   const selectedCategory = filterCategory.value;
+  const selectedSubcategory = filterSubcategory.value;
   const query = searchInput.value.trim().toLowerCase();
 
   return state.expenses.filter((expense) => {
     const matchesCategory =
       selectedCategory === "Todas" || expense.category === selectedCategory;
+    const matchesSubcategory =
+      selectedSubcategory === "Todas" || expense.subcategory === selectedSubcategory;
 
     const searchableText = [
       expense.description,
       expense.category,
+      expense.subcategory,
       expense.paymentMethod,
       expense.notes,
     ]
@@ -140,7 +229,7 @@ function getFilteredExpenses() {
       .toLowerCase();
 
     const matchesQuery = !query || searchableText.includes(query);
-    return matchesCategory && matchesQuery;
+    return matchesCategory && matchesSubcategory && matchesQuery;
   });
 }
 
@@ -158,9 +247,63 @@ function renderApp() {
   averageExpense.textContent = formatCurrency(average);
   monthlyBudgetInput.value = state.monthlyBudget ? String(state.monthlyBudget) : "";
 
+  renderCategoryControls();
   renderExpenseList(filteredExpenses);
   renderCategorySummary();
   renderImportedExpenses();
+  renderCategoryManager();
+}
+
+function renderCategoryControls() {
+  const previousCategory = categorySelect.value;
+  const previousFilterCategory = filterCategory.value;
+  const previousParentCategory = parentCategory.value;
+
+  categorySelect.innerHTML = buildCategoryOptions();
+  filterCategory.innerHTML = `<option value="Todas">Todas</option>${buildCategoryOptions()}`;
+  parentCategory.innerHTML = buildCategoryOptions();
+
+  categorySelect.value = hasCategory(previousCategory)
+    ? previousCategory
+    : state.categoryDefinitions[0]?.name || "Otros";
+  filterCategory.value =
+    previousFilterCategory === "Todas" || hasCategory(previousFilterCategory)
+      ? previousFilterCategory
+      : "Todas";
+  parentCategory.value = hasCategory(previousParentCategory)
+    ? previousParentCategory
+    : state.categoryDefinitions[0]?.name || "Otros";
+
+  renderSubcategoryOptions(categorySelect.value, subcategorySelect, subcategorySelect.value);
+  renderFilterSubcategories(filterCategory.value, filterSubcategory.value);
+}
+
+function renderSubcategoryOptions(categoryName, targetSelect, preferredValue = "") {
+  const categoryDefinition = findCategoryDefinition(categoryName);
+  const subcategories = categoryDefinition?.subcategories || ["General"];
+  targetSelect.innerHTML = subcategories
+    .map((sub) => `<option value="${escapeHtml(sub)}">${escapeHtml(sub)}</option>`)
+    .join("");
+  targetSelect.value = subcategories.includes(preferredValue) ? preferredValue : subcategories[0];
+}
+
+function renderFilterSubcategories(categoryName, preferredValue = "") {
+  let subcategories = [];
+  if (categoryName === "Todas") {
+    subcategories = Array.from(
+      new Set(state.categoryDefinitions.flatMap((category) => category.subcategories))
+    ).sort();
+  } else {
+    subcategories = findCategoryDefinition(categoryName)?.subcategories || [];
+  }
+
+  filterSubcategory.innerHTML = `<option value="Todas">Todas</option>${subcategories
+    .map((sub) => `<option value="${escapeHtml(sub)}">${escapeHtml(sub)}</option>`)
+    .join("")}`;
+  filterSubcategory.value =
+    preferredValue === "Todas" || subcategories.includes(preferredValue)
+      ? preferredValue
+      : "Todas";
 }
 
 function renderExpenseList(expenses) {
@@ -172,7 +315,7 @@ function renderExpenseList(expenses) {
     fragment.querySelector(".expense-title").textContent = expense.description;
     fragment.querySelector(".expense-amount").textContent = formatCurrency(expense.amount);
     fragment.querySelector(".expense-meta").textContent =
-      `${formatDate(expense.date)} · ${expense.category} · ${expense.paymentMethod}`;
+      `${formatDate(expense.date)} · ${expense.category} · ${expense.subcategory} · ${expense.paymentMethod}`;
     fragment.querySelector(".expense-notes").textContent = expense.notes;
     fragment
       .querySelector(".delete-button")
@@ -200,8 +343,25 @@ function renderCategorySummary() {
     .map(
       ([category, total]) => `
         <article class="category-card">
-          <span>${category}</span>
+          <span>${escapeHtml(category)}</span>
           <strong>${formatCurrency(total)}</strong>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function renderCategoryManager() {
+  categoryManagerList.innerHTML = state.categoryDefinitions
+    .map(
+      (category) => `
+        <article class="category-manager-card">
+          <strong>${escapeHtml(category.name)}</strong>
+          <div class="subcategory-chips">
+            ${category.subcategories
+              .map((subcategory) => `<span class="subcategory-chip">${escapeHtml(subcategory)}</span>`)
+              .join("")}
+          </div>
         </article>
       `
     )
@@ -265,8 +425,7 @@ function readFirstSheet(workbook) {
     return rawRows.map((row) => mapHeaderlessRow(row)).filter(Boolean);
   }
 
-  const objectRows = XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
-  return objectRows;
+  return XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
 }
 
 function mapBankRow(row, index) {
@@ -318,12 +477,14 @@ function mapBankRow(row, index) {
     return null;
   }
 
+  const category = suggestCategory(String(description));
   return {
     id: `import-${index}-${crypto.randomUUID()}`,
     description: String(description).trim(),
     amount: Math.abs(amount),
     date: parsedDate,
-    category: suggestCategory(String(description)),
+    category,
+    subcategory: getDefaultSubcategory(category),
     paymentMethod: "Tarjeta",
     notes: "Importado desde estado de cuenta",
   };
@@ -361,12 +522,10 @@ function pickValue(source, candidates) {
     return source[exactMatch];
   }
 
-  const entries = Object.entries(source);
-  for (const [key, value] of entries) {
+  for (const [key, value] of Object.entries(source)) {
     if (value === "") {
       continue;
     }
-
     if (candidates.some((candidate) => key.includes(candidate))) {
       return value;
     }
@@ -438,25 +597,12 @@ function parseImportedDate(value) {
 function suggestCategory(description) {
   const text = description.toLowerCase();
 
-  if (/(super|market|despensa|walmart|paiz|maxi)/.test(text)) {
-    return "Alimentacion";
-  }
-  if (/(agua|luz|energia|electric|internet|telefono|gas|servicio)/.test(text)) {
-    return "Servicios";
-  }
-  if (/(farmacia|medic|hospital|clinica|salud)/.test(text)) {
-    return "Salud";
-  }
-  if (/(uber|gasolina|combustible|bus|taxi|peaje)/.test(text)) {
-    return "Transporte";
-  }
-  if (/(colegio|escuela|universidad|curso|educa)/.test(text)) {
-    return "Educacion";
-  }
-  if (/(limpieza|detergente|jabon|papel)/.test(text)) {
-    return "Limpieza";
-  }
-
+  if (/(super|market|despensa|walmart|paiz|maxi)/.test(text)) return "Alimentacion";
+  if (/(agua|luz|energia|electric|internet|telefono|gas|servicio|tigo)/.test(text)) return "Servicios";
+  if (/(farmacia|medic|hospital|clinica|salud)/.test(text)) return "Salud";
+  if (/(uber|gasolina|combustible|bus|taxi|peaje|parqueo)/.test(text)) return "Transporte";
+  if (/(colegio|escuela|universidad|curso|educa)/.test(text)) return "Educacion";
+  if (/(limpieza|detergente|jabon|papel|dollarcity)/.test(text)) return "Limpieza";
   return "Otros";
 }
 
@@ -484,21 +630,34 @@ function renderImportedExpenses() {
 
     const paymentSelect = document.createElement("select");
     paymentSelect.innerHTML = PAYMENT_OPTIONS.map(
-      (option) => `<option value="${option}">${option}</option>`
+      (option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`
     ).join("");
     paymentSelect.value = expense.paymentMethod;
     paymentSelect.addEventListener("change", (event) => {
       expense.paymentMethod = event.target.value;
     });
 
-    const categorySelect = document.createElement("select");
-    categorySelect.innerHTML = CATEGORY_OPTIONS.map(
-      (option) => `<option value="${option}">${option}</option>`
-    ).join("");
-    categorySelect.value = expense.category;
-    categorySelect.addEventListener("change", (event) => {
+    const categoryField = document.createElement("div");
+    const categoryPicker = document.createElement("select");
+    const subcategoryPicker = document.createElement("select");
+
+    categoryPicker.innerHTML = buildCategoryOptions();
+    categoryPicker.value = hasCategory(expense.category) ? expense.category : "Otros";
+    renderSubcategoryOptions(categoryPicker.value, subcategoryPicker, expense.subcategory);
+
+    categoryPicker.addEventListener("change", (event) => {
       expense.category = event.target.value;
+      expense.subcategory = getDefaultSubcategory(expense.category);
+      renderSubcategoryOptions(expense.category, subcategoryPicker, expense.subcategory);
     });
+
+    subcategoryPicker.addEventListener("change", (event) => {
+      expense.subcategory = event.target.value;
+    });
+
+    categoryField.append(categoryPicker, subcategoryPicker);
+    categoryField.style.display = "grid";
+    categoryField.style.gap = "10px";
 
     const saveButton = document.createElement("button");
     saveButton.type = "button";
@@ -506,7 +665,7 @@ function renderImportedExpenses() {
     saveButton.textContent = "Guardar";
     saveButton.addEventListener("click", () => saveSingleImportedExpense(expense.id));
 
-    item.append(descriptionBlock, amountBlock, paymentSelect, categorySelect, saveButton);
+    item.append(descriptionBlock, amountBlock, paymentSelect, categoryField, saveButton);
     importPreview.appendChild(item);
   });
 }
@@ -542,6 +701,24 @@ function handleSaveImportedExpenses() {
   saveState();
   renderApp();
   showImportMessage("Los movimientos importados ya fueron agregados al historial.");
+}
+
+function findCategoryDefinition(categoryName) {
+  return state.categoryDefinitions.find((category) => category.name === categoryName) || null;
+}
+
+function hasCategory(categoryName) {
+  return Boolean(findCategoryDefinition(categoryName));
+}
+
+function getDefaultSubcategory(categoryName) {
+  return findCategoryDefinition(categoryName)?.subcategories?.[0] || "General";
+}
+
+function buildCategoryOptions() {
+  return state.categoryDefinitions
+    .map((category) => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`)
+    .join("");
 }
 
 function showImportMessage(message) {

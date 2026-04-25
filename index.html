@@ -111,16 +111,16 @@
               <label>
                 Categoria
                 <select id="category" name="category" required>
-                  <option value="Alimentacion">Alimentacion</option>
-                  <option value="Servicios">Servicios</option>
-                  <option value="Limpieza">Limpieza</option>
-                  <option value="Transporte">Transporte</option>
-                  <option value="Salud">Salud</option>
-                  <option value="Educacion">Educacion</option>
-                  <option value="Otros">Otros</option>
                 </select>
               </label>
 
+              <label>
+                Subcategoria
+                <select id="subcategory" name="subcategory" required></select>
+              </label>
+            </div>
+
+            <div class="grid-two">
               <label>
                 Metodo
                 <select id="paymentMethod" name="paymentMethod" required>
@@ -189,6 +189,47 @@
           <div id="categorySummary" class="category-summary"></div>
         </section>
 
+        <section class="panel">
+          <div class="panel__header">
+            <h2>Categorias y subcategorias</h2>
+            <p>Crea tu propia estructura para clasificar gastos del hogar.</p>
+          </div>
+
+          <form id="categoryForm" class="budget-form">
+            <label>
+              Nueva categoria
+              <input
+                id="newCategoryName"
+                name="newCategoryName"
+                type="text"
+                placeholder="Ej. Mascotas"
+                required
+              />
+            </label>
+            <button type="submit" class="secondary-button">Crear categoria</button>
+          </form>
+
+          <form id="subcategoryForm" class="budget-form category-form-spaced">
+            <label>
+              Categoria padre
+              <select id="parentCategory" name="parentCategory" required></select>
+            </label>
+            <label>
+              Nueva subcategoria
+              <input
+                id="newSubcategoryName"
+                name="newSubcategoryName"
+                type="text"
+                placeholder="Ej. Veterinaria"
+                required
+              />
+            </label>
+            <button type="submit" class="secondary-button">Crear subcategoria</button>
+          </form>
+
+          <div id="categoryManagerList" class="category-manager-list"></div>
+        </section>
+
         <section class="panel panel--wide">
           <div class="panel__header panel__header--split">
             <div>
@@ -227,15 +268,16 @@
                 Categoria
                 <select id="filterCategory">
                   <option value="Todas">Todas</option>
-                  <option value="Alimentacion">Alimentacion</option>
-                  <option value="Servicios">Servicios</option>
-                  <option value="Limpieza">Limpieza</option>
-                  <option value="Transporte">Transporte</option>
-                  <option value="Salud">Salud</option>
-                  <option value="Educacion">Educacion</option>
-                  <option value="Otros">Otros</option>
                 </select>
               </label>
+              <label>
+                Subcategoria
+                <select id="filterSubcategory">
+                  <option value="Todas">Todas</option>
+                </select>
+              </label>
+            </div>
+            <div class="filters filters--single">
               <label>
                 Buscar
                 <input
