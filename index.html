@@ -79,11 +79,11 @@
       </header>
 
       <nav class="tabbar">
-        <button class="tab-button is-active" type="button" data-view-target="resumen">
-          Resumen
-        </button>
         <button class="tab-button" type="button" data-view-target="registro">
           Registro
+        </button>
+        <button class="tab-button is-active" type="button" data-view-target="resumen">
+          Resumen
         </button>
         <button class="tab-button" type="button" data-view-target="categorias">
           Categorias
@@ -112,6 +112,20 @@
               <label>
                 Hasta
                 <input id="summaryEndDate" type="date" />
+              </label>
+            </div>
+            <div class="filters">
+              <label>
+                Categoria
+                <select id="summaryCategory">
+                  <option value="Todas">Todas</option>
+                </select>
+              </label>
+              <label>
+                Subcategoria
+                <select id="summarySubcategory">
+                  <option value="Todas">Todas</option>
+                </select>
               </label>
             </div>
 
@@ -151,10 +165,6 @@
               <article class="stat-card">
                 <span>Balance neto</span>
                 <strong id="netBalance">Q0.00</strong>
-              </article>
-              <article class="stat-card">
-                <span>Promedio por movimiento</span>
-                <strong id="averageExpense">Q0.00</strong>
               </article>
             </div>
 
@@ -483,30 +493,12 @@
     <template id="expenseItemTemplate">
       <article class="expense-item">
         <div class="expense-item__main">
-          <div class="expense-item__top expense-item__top--editor">
-            <label>
-              Descripcion
-              <input class="expense-edit-description" type="text" />
-            </label>
-            <label>
-              Monto
-              <input class="expense-edit-amount" type="number" min="0.01" step="0.01" />
-            </label>
+          <div class="expense-item__top">
+            <h3 class="expense-title"></h3>
+            <span class="expense-amount"></span>
           </div>
-          <div class="grid-two">
-            <label>
-              Fecha
-              <input class="expense-edit-date" type="date" />
-            </label>
-            <label>
-              Tipo
-              <select class="expense-edit-type">
-                <option value="gasto">Gasto</option>
-                <option value="ingreso">Ingreso</option>
-              </select>
-            </label>
-          </div>
-          <div class="grid-two">
+          <div class="expense-meta"></div>
+          <div class="expense-edit-row">
             <label>
               Categoria
               <select class="expense-edit-category"></select>
@@ -516,21 +508,6 @@
               <select class="expense-edit-subcategory"></select>
             </label>
           </div>
-          <div class="grid-two">
-            <label>
-              Metodo
-              <select class="expense-edit-payment">
-                <option value="Efectivo">Efectivo</option>
-                <option value="Tarjeta">Tarjeta</option>
-                <option value="Transferencia">Transferencia</option>
-              </select>
-            </label>
-          </div>
-          <label>
-            Nota
-            <textarea class="expense-edit-notes" rows="2"></textarea>
-          </label>
-          <div class="expense-meta"></div>
         </div>
         <div class="expense-actions">
           <button class="primary-button expense-save-button" type="button">Guardar</button>

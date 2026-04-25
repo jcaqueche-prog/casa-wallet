@@ -46,6 +46,8 @@ const categoryManagerList = document.getElementById("categoryManagerList");
 const expenseItemTemplate = document.getElementById("expenseItemTemplate");
 const summaryStartDate = document.getElementById("summaryStartDate");
 const summaryEndDate = document.getElementById("summaryEndDate");
+const summaryCategory = document.getElementById("summaryCategory");
+const summarySubcategory = document.getElementById("summarySubcategory");
 const summaryRangeLabel = document.getElementById("summaryRangeLabel");
 const filterCategory = document.getElementById("filterCategory");
 const filterSubcategory = document.getElementById("filterSubcategory");
@@ -76,7 +78,6 @@ const totalSpent = document.getElementById("totalSpent");
 const totalIncome = document.getElementById("totalIncome");
 const expenseCount = document.getElementById("expenseCount");
 const netBalance = document.getElementById("netBalance");
-const averageExpense = document.getElementById("averageExpense");
 const monthlyBudgetInput = document.getElementById("monthlyBudgetInput");
 const expenseDateInput = document.getElementById("expenseDate");
 const incomeDateInput = document.getElementById("incomeDate");
@@ -120,6 +121,11 @@ filterCategory.addEventListener("change", () => {
 filterSubcategory.addEventListener("change", renderApp);
 summaryStartDate.addEventListener("change", renderApp);
 summaryEndDate.addEventListener("change", renderApp);
+summaryCategory.addEventListener("change", () => {
+  renderSummarySubcategories(summaryCategory.value);
+  renderApp();
+});
+summarySubcategory.addEventListener("change", renderApp);
 filterStartDate.addEventListener("change", renderApp);
 filterEndDate.addEventListener("change", renderApp);
 searchInput.addEventListener("input", renderApp);
@@ -512,8 +518,6 @@ function renderApp() {
     .filter((expense) => expense.entryType === "ingreso")
     .reduce((sum, expense) => sum + Number(expense.amount), 0);
   const count = summaryExpenses.length;
-  const volume = totalExpenses + totalIncomes;
-  const average = count ? volume / count : 0;
   const balance = totalIncomes - totalExpenses;
   const overallIncomes = state.expenses
     .filter((expense) => expense.entryType === "ingreso")
@@ -529,7 +533,6 @@ function renderApp() {
   totalIncome.textContent = formatCurrency(totalIncomes);
   expenseCount.textContent = String(count);
   netBalance.textContent = formatCurrency(balance);
-  averageExpense.textContent = formatCurrency(average);
   monthlyBudgetInput.value = state.monthlyBudget ? String(state.monthlyBudget) : "";
 
   renderCategoryControls();
@@ -544,11 +547,19 @@ function renderApp() {
 function getSummaryExpenses() {
   const startDate = summaryStartDate.value;
   const endDate = summaryEndDate.value;
+  const selectedCategory = summaryCategory.value;
+  const selectedSubcategory = summarySubcategory.value;
 
   return state.expenses.filter((expense) => {
     const matchesStartDate = !startDate || expense.date >= startDate;
     const matchesEndDate = !endDate || expense.date <= endDate;
-    return matchesStartDate && matchesEndDate;
+    const matchesCategory =
+      !selectedCategory || selectedCategory === "Todas" || expense.category === selectedCategory;
+    const matchesSubcategory =
+      !selectedSubcategory ||
+      selectedSubcategory === "Todas" ||
+      expense.subcategory === selectedSubcategory;
+    return matchesStartDate && matchesEndDate && matchesCategory && matchesSubcategory;
   });
 }
 
@@ -611,11 +622,13 @@ function setActiveView(viewName) {
 function renderCategoryControls() {
   const previousExpenseCategory = expenseCategorySelect.value;
   const previousIncomeCategory = incomeCategorySelect.value;
+  const previousSummaryCategory = summaryCategory.value;
   const previousFilterCategory = filterCategory.value;
   const previousParentCategory = parentCategory.value;
 
   expenseCategorySelect.innerHTML = buildCategoryOptions();
   incomeCategorySelect.innerHTML = buildCategoryOptions();
+  summaryCategory.innerHTML = `<option value="Todas">Todas</option>${buildCategoryOptions()}`;
   filterCategory.innerHTML = `<option value="Todas">Todas</option>${buildCategoryOptions()}`;
   parentCategory.innerHTML = buildCategoryOptions();
 
@@ -625,6 +638,10 @@ function renderCategoryControls() {
   incomeCategorySelect.value = hasCategory(previousIncomeCategory)
     ? previousIncomeCategory
     : state.categoryDefinitions[0]?.name || "Otros";
+  summaryCategory.value =
+    previousSummaryCategory === "Todas" || hasCategory(previousSummaryCategory)
+      ? previousSummaryCategory
+      : "Todas";
   filterCategory.value =
     previousFilterCategory === "Todas" || hasCategory(previousFilterCategory)
       ? previousFilterCategory
@@ -643,6 +660,7 @@ function renderCategoryControls() {
     incomeSubcategorySelect,
     incomeSubcategorySelect.value
   );
+  renderSummarySubcategories(summaryCategory.value, summarySubcategory.value);
   renderFilterSubcategories(filterCategory.value, filterSubcategory.value);
 }
 
@@ -674,6 +692,25 @@ function renderFilterSubcategories(categoryName, preferredValue = "") {
       : "Todas";
 }
 
+function renderSummarySubcategories(categoryName, preferredValue = "") {
+  let subcategories = [];
+  if (categoryName === "Todas") {
+    subcategories = Array.from(
+      new Set(state.categoryDefinitions.flatMap((category) => category.subcategories))
+    ).sort();
+  } else {
+    subcategories = findCategoryDefinition(categoryName)?.subcategories || [];
+  }
+
+  summarySubcategory.innerHTML = `<option value="Todas">Todas</option>${subcategories
+    .map((sub) => `<option value="${escapeHtml(sub)}">${escapeHtml(sub)}</option>`)
+    .join("")}`;
+  summarySubcategory.value =
+    preferredValue === "Todas" || subcategories.includes(preferredValue)
+      ? preferredValue
+      : "Todas";
+}
+
 function renderExpenseList(expenses) {
   expenseList.innerHTML = "";
   emptyState.classList.toggle("hidden", expenses.length > 0);
@@ -681,63 +718,40 @@ function renderExpenseList(expenses) {
   expenses.forEach((expense) => {
     const fragment = expenseItemTemplate.content.cloneNode(true);
     const item = fragment.querySelector(".expense-item");
-    const descriptionInput = fragment.querySelector(".expense-edit-description");
-    const amountInput = fragment.querySelector(".expense-edit-amount");
-    const dateInput = fragment.querySelector(".expense-edit-date");
-    const typeSelect = fragment.querySelector(".expense-edit-type");
     const categorySelect = fragment.querySelector(".expense-edit-category");
     const subcategorySelect = fragment.querySelector(".expense-edit-subcategory");
-    const paymentSelect = fragment.querySelector(".expense-edit-payment");
-    const notesInput = fragment.querySelector(".expense-edit-notes");
     const meta = fragment.querySelector(".expense-meta");
+    const title = fragment.querySelector(".expense-title");
+    const amount = fragment.querySelector(".expense-amount");
 
     item.classList.add(
       expense.entryType === "ingreso" ? "expense-item--income" : "expense-item--expense"
     );
 
-    descriptionInput.value = expense.description;
-    amountInput.value = String(expense.amount);
-    dateInput.value = expense.date;
-    typeSelect.value = expense.entryType || "gasto";
+    title.textContent = expense.description;
+    amount.textContent = `${expense.entryType === "ingreso" ? "+" : "-"} ${formatCurrency(
+      expense.amount
+    )}`;
     categorySelect.innerHTML = buildCategoryOptions();
     categorySelect.value = hasCategory(expense.category)
       ? expense.category
       : state.categoryDefinitions[0]?.name || "Otros";
     renderSubcategoryOptions(categorySelect.value, subcategorySelect, expense.subcategory);
-    paymentSelect.value = expense.paymentMethod || "Efectivo";
-    notesInput.value = expense.notes || "";
     meta.textContent = `${formatDate(expense.date)} · ${capitalizeEntryType(
       expense.entryType
-    )} · ${expense.category} · ${expense.subcategory}`;
+    )} · ${expense.paymentMethod}`;
 
     categorySelect.addEventListener("change", () => {
       renderSubcategoryOptions(categorySelect.value, subcategorySelect);
     });
 
     fragment.querySelector(".expense-save-button").addEventListener("click", () => {
-      const nextType = typeSelect.value;
       const nextCategory = categorySelect.value;
       const nextSubcategory = subcategorySelect.value;
-      const nextAmount = Number(amountInput.value);
-
-      if (
-        !descriptionInput.value.trim() ||
-        Number.isNaN(nextAmount) ||
-        nextAmount <= 0 ||
-        !dateInput.value
-      ) {
-        return;
-      }
 
       handleUpdateExpense(expense.id, {
-        description: descriptionInput.value.trim(),
-        amount: nextAmount,
-        date: dateInput.value,
-        entryType: nextType,
         category: nextCategory,
         subcategory: nextSubcategory,
-        paymentMethod: paymentSelect.value,
-        notes: notesInput.value.trim(),
       });
     });
 

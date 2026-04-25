@@ -328,11 +328,11 @@ label {
 
 .entry-panels {
   display: grid;
-  gap: 18px;
+  gap: 10px;
 }
 
 .entry-card {
-  padding: 18px;
+  padding: 14px;
   border-radius: var(--radius-md);
   background: var(--surface-strong);
   border: 1px solid rgba(20, 33, 43, 0.08);
@@ -365,8 +365,8 @@ label {
   justify-content: space-between;
   gap: 12px;
   align-items: center;
-  margin-bottom: 14px;
-  padding-bottom: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid rgba(20, 33, 43, 0.06);
 }
 
@@ -394,7 +394,7 @@ label {
 .category-layout {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: 10px;
 }
 
 .panel {
@@ -434,7 +434,7 @@ label {
 .expense-form,
 .budget-form {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 
 .grid-two,
@@ -558,9 +558,9 @@ textarea {
 }
 
 .manager-note {
-  margin-top: 18px;
+  margin-top: 12px;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.84rem;
 }
 
 .stats-grid {
@@ -600,8 +600,8 @@ textarea {
 
 .expense-list {
   display: grid;
-  gap: 12px;
-  max-height: 340px;
+  gap: 8px;
+  max-height: 430px;
   overflow: auto;
   padding-right: 6px;
 }
@@ -620,11 +620,11 @@ textarea {
 }
 
 .expense-item {
-  padding: 14px;
+  padding: 10px 12px;
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
+  gap: 10px;
+  align-items: center;
   box-shadow: var(--shadow-soft);
   border-left: 4px solid rgba(20, 33, 43, 0.08);
 }
@@ -645,17 +645,13 @@ textarea {
 .expense-item__top {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
   align-items: baseline;
-}
-
-.expense-item__top--editor {
-  align-items: end;
 }
 
 .expense-title {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 0.97rem;
 }
 
 .expense-amount {
@@ -670,15 +666,22 @@ textarea {
 
 .expense-meta,
 .expense-notes {
-  margin: 10px 0 0;
+  margin: 6px 0 0;
   line-height: 1.5;
-  font-size: 0.92rem;
+  font-size: 0.84rem;
+}
+
+.expense-edit-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .expense-actions {
   display: grid;
-  gap: 10px;
-  min-width: 132px;
+  gap: 8px;
+  min-width: 110px;
 }
 
 .delete-button {
@@ -733,14 +736,14 @@ textarea {
 .category-manager-list {
   margin-top: 18px;
   display: grid;
-  gap: 12px;
-  max-height: 320px;
+  gap: 10px;
+  max-height: 260px;
   overflow: auto;
   padding-right: 6px;
 }
 
 .category-manager-card {
-  padding: 16px 18px;
+  padding: 12px 14px;
   border-radius: var(--radius-md);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(255, 249, 243, 0.95));
@@ -751,7 +754,7 @@ textarea {
 
 .category-manager-card strong {
   display: block;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   font-family: "Space Grotesk", sans-serif;
 }
 
@@ -759,7 +762,7 @@ textarea {
   display: flex;
   gap: 10px;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .category-manager-header input {
@@ -774,7 +777,7 @@ textarea {
 }
 
 .category-actions {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .subcategory-chips {
