@@ -51,6 +51,10 @@ const expenseCategorySelect = document.getElementById("expenseCategory");
 const expenseSubcategorySelect = document.getElementById("expenseSubcategory");
 const incomeCategorySelect = document.getElementById("incomeCategory");
 const incomeSubcategorySelect = document.getElementById("incomeSubcategory");
+const expenseAddCategoryButton = document.getElementById("expenseAddCategoryButton");
+const expenseAddSubcategoryButton = document.getElementById("expenseAddSubcategoryButton");
+const incomeAddCategoryButton = document.getElementById("incomeAddCategoryButton");
+const incomeAddSubcategoryButton = document.getElementById("incomeAddSubcategoryButton");
 const parentCategory = document.getElementById("parentCategory");
 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const views = Array.from(document.querySelectorAll(".view"));
@@ -84,6 +88,18 @@ expenseCategorySelect.addEventListener("change", () => {
 incomeCategorySelect.addEventListener("change", () => {
   renderSubcategoryOptions(incomeCategorySelect.value, incomeSubcategorySelect);
 });
+expenseAddCategoryButton.addEventListener("click", () =>
+  handleQuickCreateCategory(expenseCategorySelect, expenseSubcategorySelect)
+);
+incomeAddCategoryButton.addEventListener("click", () =>
+  handleQuickCreateCategory(incomeCategorySelect, incomeSubcategorySelect)
+);
+expenseAddSubcategoryButton.addEventListener("click", () =>
+  handleQuickCreateSubcategory(expenseCategorySelect, expenseSubcategorySelect)
+);
+incomeAddSubcategoryButton.addEventListener("click", () =>
+  handleQuickCreateSubcategory(incomeCategorySelect, incomeSubcategorySelect)
+);
 filterCategory.addEventListener("change", () => {
   renderFilterSubcategories(filterCategory.value);
   renderApp();
@@ -255,6 +271,46 @@ function handleCreateSubcategory(event) {
 
   subcategoryForm.reset();
   renderCategoryControls();
+  renderApp();
+}
+
+function handleQuickCreateCategory(categorySelect, subcategorySelect) {
+  const name = window.prompt("Escribe el nombre de la nueva categoria:");
+  const cleanName = String(name || "").trim();
+  if (!cleanName || findCategoryDefinition(cleanName)) {
+    return;
+  }
+
+  state.categoryDefinitions.push({
+    name: cleanName,
+    subcategories: ["General"],
+  });
+
+  saveState();
+  renderCategoryControls();
+  categorySelect.value = cleanName;
+  renderSubcategoryOptions(cleanName, subcategorySelect, "General");
+  renderApp();
+}
+
+function handleQuickCreateSubcategory(categorySelect, subcategorySelect) {
+  const categoryName = categorySelect.value;
+  const categoryDefinition = findCategoryDefinition(categoryName);
+  if (!categoryDefinition) {
+    return;
+  }
+
+  const name = window.prompt(`Escribe la nueva subcategoria para ${categoryName}:`);
+  const cleanName = String(name || "").trim();
+  if (!cleanName || categoryDefinition.subcategories.includes(cleanName)) {
+    return;
+  }
+
+  categoryDefinition.subcategories.push(cleanName);
+  saveState();
+  renderCategoryControls();
+  categorySelect.value = categoryName;
+  renderSubcategoryOptions(categoryName, subcategorySelect, cleanName);
   renderApp();
 }
 
