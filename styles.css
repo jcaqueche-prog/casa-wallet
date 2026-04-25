@@ -81,16 +81,16 @@ textarea {
 }
 
 .page-shell {
-  width: min(1180px, calc(100% - 32px));
+  width: min(760px, calc(100% - 18px));
   margin: 0 auto;
-  padding: 28px 0 56px;
+  padding: 12px 0 24px;
 }
 
 .hero {
   display: grid;
-  grid-template-columns: 1.4fr 0.8fr;
-  gap: 24px;
-  margin-bottom: 18px;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .hero__copy,
@@ -104,7 +104,7 @@ textarea {
 }
 
 .hero__copy {
-  padding: 40px;
+  padding: 22px;
   position: relative;
   overflow: hidden;
 }
@@ -138,8 +138,8 @@ textarea {
 }
 
 .hero h1 {
-  font-size: clamp(2.2rem, 4vw, 4.5rem);
-  max-width: 11ch;
+  font-size: clamp(1.7rem, 6vw, 2.8rem);
+  max-width: 12ch;
 }
 
 .hero__text,
@@ -161,8 +161,8 @@ label {
 .hero__badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 24px;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .hero-badge,
@@ -178,9 +178,9 @@ label {
 }
 
 .hero__summary {
-  padding: 24px;
+  padding: 18px;
   display: grid;
-  gap: 14px;
+  gap: 12px;
   align-content: stretch;
 }
 
@@ -248,16 +248,16 @@ label {
 
 .trust-strip {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .tabbar {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .tab-button {
@@ -302,8 +302,8 @@ label {
 
 .dashboard {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 24px;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
 
 .entry-panels {
@@ -356,17 +356,17 @@ label {
 
 .category-layout {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
 
 .panel {
-  padding: 26px;
+  padding: 16px;
   position: relative;
 }
 
 .panel--form {
-  grid-row: span 2;
+  grid-row: auto;
 }
 
 .panel--wide {
@@ -541,7 +541,7 @@ textarea {
 .expense-list {
   display: grid;
   gap: 14px;
-  max-height: 520px;
+  max-height: 340px;
   overflow: auto;
   padding-right: 6px;
 }
@@ -556,7 +556,7 @@ textarea {
 }
 
 .expense-item {
-  padding: 18px;
+  padding: 14px;
   display: flex;
   justify-content: space-between;
   gap: 16px;
@@ -644,7 +644,7 @@ textarea {
 
 .import-preview-shell {
   margin-top: 18px;
-  max-height: 420px;
+  max-height: 300px;
   overflow: auto;
   padding-right: 6px;
 }
@@ -662,7 +662,7 @@ textarea {
   margin-top: 18px;
   display: grid;
   gap: 12px;
-  max-height: 520px;
+  max-height: 320px;
   overflow: auto;
   padding-right: 6px;
 }
@@ -783,40 +783,72 @@ textarea {
   display: none;
 }
 
-@media (max-width: 980px) {
-  .hero,
-  .dashboard,
+@media (min-width: 900px) {
+  .page-shell {
+    width: min(920px, calc(100% - 28px));
+    padding-top: 18px;
+  }
+
+  .hero {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 18px;
+  }
+
   .trust-strip {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .tabbar {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .dashboard {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 18px;
   }
 
   .category-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
   }
 
-  .panel--form {
-    grid-row: auto;
+  .panel {
+    padding: 22px;
   }
 
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .expense-list {
+    max-height: 520px;
+  }
+
+  .category-manager-list {
+    max-height: 520px;
+  }
+
+  .import-preview-shell {
+    max-height: 420px;
   }
 
   .import-item {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.45fr 0.8fr 0.9fr 0.9fr auto;
   }
 }
 
 @media (max-width: 720px) {
   .page-shell {
-    width: min(100% - 20px, 1000px);
-    padding-top: 14px;
+    width: min(100% - 12px, 1000px);
+    padding-top: 8px;
   }
 
   .hero__copy,
   .hero__summary,
   .panel {
-    padding: 20px;
+    padding: 14px;
   }
 
   .grid-two,
@@ -826,6 +858,10 @@ textarea {
     grid-template-columns: 1fr;
     display: grid;
     align-items: stretch;
+  }
+
+  .trust-strip {
+    grid-template-columns: 1fr;
   }
 
   .expense-item,
