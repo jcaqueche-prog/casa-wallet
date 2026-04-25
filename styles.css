@@ -589,13 +589,85 @@ textarea {
 }
 
 .category-summary {
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .category-card strong {
   display: block;
   margin-top: 10px;
   font-size: 1.15rem;
+}
+
+.category-summary-total,
+.category-group-card {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(247, 251, 255, 0.95));
+  border: 1px solid rgba(20, 33, 43, 0.08);
+  box-shadow: var(--shadow-soft);
+}
+
+.category-summary-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid rgba(107, 144, 201, 0.24);
+}
+
+.category-summary-total span,
+.category-group-card__header span,
+.category-summary-row span {
+  color: var(--muted);
+}
+
+.category-summary-total strong,
+.category-group-card__header strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.15rem;
+  color: var(--ink-soft);
+}
+
+.category-group-card {
+  display: grid;
+  gap: 12px;
+}
+
+.category-group-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(20, 33, 43, 0.08);
+}
+
+.category-group-card__header h4 {
+  margin: 4px 0 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.05rem;
+  color: #183450;
+}
+
+.category-group-card__body {
+  display: grid;
+  gap: 8px;
+}
+
+.category-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(236, 244, 255, 0.72);
+}
+
+.category-summary-row strong {
+  font-size: 0.96rem;
+  color: var(--ink-soft);
 }
 
 .expense-list {

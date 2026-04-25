@@ -766,31 +766,68 @@ function renderExpenseList(expenses) {
 }
 
 function renderCategorySummary(expenses) {
-  const totalsByCategory = expenses
-    .filter((expense) => expense.entryType !== "ingreso")
-    .reduce((accumulator, expense) => {
-    accumulator[expense.category] = (accumulator[expense.category] || 0) + Number(expense.amount);
-    return accumulator;
-    }, {});
+  const expenseOnly = expenses.filter((expense) => expense.entryType !== "ingreso");
 
-  const categoryEntries = Object.entries(totalsByCategory).sort((a, b) => b[1] - a[1]);
-
-  if (categoryEntries.length === 0) {
+  if (expenseOnly.length === 0) {
     categorySummary.innerHTML =
       '<div class="category-card"><span>Sin datos</span><strong>No hay gastos en el rango seleccionado</strong></div>';
     return;
   }
 
-  categorySummary.innerHTML = categoryEntries
-    .map(
-      ([category, total]) => `
-        <article class="category-card">
-          <span>${escapeHtml(category)}</span>
-          <strong>${formatCurrency(total)}</strong>
-        </article>
-      `
-    )
-    .join("");
+  const grouped = expenseOnly.reduce((accumulator, expense) => {
+    if (!accumulator[expense.category]) {
+      accumulator[expense.category] = {
+        total: 0,
+        subcategories: {},
+      };
+    }
+
+    accumulator[expense.category].total += Number(expense.amount);
+    accumulator[expense.category].subcategories[expense.subcategory] =
+      (accumulator[expense.category].subcategories[expense.subcategory] || 0) + Number(expense.amount);
+
+    return accumulator;
+  }, {});
+
+  const categoryEntries = Object.entries(grouped).sort((a, b) => b[1].total - a[1].total);
+  const grandTotal = expenseOnly.reduce((sum, expense) => sum + Number(expense.amount), 0);
+
+  categorySummary.innerHTML = `
+    <article class="category-summary-total">
+      <span>Total general</span>
+      <strong>${formatCurrency(grandTotal)}</strong>
+    </article>
+    ${categoryEntries
+      .map(([category, details]) => {
+        const subcategoryRows = Object.entries(details.subcategories)
+          .sort((a, b) => b[1] - a[1])
+          .map(
+            ([subcategory, total]) => `
+              <div class="category-summary-row">
+                <span>${escapeHtml(subcategory)}</span>
+                <strong>${formatCurrency(total)}</strong>
+              </div>
+            `
+          )
+          .join("");
+
+        return `
+          <article class="category-group-card">
+            <div class="category-group-card__header">
+              <div>
+                <span>Categoria</span>
+                <h4>${escapeHtml(category)}</h4>
+              </div>
+              <strong>${formatCurrency(details.total)}</strong>
+            </div>
+            <div class="category-group-card__body">
+              ${subcategoryRows}
+            </div>
+          </article>
+        `;
+      })
+      .join("")}
+  `;
 }
 
 function renderCategoryManager() {
