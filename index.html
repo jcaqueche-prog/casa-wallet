@@ -13,7 +13,31 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="page-shell">
+    <div id="authScreen" class="auth-screen">
+      <div class="auth-card">
+        <p class="eyebrow">Acceso privado</p>
+        <h1 class="auth-title">GASTOS PARA EL HOGAR</h1>
+        <p class="auth-text">
+          Ingresa con tu usuario y contraseña para acceder al panel financiero.
+        </p>
+        <form id="loginForm" class="expense-form">
+          <label>
+            Usuario
+            <input id="loginUsername" name="username" type="text" required />
+          </label>
+          <label>
+            Contraseña
+            <input id="loginPassword" name="password" type="password" required />
+          </label>
+          <button type="submit" class="primary-button">Entrar</button>
+        </form>
+        <div id="loginError" class="login-error hidden">
+          Usuario o contraseña incorrectos.
+        </div>
+      </div>
+    </div>
+
+    <div id="appShell" class="page-shell hidden">
       <header class="hero">
         <div class="hero__copy">
           <p class="eyebrow">Gastos para el hogar</p>

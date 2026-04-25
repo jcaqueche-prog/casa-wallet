@@ -1,5 +1,8 @@
 const STORAGE_KEY = "hogar-expenses-app";
+const AUTH_STORAGE_KEY = "hogar-expenses-auth";
 const PAYMENT_OPTIONS = ["Efectivo", "Tarjeta", "Transferencia"];
+const AUTH_USERNAME = "Fam Aqueche Martinez";
+const AUTH_PASSWORD = "Dios2026";
 
 const defaultCategoryDefinitions = [
   { name: "Alimentacion", subcategories: ["Supermercado", "Restaurante", "Despensa"] },
@@ -62,6 +65,10 @@ const averageExpense = document.getElementById("averageExpense");
 const monthlyBudgetInput = document.getElementById("monthlyBudgetInput");
 const expenseDateInput = document.getElementById("expenseDate");
 const incomeDateInput = document.getElementById("incomeDate");
+const authScreen = document.getElementById("authScreen");
+const appShell = document.getElementById("appShell");
+const loginForm = document.getElementById("loginForm");
+const loginError = document.getElementById("loginError");
 
 expenseDateInput.value = new Date().toISOString().split("T")[0];
 incomeDateInput.value = new Date().toISOString().split("T")[0];
@@ -88,9 +95,34 @@ importAllButton.addEventListener("click", handleSaveImportedExpenses);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
 });
+loginForm.addEventListener("submit", handleLogin);
 
 renderApp();
 setActiveView("registro");
+initializeAuth();
+
+function initializeAuth() {
+  const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === "true";
+  authScreen.classList.toggle("hidden", isAuthenticated);
+  appShell.classList.toggle("hidden", !isAuthenticated);
+}
+
+function handleLogin(event) {
+  event.preventDefault();
+  const formData = new FormData(loginForm);
+  const username = String(formData.get("username") || "").trim();
+  const password = String(formData.get("password") || "");
+
+  const success = username === AUTH_USERNAME && password === AUTH_PASSWORD;
+  loginError.classList.toggle("hidden", success);
+
+  if (!success) {
+    return;
+  }
+
+  localStorage.setItem(AUTH_STORAGE_KEY, "true");
+  initializeAuth();
+}
 
 function loadState() {
   try {
