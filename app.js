@@ -761,6 +761,10 @@ function renderExpenseList(expenses) {
       });
     });
 
+    fragment.querySelector(".expense-delete-button").addEventListener("click", () => {
+      handleDeleteExpense(expense.id);
+    });
+
     expenseList.appendChild(fragment);
   });
 }

@@ -741,13 +741,15 @@ textarea {
 .history-cell--action {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
 }
 
 .expense-save-button {
-  padding: 10px 14px;
-  min-height: 42px;
-  width: 100%;
+  padding: 9px 12px;
+  min-height: 38px;
+  width: auto;
   white-space: nowrap;
+  font-size: 0.88rem;
 }
 
 .delete-button {
@@ -755,6 +757,9 @@ textarea {
   color: var(--danger);
   font-weight: 700;
   white-space: nowrap;
+  padding: 9px 12px;
+  min-height: 38px;
+  font-size: 0.88rem;
 }
 
 .empty-state {
