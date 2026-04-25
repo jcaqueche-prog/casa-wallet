@@ -45,11 +45,17 @@ const historyTableHeader = document.getElementById("historyTableHeader");
 const categorySummary = document.getElementById("categorySummary");
 const categoryManagerList = document.getElementById("categoryManagerList");
 const expenseItemTemplate = document.getElementById("expenseItemTemplate");
-const summaryStartDate = document.getElementById("summaryStartDate");
-const summaryEndDate = document.getElementById("summaryEndDate");
-const summaryCategory = document.getElementById("summaryCategory");
-const summarySubcategory = document.getElementById("summarySubcategory");
 const summaryRangeLabel = document.getElementById("summaryRangeLabel");
+const cardStartDate = document.getElementById("cardStartDate");
+const cardEndDate = document.getElementById("cardEndDate");
+const cashStartDate = document.getElementById("cashStartDate");
+const cashEndDate = document.getElementById("cashEndDate");
+const cardCategoryList = document.getElementById("cardCategoryList");
+const cashCategoryList = document.getElementById("cashCategoryList");
+const cardSummary = document.getElementById("cardSummary");
+const cashSummary = document.getElementById("cashSummary");
+const cardMethodTotal = document.getElementById("cardMethodTotal");
+const cashMethodTotal = document.getElementById("cashMethodTotal");
 const filterCategory = document.getElementById("filterCategory");
 const filterSubcategory = document.getElementById("filterSubcategory");
 const filterStartDate = document.getElementById("filterStartDate");
@@ -120,13 +126,12 @@ filterCategory.addEventListener("change", () => {
   renderApp();
 });
 filterSubcategory.addEventListener("change", renderApp);
-summaryStartDate.addEventListener("change", renderApp);
-summaryEndDate.addEventListener("change", renderApp);
-summaryCategory.addEventListener("change", () => {
-  renderSummarySubcategories(summaryCategory.value);
-  renderApp();
-});
-summarySubcategory.addEventListener("change", renderApp);
+cardStartDate.addEventListener("change", renderApp);
+cardEndDate.addEventListener("change", renderApp);
+cashStartDate.addEventListener("change", renderApp);
+cashEndDate.addEventListener("change", renderApp);
+cardCategoryList.addEventListener("change", handleMethodChecklistChange);
+cashCategoryList.addEventListener("change", handleMethodChecklistChange);
 filterStartDate.addEventListener("change", renderApp);
 filterEndDate.addEventListener("change", renderApp);
 searchInput.addEventListener("input", renderApp);
@@ -511,15 +516,14 @@ function getFilteredExpenses() {
 
 function renderApp() {
   const filteredExpenses = getFilteredExpenses();
-  const summaryExpenses = getSummaryExpenses();
-  const totalExpenses = summaryExpenses
-    .filter((expense) => expense.entryType !== "ingreso")
-    .reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const totalIncomes = summaryExpenses
-    .filter((expense) => expense.entryType === "ingreso")
-    .reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const count = summaryExpenses.length;
-  const balance = totalIncomes - totalExpenses;
+  renderCategoryControls();
+  const cardSummaryExpenses = getMethodSummaryExpenses("Tarjeta");
+  const cashSummaryExpenses = getMethodSummaryExpenses("Efectivo");
+  const combinedSummaryExpenses = [...cardSummaryExpenses, ...cashSummaryExpenses];
+  const totalCardExpenses = cardSummaryExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const totalCashExpenses = cashSummaryExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const count = combinedSummaryExpenses.length;
+  const combinedTotal = totalCardExpenses + totalCashExpenses;
   const overallIncomes = state.expenses
     .filter((expense) => expense.entryType === "ingreso")
     .reduce((sum, expense) => sum + Number(expense.amount), 0);
@@ -530,60 +534,40 @@ function renderApp() {
 
   monthlyBudgetValue.textContent = formatCurrency(state.monthlyBudget);
   availableBudgetValue.textContent = formatCurrency(available);
-  totalSpent.textContent = formatCurrency(totalExpenses);
-  totalIncome.textContent = formatCurrency(totalIncomes);
+  totalSpent.textContent = formatCurrency(totalCardExpenses);
+  totalIncome.textContent = formatCurrency(totalCashExpenses);
   expenseCount.textContent = String(count);
-  netBalance.textContent = formatCurrency(balance);
+  netBalance.textContent = formatCurrency(combinedTotal);
   monthlyBudgetInput.value = state.monthlyBudget ? String(state.monthlyBudget) : "";
-
-  renderCategoryControls();
   renderSummaryRangeLabel();
-  renderBudgetAlerts(totalExpenses);
+  renderBudgetAlerts(combinedTotal);
   renderExpenseList(filteredExpenses);
-  renderCategorySummary(summaryExpenses);
+  renderMethodSummary(cardSummaryExpenses, cardSummary, cardMethodTotal, "Tarjeta");
+  renderMethodSummary(cashSummaryExpenses, cashSummary, cashMethodTotal, "Efectivo");
+  renderCombinedPaymentSummary(cardSummaryExpenses, cashSummaryExpenses);
   renderImportedExpenses();
   renderCategoryManager();
 }
 
-function getSummaryExpenses() {
-  const startDate = summaryStartDate.value;
-  const endDate = summaryEndDate.value;
-  const selectedCategory = summaryCategory.value;
-  const selectedSubcategory = summarySubcategory.value;
+function getMethodSummaryExpenses(method) {
+  const startDate = method === "Tarjeta" ? cardStartDate.value : cashStartDate.value;
+  const endDate = method === "Tarjeta" ? cardEndDate.value : cashEndDate.value;
+  const selectedCategories = getSelectedMethodCategories(method);
 
   return state.expenses.filter((expense) => {
+    const matchesMethod = expense.entryType !== "ingreso" && expense.paymentMethod === method;
     const matchesStartDate = !startDate || expense.date >= startDate;
     const matchesEndDate = !endDate || expense.date <= endDate;
     const matchesCategory =
-      !selectedCategory || selectedCategory === "Todas" || expense.category === selectedCategory;
-    const matchesSubcategory =
-      !selectedSubcategory ||
-      selectedSubcategory === "Todas" ||
-      expense.subcategory === selectedSubcategory;
-    return matchesStartDate && matchesEndDate && matchesCategory && matchesSubcategory;
+      selectedCategories === null || selectedCategories.includes(expense.category);
+    return matchesMethod && matchesStartDate && matchesEndDate && matchesCategory;
   });
 }
 
 function renderSummaryRangeLabel() {
-  const startDate = summaryStartDate.value;
-  const endDate = summaryEndDate.value;
-
-  if (!startDate && !endDate) {
-    summaryRangeLabel.textContent = "Rango actual: todos los movimientos registrados.";
-    return;
-  }
-
-  if (startDate && endDate) {
-    summaryRangeLabel.textContent = `Rango actual: ${formatDate(startDate)} al ${formatDate(endDate)}.`;
-    return;
-  }
-
-  if (startDate) {
-    summaryRangeLabel.textContent = `Rango actual: desde ${formatDate(startDate)}.`;
-    return;
-  }
-
-  summaryRangeLabel.textContent = `Rango actual: hasta ${formatDate(endDate)}.`;
+  const cardLabel = buildRangeText(cardStartDate.value, cardEndDate.value, "tarjeta");
+  const cashLabel = buildRangeText(cashStartDate.value, cashEndDate.value, "efectivo");
+  summaryRangeLabel.textContent = `${cardLabel} ${cashLabel}`;
 }
 
 function renderBudgetAlerts(totalExpenses) {
@@ -623,13 +607,11 @@ function setActiveView(viewName) {
 function renderCategoryControls() {
   const previousExpenseCategory = expenseCategorySelect.value;
   const previousIncomeCategory = incomeCategorySelect.value;
-  const previousSummaryCategory = summaryCategory.value;
   const previousFilterCategory = filterCategory.value;
   const previousParentCategory = parentCategory.value;
 
   expenseCategorySelect.innerHTML = buildCategoryOptions();
   incomeCategorySelect.innerHTML = buildCategoryOptions();
-  summaryCategory.innerHTML = `<option value="Todas">Todas</option>${buildCategoryOptions()}`;
   filterCategory.innerHTML = `<option value="Todas">Todas</option>${buildCategoryOptions()}`;
   parentCategory.innerHTML = buildCategoryOptions();
 
@@ -639,10 +621,6 @@ function renderCategoryControls() {
   incomeCategorySelect.value = hasCategory(previousIncomeCategory)
     ? previousIncomeCategory
     : state.categoryDefinitions[0]?.name || "Otros";
-  summaryCategory.value =
-    previousSummaryCategory === "Todas" || hasCategory(previousSummaryCategory)
-      ? previousSummaryCategory
-      : "Todas";
   filterCategory.value =
     previousFilterCategory === "Todas" || hasCategory(previousFilterCategory)
       ? previousFilterCategory
@@ -661,8 +639,9 @@ function renderCategoryControls() {
     incomeSubcategorySelect,
     incomeSubcategorySelect.value
   );
-  renderSummarySubcategories(summaryCategory.value, summarySubcategory.value);
   renderFilterSubcategories(filterCategory.value, filterSubcategory.value);
+  renderMethodCategoryChecklist(cardCategoryList);
+  renderMethodCategoryChecklist(cashCategoryList);
 }
 
 function renderSubcategoryOptions(categoryName, targetSelect, preferredValue = "") {
@@ -688,25 +667,6 @@ function renderFilterSubcategories(categoryName, preferredValue = "") {
     .map((sub) => `<option value="${escapeHtml(sub)}">${escapeHtml(sub)}</option>`)
     .join("")}`;
   filterSubcategory.value =
-    preferredValue === "Todas" || subcategories.includes(preferredValue)
-      ? preferredValue
-      : "Todas";
-}
-
-function renderSummarySubcategories(categoryName, preferredValue = "") {
-  let subcategories = [];
-  if (categoryName === "Todas") {
-    subcategories = Array.from(
-      new Set(state.categoryDefinitions.flatMap((category) => category.subcategories))
-    ).sort();
-  } else {
-    subcategories = findCategoryDefinition(categoryName)?.subcategories || [];
-  }
-
-  summarySubcategory.innerHTML = `<option value="Todas">Todas</option>${subcategories
-    .map((sub) => `<option value="${escapeHtml(sub)}">${escapeHtml(sub)}</option>`)
-    .join("")}`;
-  summarySubcategory.value =
     preferredValue === "Todas" || subcategories.includes(preferredValue)
       ? preferredValue
       : "Todas";
@@ -769,11 +729,102 @@ function renderExpenseList(expenses) {
   });
 }
 
-function renderCategorySummary(expenses) {
+function renderMethodCategoryChecklist(container) {
+  const selectedValues = new Set(
+    Array.from(container.querySelectorAll('input[type="checkbox"][data-category]:checked')).map(
+      (input) => input.value
+    )
+  );
+
+  const options = state.categoryDefinitions.map((category) => category.name);
+  const allSelected = selectedValues.size === 0 || selectedValues.size === options.length;
+
+  container.innerHTML = `
+    <label class="category-checklist__item">
+      <input type="checkbox" data-all="true" ${allSelected ? "checked" : ""} />
+      <span>Todas</span>
+    </label>
+    ${options
+      .map(
+        (category) => `
+          <label class="category-checklist__item">
+            <input
+              type="checkbox"
+              data-category="true"
+              value="${escapeHtml(category)}"
+              ${allSelected || selectedValues.has(category) ? "checked" : ""}
+            />
+            <span>${escapeHtml(category)}</span>
+          </label>
+        `
+      )
+      .join("")}
+  `;
+}
+
+function handleMethodChecklistChange(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+
+  const container = target.closest(".category-checklist");
+  if (!container) {
+    renderApp();
+    return;
+  }
+
+  const allInput = container.querySelector('input[data-all="true"]');
+  const categoryInputs = Array.from(container.querySelectorAll('input[data-category="true"]'));
+
+  if (target.dataset.all === "true") {
+    categoryInputs.forEach((input) => {
+      input.checked = target.checked;
+    });
+  } else if (allInput instanceof HTMLInputElement) {
+    const checkedCount = categoryInputs.filter((input) => input.checked).length;
+    allInput.checked = checkedCount === categoryInputs.length;
+  }
+
+  renderApp();
+}
+
+function getSelectedMethodCategories(method) {
+  const container = method === "Tarjeta" ? cardCategoryList : cashCategoryList;
+  const allInput = container.querySelector('input[data-all="true"]');
+  const categoryInputs = Array.from(container.querySelectorAll('input[data-category="true"]'));
+
+  if (allInput instanceof HTMLInputElement && allInput.checked) {
+    return null;
+  }
+
+  const selected = categoryInputs.filter((input) => input.checked).map((input) => input.value);
+  return selected.length === categoryInputs.length ? null : selected;
+}
+
+function buildRangeText(startDate, endDate, label) {
+  if (!startDate && !endDate) {
+    return `Rango de ${label}: todos los movimientos.`;
+  }
+
+  if (startDate && endDate) {
+    return `Rango de ${label}: ${formatDate(startDate)} al ${formatDate(endDate)}.`;
+  }
+
+  if (startDate) {
+    return `Rango de ${label}: desde ${formatDate(startDate)}.`;
+  }
+
+  return `Rango de ${label}: hasta ${formatDate(endDate)}.`;
+}
+
+function renderMethodSummary(expenses, targetElement, totalElement, methodLabel) {
   const expenseOnly = expenses.filter((expense) => expense.entryType !== "ingreso");
+  const methodTotal = expenseOnly.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  totalElement.textContent = formatCurrency(methodTotal);
 
   if (expenseOnly.length === 0) {
-    categorySummary.innerHTML =
+    targetElement.innerHTML =
       '<div class="category-card"><span>Sin datos</span><strong>No hay gastos en el rango seleccionado</strong></div>';
     return;
   }
@@ -794,12 +845,11 @@ function renderCategorySummary(expenses) {
   }, {});
 
   const categoryEntries = Object.entries(grouped).sort((a, b) => b[1].total - a[1].total);
-  const grandTotal = expenseOnly.reduce((sum, expense) => sum + Number(expense.amount), 0);
 
-  categorySummary.innerHTML = `
+  targetElement.innerHTML = `
     <article class="category-summary-total">
-      <span>Total general</span>
-      <strong>${formatCurrency(grandTotal)}</strong>
+      <span>Total ${escapeHtml(methodLabel.toLowerCase())}</span>
+      <strong>${formatCurrency(methodTotal)}</strong>
     </article>
     ${categoryEntries
       .map(([category, details]) => {
@@ -831,6 +881,46 @@ function renderCategorySummary(expenses) {
         `;
       })
       .join("")}
+  `;
+}
+
+function renderCombinedPaymentSummary(cardExpenses, cashExpenses) {
+  const totalCard = cardExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const totalCash = cashExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+  const combinedTotal = totalCard + totalCash;
+  const combinedExpenses = [...cardExpenses, ...cashExpenses];
+  const totalsByCategory = combinedExpenses.reduce((accumulator, expense) => {
+    accumulator[expense.category] = (accumulator[expense.category] || 0) + Number(expense.amount);
+    return accumulator;
+  }, {});
+  const categoryRows = Object.entries(totalsByCategory)
+    .sort((a, b) => b[1] - a[1])
+    .map(
+      ([category, total]) => `
+        <div class="payment-total-card__row">
+          <span>${escapeHtml(category)}</span>
+          <strong>${formatCurrency(total)}</strong>
+        </div>
+      `
+    )
+    .join("");
+
+  categorySummary.innerHTML = `
+    <article class="payment-total-card">
+      <div class="payment-total-card__row">
+        <span>Total tarjeta</span>
+        <strong>${formatCurrency(totalCard)}</strong>
+      </div>
+      <div class="payment-total-card__row">
+        <span>Total efectivo</span>
+        <strong>${formatCurrency(totalCash)}</strong>
+      </div>
+      <div class="payment-total-card__row payment-total-card__row--grand">
+        <span>Total general seleccionado</span>
+        <strong>${formatCurrency(combinedTotal)}</strong>
+      </div>
+      ${categoryRows}
+    </article>
   `;
 }
 

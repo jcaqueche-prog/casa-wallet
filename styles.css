@@ -445,6 +445,11 @@ label {
   gap: 14px;
 }
 
+.method-summary-grid {
+  display: grid;
+  gap: 14px;
+}
+
 .grid-two,
 .filters {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -592,6 +597,76 @@ textarea {
   grid-template-columns: 1fr;
 }
 
+.method-summary-card {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(247, 251, 255, 0.95));
+  border: 1px solid rgba(20, 33, 43, 0.08);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 14px;
+}
+
+.method-summary-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(20, 33, 43, 0.08);
+}
+
+.method-summary-card__header span {
+  color: var(--muted);
+}
+
+.method-summary-card__header h4 {
+  margin: 4px 0 0;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.05rem;
+  color: #183450;
+}
+
+.method-summary-card__header strong {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.12rem;
+  color: var(--ink-soft);
+}
+
+.method-selector-block {
+  display: grid;
+  gap: 10px;
+}
+
+.method-selector-title {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.category-checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.category-checklist__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(236, 244, 255, 0.72);
+  border: 1px solid rgba(61, 120, 201, 0.08);
+}
+
+.category-checklist__item input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
 .category-card strong {
   display: block;
   margin-top: 10px;
@@ -668,6 +743,44 @@ textarea {
 .category-summary-row strong {
   font-size: 0.96rem;
   color: var(--ink-soft);
+}
+
+.payment-total-card {
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, rgba(232, 242, 255, 0.96), rgba(246, 250, 255, 0.95));
+  border: 1px solid rgba(61, 120, 201, 0.1);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 10px;
+}
+
+.payment-total-card__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.payment-total-card__row span {
+  color: var(--muted);
+}
+
+.payment-total-card__row strong {
+  color: var(--ink-soft);
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.payment-total-card__row--grand {
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+}
+
+.payment-total-card__row--grand span,
+.payment-total-card__row--grand strong {
+  color: white;
 }
 
 .expense-list {
@@ -930,6 +1043,10 @@ textarea {
   .category-layout {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 18px;
+  }
+
+  .method-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .panel {
