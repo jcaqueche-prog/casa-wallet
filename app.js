@@ -458,6 +458,20 @@ function handleDeleteExpense(id) {
   renderApp();
 }
 
+function handleUpdateExpense(id, updates) {
+  state.expenses = state.expenses.map((expense) =>
+    expense.id === id
+      ? {
+          ...expense,
+          ...updates,
+          amount: Number(updates.amount ?? expense.amount),
+        }
+      : expense
+  );
+  saveState();
+  renderApp();
+}
+
 function getFilteredExpenses() {
   const selectedCategory = filterCategory.value;
   const selectedSubcategory = filterSubcategory.value;
@@ -666,19 +680,67 @@ function renderExpenseList(expenses) {
 
   expenses.forEach((expense) => {
     const fragment = expenseItemTemplate.content.cloneNode(true);
-    fragment
-      .querySelector(".expense-item")
-      .classList.add(expense.entryType === "ingreso" ? "expense-item--income" : "expense-item--expense");
-    fragment.querySelector(".expense-title").textContent = expense.description;
-    fragment.querySelector(".expense-amount").textContent = `${
-      expense.entryType === "ingreso" ? "+" : "-"
-    } ${formatCurrency(expense.amount)}`;
-    fragment.querySelector(".expense-meta").textContent =
-      `${formatDate(expense.date)} · ${capitalizeEntryType(expense.entryType)} · ${expense.category} · ${expense.subcategory} · ${expense.paymentMethod}`;
-    fragment.querySelector(".expense-notes").textContent = expense.notes;
-    fragment
-      .querySelector(".expense-amount")
-      .classList.toggle("expense-amount--income", expense.entryType === "ingreso");
+    const item = fragment.querySelector(".expense-item");
+    const descriptionInput = fragment.querySelector(".expense-edit-description");
+    const amountInput = fragment.querySelector(".expense-edit-amount");
+    const dateInput = fragment.querySelector(".expense-edit-date");
+    const typeSelect = fragment.querySelector(".expense-edit-type");
+    const categorySelect = fragment.querySelector(".expense-edit-category");
+    const subcategorySelect = fragment.querySelector(".expense-edit-subcategory");
+    const paymentSelect = fragment.querySelector(".expense-edit-payment");
+    const notesInput = fragment.querySelector(".expense-edit-notes");
+    const meta = fragment.querySelector(".expense-meta");
+
+    item.classList.add(
+      expense.entryType === "ingreso" ? "expense-item--income" : "expense-item--expense"
+    );
+
+    descriptionInput.value = expense.description;
+    amountInput.value = String(expense.amount);
+    dateInput.value = expense.date;
+    typeSelect.value = expense.entryType || "gasto";
+    categorySelect.innerHTML = buildCategoryOptions();
+    categorySelect.value = hasCategory(expense.category)
+      ? expense.category
+      : state.categoryDefinitions[0]?.name || "Otros";
+    renderSubcategoryOptions(categorySelect.value, subcategorySelect, expense.subcategory);
+    paymentSelect.value = expense.paymentMethod || "Efectivo";
+    notesInput.value = expense.notes || "";
+    meta.textContent = `${formatDate(expense.date)} · ${capitalizeEntryType(
+      expense.entryType
+    )} · ${expense.category} · ${expense.subcategory}`;
+
+    categorySelect.addEventListener("change", () => {
+      renderSubcategoryOptions(categorySelect.value, subcategorySelect);
+    });
+
+    fragment.querySelector(".expense-save-button").addEventListener("click", () => {
+      const nextType = typeSelect.value;
+      const nextCategory = categorySelect.value;
+      const nextSubcategory = subcategorySelect.value;
+      const nextAmount = Number(amountInput.value);
+
+      if (
+        !descriptionInput.value.trim() ||
+        Number.isNaN(nextAmount) ||
+        nextAmount <= 0 ||
+        !dateInput.value
+      ) {
+        return;
+      }
+
+      handleUpdateExpense(expense.id, {
+        description: descriptionInput.value.trim(),
+        amount: nextAmount,
+        date: dateInput.value,
+        entryType: nextType,
+        category: nextCategory,
+        subcategory: nextSubcategory,
+        paymentMethod: paymentSelect.value,
+        notes: notesInput.value.trim(),
+      });
+    });
+
     fragment
       .querySelector(".delete-button")
       .addEventListener("click", () => handleDeleteExpense(expense.id));

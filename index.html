@@ -483,14 +483,59 @@
     <template id="expenseItemTemplate">
       <article class="expense-item">
         <div class="expense-item__main">
-          <div class="expense-item__top">
-            <h3 class="expense-title"></h3>
-            <span class="expense-amount"></span>
+          <div class="expense-item__top expense-item__top--editor">
+            <label>
+              Descripcion
+              <input class="expense-edit-description" type="text" />
+            </label>
+            <label>
+              Monto
+              <input class="expense-edit-amount" type="number" min="0.01" step="0.01" />
+            </label>
           </div>
+          <div class="grid-two">
+            <label>
+              Fecha
+              <input class="expense-edit-date" type="date" />
+            </label>
+            <label>
+              Tipo
+              <select class="expense-edit-type">
+                <option value="gasto">Gasto</option>
+                <option value="ingreso">Ingreso</option>
+              </select>
+            </label>
+          </div>
+          <div class="grid-two">
+            <label>
+              Categoria
+              <select class="expense-edit-category"></select>
+            </label>
+            <label>
+              Subcategoria
+              <select class="expense-edit-subcategory"></select>
+            </label>
+          </div>
+          <div class="grid-two">
+            <label>
+              Metodo
+              <select class="expense-edit-payment">
+                <option value="Efectivo">Efectivo</option>
+                <option value="Tarjeta">Tarjeta</option>
+                <option value="Transferencia">Transferencia</option>
+              </select>
+            </label>
+          </div>
+          <label>
+            Nota
+            <textarea class="expense-edit-notes" rows="2"></textarea>
+          </label>
           <div class="expense-meta"></div>
-          <p class="expense-notes"></p>
         </div>
-        <button class="delete-button" type="button">Eliminar</button>
+        <div class="expense-actions">
+          <button class="primary-button expense-save-button" type="button">Guardar</button>
+          <button class="delete-button" type="button">Eliminar</button>
+        </div>
       </article>
     </template>
 

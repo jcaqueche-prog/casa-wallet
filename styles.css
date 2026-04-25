@@ -639,6 +639,7 @@ textarea {
 
 .expense-item__main {
   min-width: 0;
+  flex: 1;
 }
 
 .expense-item__top {
@@ -646,6 +647,10 @@ textarea {
   justify-content: space-between;
   gap: 16px;
   align-items: baseline;
+}
+
+.expense-item__top--editor {
+  align-items: end;
 }
 
 .expense-title {
@@ -670,8 +675,10 @@ textarea {
   font-size: 0.92rem;
 }
 
-.expense-notes:empty {
-  display: none;
+.expense-actions {
+  display: grid;
+  gap: 10px;
+  min-width: 132px;
 }
 
 .delete-button {
