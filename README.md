@@ -5,6 +5,7 @@ Aplicacion web simple para registrar y controlar gastos del hogar.
 ## Incluye
 
 - Registro de gastos con descripcion, monto, fecha, categoria, metodo y nota.
+- Importacion de archivo Excel o CSV del banco para clasificar movimientos.
 - Presupuesto mensual configurable.
 - Resumen automatico de gasto total, disponible y promedio.
 - Filtros por categoria y buscador.
