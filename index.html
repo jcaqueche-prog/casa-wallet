@@ -3,477 +3,251 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gastos del Hogar</title>
+    <title>Checklist de Servicios Iglesia</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260425b" />
+    <link rel="stylesheet" href="./styles.css?v=20260427a" />
   </head>
   <body>
-    <div id="authScreen" class="auth-screen">
-      <div class="auth-card">
-        <p class="eyebrow">Acceso privado</p>
-        <h1 class="auth-title">GASTOS PARA EL HOGAR</h1>
-        <p class="auth-text">
-          Ingresa con tu usuario y contraseña para acceder al panel financiero.
-        </p>
-        <form id="loginForm" class="expense-form">
-          <label>
-            Usuario
-            <select id="loginUsername" name="username" required>
-              <option value="">Selecciona un usuario</option>
-              <option value="JCAE">JCAE</option>
-              <option value="CLFE">CLFE</option>
-            </select>
-          </label>
-          <label>
-            Clave de acceso
-            <input
-              id="loginPassword"
-              name="password"
-              type="password"
-              placeholder="Ingresa tu clave"
-              required
-            />
-          </label>
-          <button type="submit" class="primary-button">Entrar</button>
-        </form>
-        <div id="loginError" class="login-error hidden">
-          Usuario o clave incorrectos.
-        </div>
-      </div>
-    </div>
-
-    <div id="appShell" class="page-shell hidden">
+    <div class="app-shell">
       <header class="hero">
         <div class="hero__copy">
-          <p class="eyebrow">Panel privado familiar</p>
-          <h1>GASTOS FAMILIA AQUECHE</h1>
-          <p class="hero__text hero__verse">
-            "Mi Dios, pues, suplirá todo lo que os falta conforme a sus riquezas
-            en gloria en Cristo Jesús." Filipenses 4:19
+          <p class="eyebrow">Organizacion ministerial</p>
+          <h1>Checklist de Servicios Iglesia</h1>
+          <p class="hero__text">
+            Controla pendientes del culto, asigna responsables y revisa todo lo
+            necesario antes, durante y despues del servicio.
           </p>
         </div>
-        <div class="hero__summary">
-          <div class="summary-header">
-            <span>Estado actual</span>
-            <strong>Casa Wallet</strong>
+
+        <div class="hero__panel">
+          <div class="hero__badge">Guardado automatico</div>
+          <div class="hero__date">
+            <span>Hoy</span>
+            <strong id="todayLabel">--</strong>
           </div>
-          <button id="logoutButton" type="button" class="secondary-button">Cerrar sesion</button>
-          <div class="hero-card">
-            <span>Presupuesto mensual</span>
-            <strong id="monthlyBudgetValue">Q0.00</strong>
-          </div>
-          <div class="hero-card hero-card--accent">
-            <span>Disponible</span>
-            <strong id="availableBudgetValue">Q0.00</strong>
-          </div>
-          <div class="hero-note">
-            Tus datos se guardan en este navegador para que puedas continuar
-            donde te quedaste.
+          <div class="hero__note">
+            La informacion queda almacenada en este navegador.
           </div>
         </div>
       </header>
 
-      <nav class="tabbar">
-        <button class="tab-button" type="button" data-view-target="registro">
-          Registro
+      <nav class="tabbar" id="groupTabs">
+        <button class="tab-button is-active" type="button" data-group="Puertas y Bienvenidas">
+          Puertas y Bienvenidas
         </button>
-        <button class="tab-button is-active" type="button" data-view-target="resumen">
-          Resumen
+        <button class="tab-button" type="button" data-group="Anexo A y B">
+          Anexo A y B
         </button>
-        <button class="tab-button" type="button" data-view-target="categorias">
-          Categorias
+        <button class="tab-button" type="button" data-group="Anexo C y M">
+          Anexo C y M
         </button>
-        <button class="tab-button" type="button" data-view-target="importar">
-          Importar
-        </button>
-        <button class="tab-button" type="button" data-view-target="historial">
-          Historial
+        <button class="tab-button" type="button" data-group="Anexd D, E y F">
+          Anexd D, E y F
         </button>
       </nav>
 
-      <main class="views">
-        <section class="view view--active" data-view="resumen">
-          <section class="panel">
-            <div class="panel__header">
-              <h2>Resumen general</h2>
-              <p>Trabaja por metodo con rangos separados para tarjeta y efectivo, y selecciona solo las categorias que necesites.</p>
-            </div>
+      <main class="dashboard">
+        <section class="panel panel--form">
+          <div class="panel__header">
+            <h2>Nuevo pendiente</h2>
+            <p>Agrega tareas para el siguiente servicio o actividad especial.</p>
+          </div>
 
-            <div id="summaryRangeLabel" class="manager-note"></div>
-            <div id="budgetAlerts" class="budget-alerts"></div>
+          <form id="taskForm" class="task-form">
+            <label>
+              Actividad
+              <input
+                id="taskTitle"
+                name="title"
+                type="text"
+                placeholder="Ej. Probar microfonos"
+                required
+              />
+            </label>
 
-            <form id="budgetForm" class="budget-form">
+            <div class="grid-two">
               <label>
-                Presupuesto mensual
+                Grupo
+                <select id="taskGroup" name="group" required></select>
+              </label>
+              <label>
+                Responsable
                 <input
-                  id="monthlyBudgetInput"
-                  name="monthlyBudgetInput"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="Ej. 3500"
+                  id="taskResponsible"
+                  name="responsible"
+                  type="text"
+                  placeholder="Ej. Juan, Equipo de audio"
+                  required
                 />
               </label>
-              <button type="submit" class="secondary-button">
-                Actualizar presupuesto
-              </button>
-            </form>
-
-            <div class="stats-grid">
-              <article class="stat-card">
-                <span>Total tarjeta</span>
-                <strong id="totalSpent">Q0.00</strong>
-              </article>
-              <article class="stat-card">
-                <span>Total efectivo</span>
-                <strong id="totalIncome">Q0.00</strong>
-              </article>
-              <article class="stat-card">
-                <span>Movimientos seleccionados</span>
-                <strong id="expenseCount">0</strong>
-              </article>
-              <article class="stat-card">
-                <span>Total general</span>
-                <strong id="netBalance">Q0.00</strong>
-              </article>
             </div>
 
-            <div class="panel__header panel__header--compact">
-              <h3>Resumen por metodo</h3>
-            </div>
-            <div class="method-summary-grid">
-              <article class="method-summary-card">
-                <div class="method-summary-card__header">
-                  <div>
-                    <span>Metodo</span>
-                    <h4>Tarjeta</h4>
-                  </div>
-                  <strong id="cardMethodTotal">Q0.00</strong>
-                </div>
-                <div class="filters">
-                  <label>
-                    Desde
-                    <input id="cardStartDate" type="date" />
-                  </label>
-                  <label>
-                    Hasta
-                    <input id="cardEndDate" type="date" />
-                  </label>
-                </div>
-                <div class="method-selector-block">
-                  <span class="method-selector-title">Categorias a incluir</span>
-                  <div id="cardCategoryList" class="category-checklist"></div>
-                </div>
-                <div id="cardSummary" class="category-summary"></div>
-              </article>
-
-              <article class="method-summary-card">
-                <div class="method-summary-card__header">
-                  <div>
-                    <span>Metodo</span>
-                    <h4>Efectivo</h4>
-                  </div>
-                  <strong id="cashMethodTotal">Q0.00</strong>
-                </div>
-                <div class="filters">
-                  <label>
-                    Desde
-                    <input id="cashStartDate" type="date" />
-                  </label>
-                  <label>
-                    Hasta
-                    <input id="cashEndDate" type="date" />
-                  </label>
-                </div>
-                <div class="method-selector-block">
-                  <span class="method-selector-title">Categorias a incluir</span>
-                  <div id="cashCategoryList" class="category-checklist"></div>
-                </div>
-                <div id="cashSummary" class="category-summary"></div>
-              </article>
-            </div>
-
-            <div class="panel__header panel__header--compact">
-              <h3>Total para tabla de pagos</h3>
-              <p>Suma de los gastos seleccionados en tarjeta y efectivo.</p>
-            </div>
-            <div id="categorySummary" class="category-summary"></div>
-          </section>
-        </section>
-
-        <section class="view" data-view="registro">
-          <section class="panel panel--wide">
-              <div class="panel__header">
-                <h2>Registro de movimientos</h2>
-                <p>Usa un espacio para gastos y otro para ingresos. Ambos se conectan al mismo resumen.</p>
-              </div>
-
-              <div class="entry-panels">
-                <form id="expenseForm" class="expense-form entry-card entry-card--expense">
-                  <div class="entry-card__header">
-                    <h3>Solo gastos</h3>
-                    <span class="entry-chip">Resta en la tabla</span>
-                  </div>
-                  <input type="hidden" name="entryType" value="gasto" />
-
-                  <label>
-                    Descripcion
-                    <input
-                      id="expenseDescription"
-                      name="description"
-                      type="text"
-                      placeholder="Ej. Supermercado de la semana"
-                      required
-                    />
-                  </label>
-
-                  <div class="grid-two">
-                    <label>
-                      Monto
-                      <input
-                        id="expenseAmount"
-                        name="amount"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="0.00"
-                        required
-                      />
-                    </label>
-
-                    <label>
-                      Fecha
-                      <input id="expenseDate" name="date" type="date" required />
-                    </label>
-                  </div>
-
-                  <div class="grid-two">
-                  <label>
-                    Categoria
-                    <select id="expenseCategory" name="category" required></select>
-                  </label>
-                </div>
-
-                  <label>
-                    Metodo
-                    <select id="expensePaymentMethod" name="paymentMethod" required>
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Tarjeta">Tarjeta</option>
-                    </select>
-                  </label>
-
-                  <label>
-                    Nota opcional
-                    <textarea
-                      id="expenseNotes"
-                      name="notes"
-                      rows="3"
-                      placeholder="Algo importante sobre este gasto"
-                    ></textarea>
-                  </label>
-
-                  <button type="submit" class="primary-button">Guardar gasto</button>
-                </form>
-
-                <form id="incomeForm" class="expense-form entry-card entry-card--income">
-                  <div class="entry-card__header">
-                    <h3>Solo ingresos</h3>
-                    <span class="entry-chip entry-chip--income">Suma en la tabla</span>
-                  </div>
-                  <input type="hidden" name="entryType" value="ingreso" />
-
-                  <label>
-                    Descripcion
-                    <input
-                      id="incomeDescription"
-                      name="description"
-                      type="text"
-                      placeholder="Ej. Sueldo mensual"
-                      required
-                    />
-                  </label>
-
-                  <div class="grid-two">
-                    <label>
-                      Monto
-                      <input
-                        id="incomeAmount"
-                        name="amount"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="0.00"
-                        required
-                      />
-                    </label>
-
-                    <label>
-                      Fecha
-                      <input id="incomeDate" name="date" type="date" required />
-                    </label>
-                  </div>
-
-                  <div class="grid-two">
-                  <label>
-                    Categoria
-                    <select id="incomeCategory" name="category" required></select>
-                  </label>
-                </div>
-
-                  <label>
-                    Metodo
-                    <select id="incomePaymentMethod" name="paymentMethod" required>
-                      <option value="Efectivo">Efectivo</option>
-                      <option value="Tarjeta">Tarjeta</option>
-                    </select>
-                  </label>
-
-                  <label>
-                    Nota opcional
-                    <textarea
-                      id="incomeNotes"
-                      name="notes"
-                      rows="3"
-                      placeholder="Ej. sueldo, bono o deposito"
-                    ></textarea>
-                  </label>
-
-                  <button type="submit" class="primary-button">Guardar ingreso</button>
-                </form>
-              </div>
-          </section>
-        </section>
-
-        <section class="view" data-view="categorias">
-          <section class="panel">
-            <div class="panel__header">
-              <h2>Categorias</h2>
-              <p>La app ahora trabaja con categorias fijas para que todo sea mas rapido y uniforme.</p>
-            </div>
-
-            <div class="manager-note">
-              Categorias activas para registrar e importar: Oficina, Casa y Gastos Externos.
-            </div>
-            <div id="categoryManagerList" class="category-manager-list"></div>
-          </section>
-        </section>
-
-        <section class="view" data-view="importar">
-          <section class="panel">
-            <div class="panel__header panel__header--split">
-              <div>
-                <h2>Importar estado de cuenta</h2>
-                <p>
-                  Carga un archivo Excel o CSV del banco. La app intentara detectar
-                  fecha, descripcion y monto para que solo revises las categorias
-                  antes de guardar los movimientos.
-                </p>
-              </div>
-              <div class="panel-pill">Carga masiva asistida</div>
-            </div>
-
-            <div class="import-toolbar">
-              <label class="file-input">
-                Archivo Excel o CSV
-                <input id="statementFile" type="file" accept=".xlsx,.xls,.csv" />
+            <div class="grid-two">
+              <label>
+                Fecha del servicio
+                <input id="taskDate" name="date" type="date" required />
               </label>
-              <button id="importAllButton" type="button" class="secondary-button" disabled>
-                Guardar importados
-              </button>
+              <label>
+                Prioridad
+                <select id="taskPriority" name="priority" required>
+                  <option value="Alta">Alta</option>
+                  <option value="Media">Media</option>
+                  <option value="Baja">Baja</option>
+                </select>
+              </label>
             </div>
 
-            <div id="importMessage" class="import-message hidden"></div>
-            <div class="import-preview-shell hidden" id="importPreviewShell">
-              <div id="importPreview" class="import-preview"></div>
-            </div>
-          </section>
+            <label>
+              Nota
+              <textarea
+                id="taskNotes"
+                name="notes"
+                rows="4"
+                placeholder="Ej. Revisar baterias, cables HDMI, extension y laptop"
+              ></textarea>
+            </label>
+
+            <button type="submit" class="primary-button">Guardar pendiente</button>
+          </form>
         </section>
 
-        <section class="view" data-view="historial">
-          <section class="panel">
-            <div class="panel__header panel__header--split">
-              <div>
-                <h2>Historial de movimientos</h2>
-                <p>Filtra por fechas y ajusta categoria o metodo en una sola lista compacta.</p>
-              </div>
-              <div class="filters">
-                <label>
-                  Categoria
-                  <select id="filterCategory">
-                    <option value="Todas">Todas</option>
-                  </select>
-                </label>
-              </div>
-              <div class="filters">
-                <label>
-                  Desde
-                  <input id="filterStartDate" type="date" />
-                </label>
-                <label>
-                  Hasta
-                  <input id="filterEndDate" type="date" />
-                </label>
-              </div>
-              <div class="filters filters--single">
-                <label>
-                  Buscar
-                  <input
-                    id="searchInput"
-                    type="search"
-                    placeholder="Ej. agua, renta, mercado"
-                  />
-                </label>
-              </div>
-            </div>
+        <section class="panel panel--summary">
+          <div class="panel__header">
+            <h2>Resumen rapido</h2>
+            <p>Vista general de pendientes y avance del servicio.</p>
+          </div>
 
-            <div id="emptyState" class="empty-state">
-              Todavia no hay gastos registrados. Agrega el primero para comenzar.
-            </div>
+          <div class="stats-grid">
+            <article class="stat-card">
+              <span>Total</span>
+              <strong id="totalTasks">0</strong>
+            </article>
+            <article class="stat-card">
+              <span>Pendientes</span>
+              <strong id="pendingTasks">0</strong>
+            </article>
+            <article class="stat-card">
+              <span>En proceso</span>
+              <strong id="progressTasks">0</strong>
+            </article>
+            <article class="stat-card stat-card--success">
+              <span>Completados</span>
+              <strong id="doneTasks">0</strong>
+            </article>
+          </div>
 
-            <div id="historyTableHeader" class="history-table-header">
-              <span>Fecha</span>
-              <span>Descripcion</span>
-              <span>Monto</span>
-              <span>Categoria</span>
-              <span>Metodo</span>
-              <span>Acciones</span>
+          <div class="panel__header panel__header--compact">
+            <h3>Plantillas rapidas</h3>
+          </div>
+          <div class="quick-actions">
+            <button class="secondary-button quick-template" type="button" data-template="domingo">
+              Servicio domingo
+            </button>
+            <button class="secondary-button quick-template" type="button" data-template="oracion">
+              Noche de oracion
+            </button>
+            <button class="secondary-button quick-template" type="button" data-template="especial">
+              Evento especial
+            </button>
+          </div>
+        </section>
+
+        <section class="panel panel--filters">
+          <div class="panel__header panel__header--split">
+            <div>
+              <h2 id="boardTitle">Checklist de grupo</h2>
+              <p>Filtra por estado, fecha o texto para encontrar rapido cada tarea.</p>
             </div>
-            <div id="expenseList" class="expense-list"></div>
-          </section>
+            <button id="clearCompletedButton" type="button" class="ghost-button">
+              Borrar completados
+            </button>
+          </div>
+
+          <div class="filters">
+            <label>
+              Estado
+              <select id="filterStatus">
+                <option value="Todos">Todos</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="En proceso">En proceso</option>
+                <option value="Completado">Completado</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="filters">
+            <label>
+              Fecha
+              <input id="filterDate" type="date" />
+            </label>
+            <label>
+              Buscar
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Ej. audio, limpieza, ujieres"
+              />
+            </label>
+          </div>
+        </section>
+
+        <section class="board">
+          <article class="board-column">
+            <div class="board-column__header">
+              <h3>Pendiente</h3>
+              <span id="pendingCountBadge">0</span>
+            </div>
+            <div id="pendingList" class="task-list"></div>
+          </article>
+
+          <article class="board-column">
+            <div class="board-column__header">
+              <h3>En proceso</h3>
+              <span id="progressCountBadge">0</span>
+            </div>
+            <div id="progressList" class="task-list"></div>
+          </article>
+
+          <article class="board-column">
+            <div class="board-column__header">
+              <h3>Completado</h3>
+              <span id="doneCountBadge">0</span>
+            </div>
+            <div id="doneList" class="task-list"></div>
+          </article>
         </section>
       </main>
     </div>
 
-    <template id="expenseItemTemplate">
-      <article class="expense-item">
-        <div class="history-cell">
-          <input class="expense-edit-date" type="date" />
+    <template id="taskTemplate">
+      <article class="task-card">
+        <div class="task-card__top">
+          <span class="task-group"></span>
+          <span class="task-priority"></span>
         </div>
-        <div class="history-cell">
-          <input class="expense-edit-description" type="text" />
-        </div>
-        <div class="history-cell">
-          <input class="expense-edit-amount" type="number" min="0.01" step="0.01" />
-        </div>
-        <div class="history-cell">
-          <select class="expense-edit-category"></select>
-        </div>
-        <div class="history-cell">
-          <select class="expense-edit-method"></select>
-        </div>
-        <div class="history-cell history-cell--action">
-          <button class="primary-button expense-save-button" type="button">Guardar</button>
-          <button class="delete-button expense-delete-button" type="button">Eliminar</button>
+        <h4 class="task-title"></h4>
+        <p class="task-meta">
+          <span class="task-responsible"></span>
+          <span class="task-date"></span>
+        </p>
+        <p class="task-notes hidden"></p>
+        <div class="task-actions">
+          <select class="task-status-select">
+            <option value="Pendiente">Pendiente</option>
+            <option value="En proceso">En proceso</option>
+            <option value="Completado">Completado</option>
+          </select>
+          <button type="button" class="mini-button task-duplicate-button">Duplicar</button>
+          <button type="button" class="ghost-button task-delete-button">Eliminar</button>
         </div>
       </article>
     </template>
 
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-    <script src="./app.js?v=20260425b"></script>
+    <script src="./app.js?v=20260427a"></script>
   </body>
 </html>

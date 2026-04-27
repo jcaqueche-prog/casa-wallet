@@ -1,10 +1,8 @@
 services:
   - type: web
-    name: casa-wallet
+    name: checklist-iglesia
     runtime: static
     branch: main
     buildCommand: echo "Static site ready"
     staticPublishPath: .
     autoDeployTrigger: commit
-    previews:
-      generation: automatic

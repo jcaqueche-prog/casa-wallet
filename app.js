@@ -1,1087 +1,311 @@
-const STORAGE_KEY = "hogar-expenses-app";
-const AUTH_STORAGE_KEY = "hogar-expenses-auth";
-const AUTH_USER_STORAGE_KEY = "hogar-expenses-auth-user";
-const AUTH_VERSION_KEY = "hogar-expenses-auth-version";
-const AUTH_VERSION = "2";
-const PAYMENT_OPTIONS = ["Efectivo", "Tarjeta"];
-const AUTH_USERS = {
-  JCAE: "jcae2026",
-  CLFE: "clfe2026",
-};
+const STORAGE_KEY = "iglesia-servicios-checklist";
 
-const defaultCategoryDefinitions = [
-  { name: "Oficina", subcategories: ["General"] },
-  { name: "Casa", subcategories: ["General"] },
-  { name: "Gastos Externos", subcategories: ["General"] },
+const GROUP_OPTIONS = [
+  "Puertas y Bienvenidas",
+  "Anexo A y B",
+  "Anexo C y M",
+  "Anexd D, E y F",
 ];
 
+const TEMPLATE_TASKS = {
+  domingo: [
+    { title: "Revisar puertas principales", group: "Puertas y Bienvenidas", priority: "Alta" },
+    { title: "Coordinar bienvenida del ingreso", group: "Puertas y Bienvenidas", priority: "Alta" },
+    { title: "Verificar sillas y orden Anexo A", group: "Anexo A y B", priority: "Media" },
+    { title: "Revisar limpieza Anexo C", group: "Anexo C y M", priority: "Media" },
+    { title: "Preparar apoyo de orden Anexo D", group: "Anexd D, E y F", priority: "Alta" },
+  ],
+  oracion: [
+    { title: "Abrir puertas de ingreso", group: "Puertas y Bienvenidas", priority: "Alta" },
+    { title: "Ordenar Anexo B", group: "Anexo A y B", priority: "Media" },
+    { title: "Preparar Anexo M", group: "Anexo C y M", priority: "Media" },
+  ],
+  especial: [
+    { title: "Equipo extra de bienvenida", group: "Puertas y Bienvenidas", priority: "Alta" },
+    { title: "Cobertura completa Anexo A", group: "Anexo A y B", priority: "Alta" },
+    { title: "Apoyo especial Anexo C", group: "Anexo C y M", priority: "Alta" },
+    { title: "Reforzar atencion Anexo E", group: "Anexd D, E y F", priority: "Alta" },
+  ],
+};
+
 const defaultState = {
-  monthlyBudget: 0,
-  expenses: [],
-  categoryDefinitions: defaultCategoryDefinitions,
+  tasks: [],
 };
 
 const state = loadState();
-let importedExpenses = [];
+let activeGroup = GROUP_OPTIONS[0];
 
-const currencyFormatter = new Intl.NumberFormat("es-GT", {
-  style: "currency",
-  currency: "GTQ",
-  minimumFractionDigits: 2,
-});
-
-const expenseForm = document.getElementById("expenseForm");
-const incomeForm = document.getElementById("incomeForm");
-const budgetForm = document.getElementById("budgetForm");
-const expenseList = document.getElementById("expenseList");
-const emptyState = document.getElementById("emptyState");
-const historyTableHeader = document.getElementById("historyTableHeader");
-const categorySummary = document.getElementById("categorySummary");
-const categoryManagerList = document.getElementById("categoryManagerList");
-const expenseItemTemplate = document.getElementById("expenseItemTemplate");
-const summaryRangeLabel = document.getElementById("summaryRangeLabel");
-const cardStartDate = document.getElementById("cardStartDate");
-const cardEndDate = document.getElementById("cardEndDate");
-const cashStartDate = document.getElementById("cashStartDate");
-const cashEndDate = document.getElementById("cashEndDate");
-const cardCategoryList = document.getElementById("cardCategoryList");
-const cashCategoryList = document.getElementById("cashCategoryList");
-const cardSummary = document.getElementById("cardSummary");
-const cashSummary = document.getElementById("cashSummary");
-const cardMethodTotal = document.getElementById("cardMethodTotal");
-const cashMethodTotal = document.getElementById("cashMethodTotal");
-const filterCategory = document.getElementById("filterCategory");
-const filterStartDate = document.getElementById("filterStartDate");
-const filterEndDate = document.getElementById("filterEndDate");
+const taskForm = document.getElementById("taskForm");
+const taskGroup = document.getElementById("taskGroup");
+const taskDate = document.getElementById("taskDate");
+const filterStatus = document.getElementById("filterStatus");
+const filterDate = document.getElementById("filterDate");
 const searchInput = document.getElementById("searchInput");
-const statementFile = document.getElementById("statementFile");
-const importAllButton = document.getElementById("importAllButton");
-const importPreview = document.getElementById("importPreview");
-const importPreviewShell = document.getElementById("importPreviewShell");
-const importMessage = document.getElementById("importMessage");
-const expenseCategorySelect = document.getElementById("expenseCategory");
-const incomeCategorySelect = document.getElementById("incomeCategory");
-const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
-const views = Array.from(document.querySelectorAll(".view"));
+const clearCompletedButton = document.getElementById("clearCompletedButton");
+const todayLabel = document.getElementById("todayLabel");
+const boardTitle = document.getElementById("boardTitle");
+const groupTabs = Array.from(document.querySelectorAll(".tab-button"));
+const taskTemplate = document.getElementById("taskTemplate");
+const pendingList = document.getElementById("pendingList");
+const progressList = document.getElementById("progressList");
+const doneList = document.getElementById("doneList");
+const totalTasks = document.getElementById("totalTasks");
+const pendingTasks = document.getElementById("pendingTasks");
+const progressTasks = document.getElementById("progressTasks");
+const doneTasks = document.getElementById("doneTasks");
+const pendingCountBadge = document.getElementById("pendingCountBadge");
+const progressCountBadge = document.getElementById("progressCountBadge");
+const doneCountBadge = document.getElementById("doneCountBadge");
+const quickTemplateButtons = Array.from(document.querySelectorAll(".quick-template"));
 
-const monthlyBudgetValue = document.getElementById("monthlyBudgetValue");
-const availableBudgetValue = document.getElementById("availableBudgetValue");
-const budgetAlerts = document.getElementById("budgetAlerts");
-const totalSpent = document.getElementById("totalSpent");
-const totalIncome = document.getElementById("totalIncome");
-const expenseCount = document.getElementById("expenseCount");
-const netBalance = document.getElementById("netBalance");
-const monthlyBudgetInput = document.getElementById("monthlyBudgetInput");
-const expenseDateInput = document.getElementById("expenseDate");
-const incomeDateInput = document.getElementById("incomeDate");
-const authScreen = document.getElementById("authScreen");
-const appShell = document.getElementById("appShell");
-const loginForm = document.getElementById("loginForm");
-const loginUsername = document.getElementById("loginUsername");
-const logoutButton = document.getElementById("logoutButton");
-const loginError = document.getElementById("loginError");
-
-expenseDateInput.value = new Date().toISOString().split("T")[0];
-incomeDateInput.value = new Date().toISOString().split("T")[0];
-
-expenseForm.addEventListener("submit", handleCreateEntry);
-incomeForm.addEventListener("submit", handleCreateEntry);
-budgetForm.addEventListener("submit", handleUpdateBudget);
-filterCategory.addEventListener("change", renderApp);
-cardStartDate.addEventListener("change", renderApp);
-cardEndDate.addEventListener("change", renderApp);
-cashStartDate.addEventListener("change", renderApp);
-cashEndDate.addEventListener("change", renderApp);
-cardCategoryList.addEventListener("change", handleMethodChecklistChange);
-cashCategoryList.addEventListener("change", handleMethodChecklistChange);
-filterStartDate.addEventListener("change", renderApp);
-filterEndDate.addEventListener("change", renderApp);
+taskForm.addEventListener("submit", handleCreateTask);
+filterStatus.addEventListener("change", renderApp);
+filterDate.addEventListener("change", renderApp);
 searchInput.addEventListener("input", renderApp);
-statementFile.addEventListener("change", handleImportFile);
-importAllButton.addEventListener("click", handleSaveImportedExpenses);
-tabButtons.forEach((button) => {
-  button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
+clearCompletedButton.addEventListener("click", handleClearCompleted);
+quickTemplateButtons.forEach((button) => {
+  button.addEventListener("click", () => createTemplateTasks(button.dataset.template));
 });
-loginForm.addEventListener("submit", handleLogin);
-logoutButton.addEventListener("click", handleLogout);
+groupTabs.forEach((button) => {
+  button.addEventListener("click", () => setActiveGroup(button.dataset.group));
+});
 
+initializeControls();
 renderApp();
-setActiveView("resumen");
-initializeAuth();
 
-function initializeAuth() {
-  const storedVersion = localStorage.getItem(AUTH_VERSION_KEY);
-  if (storedVersion !== AUTH_VERSION) {
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    localStorage.removeItem(AUTH_USER_STORAGE_KEY);
-    localStorage.setItem(AUTH_VERSION_KEY, AUTH_VERSION);
-  }
-
-  const isAuthenticated = localStorage.getItem(AUTH_STORAGE_KEY) === "true";
-  const savedUser = localStorage.getItem(AUTH_USER_STORAGE_KEY) || "";
-  loginUsername.value = AUTH_USERS[savedUser] ? savedUser : "";
-  authScreen.classList.toggle("hidden", isAuthenticated);
-  appShell.classList.toggle("hidden", !isAuthenticated);
+function initializeControls() {
+  taskGroup.innerHTML = buildGroupOptions();
+  taskDate.value = getTodayIso();
+  todayLabel.textContent = formatDate(getTodayIso());
+  taskGroup.value = activeGroup;
 }
 
-function handleLogin(event) {
-  event.preventDefault();
-  const formData = new FormData(loginForm);
-  const username = String(formData.get("username") || "").trim();
-  const password = String(formData.get("password") || "");
-
-  const success = Boolean(username) && AUTH_USERS[username] === password;
-  loginError.classList.toggle("hidden", success);
-
-  if (!success) {
-    return;
-  }
-
-  localStorage.setItem(AUTH_STORAGE_KEY, "true");
-  localStorage.setItem(AUTH_USER_STORAGE_KEY, username);
-  localStorage.setItem(AUTH_VERSION_KEY, AUTH_VERSION);
-  initializeAuth();
-}
-
-function handleLogout() {
-  localStorage.removeItem(AUTH_STORAGE_KEY);
-  initializeAuth();
+function buildGroupOptions() {
+  return GROUP_OPTIONS.map((group) => `<option value="${escapeHtml(group)}">${escapeHtml(group)}</option>`).join("");
 }
 
 function loadState() {
   try {
-    const savedState = localStorage.getItem(STORAGE_KEY);
-    if (!savedState) {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
       return structuredClone(defaultState);
     }
 
-    const parsed = JSON.parse(savedState);
+    const parsed = JSON.parse(saved);
     return {
-      monthlyBudget: Number(parsed.monthlyBudget) || 0,
-      expenses: Array.isArray(parsed.expenses) ? parsed.expenses.map(normalizeStoredExpense) : [],
-      categoryDefinitions: normalizeCategoryDefinitions(parsed.categoryDefinitions),
+      tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
     };
   } catch (error) {
     return structuredClone(defaultState);
   }
 }
 
-function normalizeCategoryDefinitions(value) {
-  return structuredClone(defaultCategoryDefinitions);
-}
-
-function normalizeStoredExpense(expense) {
-  const safeCategory = hasCategory(expense?.category) ? expense.category : "Casa";
-  const safeMethod = PAYMENT_OPTIONS.includes(expense?.paymentMethod)
-    ? expense.paymentMethod
-    : "Efectivo";
-
-  return {
-    ...expense,
-    category: safeCategory,
-    subcategory: "General",
-    paymentMethod: safeMethod,
-  };
-}
-
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function handleCreateEntry(event) {
+function handleCreateTask(event) {
   event.preventDefault();
-
-  const form = event.currentTarget;
-  const formData = new FormData(form);
-  const description = String(formData.get("description") || "").trim();
-  const amount = Number(formData.get("amount"));
+  const formData = new FormData(taskForm);
+  const title = String(formData.get("title") || "").trim();
+  const group = String(formData.get("group") || activeGroup);
+  const responsible = String(formData.get("responsible") || "").trim();
   const date = String(formData.get("date") || "");
-  const entryType = String(formData.get("entryType") || "gasto");
-  const category = String(formData.get("category") || "Casa");
-  const paymentMethod = String(formData.get("paymentMethod") || "Efectivo");
+  const priority = String(formData.get("priority") || "Media");
   const notes = String(formData.get("notes") || "").trim();
 
-  if (!description || !date || Number.isNaN(amount) || amount <= 0) {
+  if (!title || !responsible || !date) {
     return;
   }
 
-  state.expenses.unshift({
+  state.tasks.unshift({
     id: crypto.randomUUID(),
-    description,
-    amount,
+    title,
+    group,
+    responsible,
     date,
-    entryType,
-    category,
-    subcategory: "General",
-    paymentMethod,
+    priority,
     notes,
+    status: "Pendiente",
   });
 
   saveState();
-  form.reset();
-  const dateInput = form.querySelector('input[name="date"]');
-  if (dateInput) {
-    dateInput.value = new Date().toISOString().split("T")[0];
-  }
-  renderCategoryControls();
+  taskForm.reset();
+  taskDate.value = getTodayIso();
+  taskGroup.value = activeGroup;
   renderApp();
 }
 
-function handleUpdateBudget(event) {
-  event.preventDefault();
-  const nextBudget = Number(monthlyBudgetInput.value);
-  state.monthlyBudget = Number.isNaN(nextBudget) || nextBudget < 0 ? 0 : nextBudget;
-  saveState();
-  renderApp();
-}
-
-function handleRenameCategory(previousName, nextName) {
-  return;
-}
-
-function handleDeleteCategory(categoryName) {
-  return;
-}
-
-function handleRenameSubcategory(categoryName, previousName, nextName) {
-  const cleanName = String(nextName || "").trim();
-  if (!cleanName) {
+function createTemplateTasks(templateName) {
+  const template = TEMPLATE_TASKS[templateName];
+  if (!template) {
     return;
   }
 
-  const categoryDefinition = findCategoryDefinition(categoryName);
-  if (!categoryDefinition || categoryDefinition.subcategories.includes(cleanName)) {
-    if (cleanName !== previousName) {
-      return;
-    }
-  }
+  const today = getTodayIso();
+  template.forEach((item) => {
+    state.tasks.unshift({
+      id: crypto.randomUUID(),
+      title: item.title,
+      group: item.group,
+      responsible: "Asignar responsable",
+      date: today,
+      priority: item.priority,
+      notes: "",
+      status: "Pendiente",
+    });
+  });
 
-  categoryDefinition.subcategories = categoryDefinition.subcategories.map((subcategory) =>
-    subcategory === previousName ? cleanName : subcategory
-  );
-  state.expenses = state.expenses.map((expense) =>
-    expense.category === categoryName && expense.subcategory === previousName
-      ? { ...expense, subcategory: cleanName }
-      : expense
-  );
-  importedExpenses = importedExpenses.map((expense) =>
-    expense.category === categoryName && expense.subcategory === previousName
-      ? { ...expense, subcategory: cleanName }
-      : expense
-  );
   saveState();
   renderApp();
 }
 
-function handleDeleteSubcategory(categoryName, subcategoryName) {
-  const categoryDefinition = findCategoryDefinition(categoryName);
-  if (!categoryDefinition || categoryDefinition.subcategories.length <= 1) {
-    return;
-  }
-
-  const fallbackSubcategory = categoryDefinition.subcategories.find(
-    (subcategory) => subcategory !== subcategoryName
-  );
-  categoryDefinition.subcategories = categoryDefinition.subcategories.filter(
-    (subcategory) => subcategory !== subcategoryName
-  );
-
-  state.expenses = state.expenses.map((expense) =>
-    expense.category === categoryName && expense.subcategory === subcategoryName
-      ? { ...expense, subcategory: fallbackSubcategory || "General" }
-      : expense
-  );
-  importedExpenses = importedExpenses.map((expense) =>
-    expense.category === categoryName && expense.subcategory === subcategoryName
-      ? { ...expense, subcategory: fallbackSubcategory || "General" }
-      : expense
-  );
+function handleClearCompleted() {
+  state.tasks = state.tasks.filter((task) => task.status !== "Completado");
   saveState();
   renderApp();
 }
 
-function handleDeleteExpense(id) {
-  state.expenses = state.expenses.filter((expense) => expense.id !== id);
-  saveState();
-  renderApp();
-}
-
-function handleUpdateExpense(id, updates) {
-  state.expenses = state.expenses.map((expense) =>
-    expense.id === id
-      ? {
-          ...expense,
-          ...updates,
-          amount: Number(updates.amount ?? expense.amount),
-        }
-      : expense
-  );
-  saveState();
-  renderApp();
-}
-
-function getFilteredExpenses() {
-  const selectedCategory = filterCategory.value;
-  const startDate = filterStartDate.value;
-  const endDate = filterEndDate.value;
+function getFilteredTasks() {
+  const status = filterStatus.value;
+  const date = filterDate.value;
   const query = searchInput.value.trim().toLowerCase();
 
-  return state.expenses.filter((expense) => {
-    const matchesCategory =
-      selectedCategory === "Todas" || expense.category === selectedCategory;
-    const matchesStartDate = !startDate || expense.date >= startDate;
-    const matchesEndDate = !endDate || expense.date <= endDate;
+  return state.tasks.filter((task) => {
+    const matchesGroup = task.group === activeGroup;
+    const matchesStatus = status === "Todos" || task.status === status;
+    const matchesDate = !date || task.date === date;
+    const matchesQuery =
+      !query ||
+      [task.title, task.group, task.responsible, task.notes]
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
 
-    const searchableText = [
-      expense.description,
-      expense.category,
-      expense.subcategory,
-      expense.paymentMethod,
-      expense.notes,
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    const matchesQuery = !query || searchableText.includes(query);
-    return matchesCategory && matchesStartDate && matchesEndDate && matchesQuery;
+    return matchesGroup && matchesStatus && matchesDate && matchesQuery;
   });
 }
 
 function renderApp() {
-  const filteredExpenses = getFilteredExpenses();
-  renderCategoryControls();
-  const cardSummaryExpenses = getMethodSummaryExpenses("Tarjeta");
-  const cashSummaryExpenses = getMethodSummaryExpenses("Efectivo");
-  const combinedSummaryExpenses = [...cardSummaryExpenses, ...cashSummaryExpenses];
-  const totalCardExpenses = cardSummaryExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const totalCashExpenses = cashSummaryExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const count = combinedSummaryExpenses.length;
-  const combinedTotal = totalCardExpenses + totalCashExpenses;
-  const overallIncomes = state.expenses
-    .filter((expense) => expense.entryType === "ingreso")
-    .reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const overallExpenses = state.expenses
-    .filter((expense) => expense.entryType !== "ingreso")
-    .reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const available = state.monthlyBudget + overallIncomes - overallExpenses;
+  const tasks = getFilteredTasks();
+  const pending = tasks.filter((task) => task.status === "Pendiente");
+  const progress = tasks.filter((task) => task.status === "En proceso");
+  const done = tasks.filter((task) => task.status === "Completado");
 
-  monthlyBudgetValue.textContent = formatCurrency(state.monthlyBudget);
-  availableBudgetValue.textContent = formatCurrency(available);
-  totalSpent.textContent = formatCurrency(totalCardExpenses);
-  totalIncome.textContent = formatCurrency(totalCashExpenses);
-  expenseCount.textContent = String(count);
-  netBalance.textContent = formatCurrency(combinedTotal);
-  monthlyBudgetInput.value = state.monthlyBudget ? String(state.monthlyBudget) : "";
-  renderSummaryRangeLabel();
-  renderBudgetAlerts(combinedTotal);
-  renderExpenseList(filteredExpenses);
-  renderMethodSummary(cardSummaryExpenses, cardSummary, cardMethodTotal, "Tarjeta");
-  renderMethodSummary(cashSummaryExpenses, cashSummary, cashMethodTotal, "Efectivo");
-  renderCombinedPaymentSummary(cardSummaryExpenses, cashSummaryExpenses);
-  renderImportedExpenses();
-  renderCategoryManager();
-}
+  renderTaskList(pendingList, pending);
+  renderTaskList(progressList, progress);
+  renderTaskList(doneList, done);
 
-function getMethodSummaryExpenses(method) {
-  const startDate = method === "Tarjeta" ? cardStartDate.value : cashStartDate.value;
-  const endDate = method === "Tarjeta" ? cardEndDate.value : cashEndDate.value;
-  const selectedCategories = getSelectedMethodCategories(method);
+  totalTasks.textContent = String(tasks.length);
+  pendingTasks.textContent = String(pending.length);
+  progressTasks.textContent = String(progress.length);
+  doneTasks.textContent = String(done.length);
+  pendingCountBadge.textContent = String(pending.length);
+  progressCountBadge.textContent = String(progress.length);
+  doneCountBadge.textContent = String(done.length);
+  boardTitle.textContent = activeGroup;
+  taskGroup.value = activeGroup;
 
-  return state.expenses.filter((expense) => {
-    const matchesMethod = expense.entryType !== "ingreso" && expense.paymentMethod === method;
-    const matchesStartDate = !startDate || expense.date >= startDate;
-    const matchesEndDate = !endDate || expense.date <= endDate;
-    const matchesCategory =
-      selectedCategories === null || selectedCategories.includes(expense.category);
-    return matchesMethod && matchesStartDate && matchesEndDate && matchesCategory;
+  groupTabs.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.group === activeGroup);
   });
 }
 
-function renderSummaryRangeLabel() {
-  const cardLabel = buildRangeText(cardStartDate.value, cardEndDate.value, "tarjeta");
-  const cashLabel = buildRangeText(cashStartDate.value, cashEndDate.value, "efectivo");
-  summaryRangeLabel.textContent = `${cardLabel} ${cashLabel}`;
-}
+function renderTaskList(target, tasks) {
+  target.innerHTML = "";
 
-function renderBudgetAlerts(totalExpenses) {
-  const alerts = [];
-  if (totalExpenses >= 24000) {
-    alerts.push({
-      level: "high",
-      message: "Alerta critica: tus gastos acumulados ya llegaron a Q24,000 o mas.",
-    });
-  } else if (totalExpenses >= 20000) {
-    alerts.push({
-      level: "normal",
-      message: "Alerta: tus gastos acumulados ya llegaron a Q20,000 o mas.",
-    });
+  if (!tasks.length) {
+    const empty = document.createElement("div");
+    empty.className = "task-card";
+    empty.innerHTML = `<p class="task-notes">No hay tareas en esta columna.</p>`;
+    target.appendChild(empty);
+    return;
   }
 
-  budgetAlerts.innerHTML = alerts
-    .map(
-      (alert) =>
-        `<div class="budget-alert${alert.level === "high" ? " budget-alert--high" : ""}">${escapeHtml(
-          alert.message
-        )}</div>`
-    )
-    .join("");
-}
+  tasks.forEach((task) => {
+    const fragment = taskTemplate.content.cloneNode(true);
+    const card = fragment.querySelector(".task-card");
+    const group = fragment.querySelector(".task-group");
+    const priority = fragment.querySelector(".task-priority");
+    const title = fragment.querySelector(".task-title");
+    const responsible = fragment.querySelector(".task-responsible");
+    const date = fragment.querySelector(".task-date");
+    const notes = fragment.querySelector(".task-notes");
+    const statusSelect = fragment.querySelector(".task-status-select");
+    const duplicateButton = fragment.querySelector(".task-duplicate-button");
+    const deleteButton = fragment.querySelector(".task-delete-button");
 
-function setActiveView(viewName) {
-  tabButtons.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.viewTarget === viewName);
-  });
+    group.textContent = task.group;
+    priority.textContent = task.priority;
+    title.textContent = task.title;
+    responsible.textContent = task.responsible;
+    date.textContent = formatDate(task.date);
+    statusSelect.value = task.status;
 
-  views.forEach((view) => {
-    view.classList.toggle("view--active", view.dataset.view === viewName);
-  });
-}
+    if (task.notes) {
+      notes.textContent = task.notes;
+      notes.classList.remove("hidden");
+    }
 
-function renderCategoryControls() {
-  const previousExpenseCategory = expenseCategorySelect.value;
-  const previousIncomeCategory = incomeCategorySelect.value;
-  const previousFilterCategory = filterCategory.value;
+    if (task.status === "Completado") {
+      card.style.borderColor = "rgba(31, 138, 99, 0.18)";
+    } else if (task.status === "En proceso") {
+      card.style.borderColor = "rgba(211, 131, 39, 0.2)";
+    }
 
-  expenseCategorySelect.innerHTML = buildCategoryOptions();
-  incomeCategorySelect.innerHTML = buildCategoryOptions();
-  filterCategory.innerHTML = `<option value="Todas">Todas</option>${buildCategoryOptions()}`;
+    statusSelect.addEventListener("change", (event) => {
+      updateTask(task.id, { status: event.target.value });
+    });
 
-  expenseCategorySelect.value = hasCategory(previousExpenseCategory)
-    ? previousExpenseCategory
-    : state.categoryDefinitions[0]?.name || "Casa";
-  incomeCategorySelect.value = hasCategory(previousIncomeCategory)
-    ? previousIncomeCategory
-    : state.categoryDefinitions[0]?.name || "Casa";
-  filterCategory.value =
-    previousFilterCategory === "Todas" || hasCategory(previousFilterCategory)
-      ? previousFilterCategory
-      : "Todas";
-  renderMethodCategoryChecklist(cardCategoryList);
-  renderMethodCategoryChecklist(cashCategoryList);
-}
-
-function renderExpenseList(expenses) {
-  expenseList.innerHTML = "";
-  emptyState.classList.toggle("hidden", expenses.length > 0);
-  historyTableHeader.classList.toggle("hidden", expenses.length === 0);
-
-  expenses.forEach((expense) => {
-    const fragment = expenseItemTemplate.content.cloneNode(true);
-    const item = fragment.querySelector(".expense-item");
-    const descriptionInput = fragment.querySelector(".expense-edit-description");
-    const amountInput = fragment.querySelector(".expense-edit-amount");
-    const dateInput = fragment.querySelector(".expense-edit-date");
-    const categorySelect = fragment.querySelector(".expense-edit-category");
-    const methodSelect = fragment.querySelector(".expense-edit-method");
-
-    item.classList.add(
-      expense.entryType === "ingreso" ? "expense-item--income" : "expense-item--expense"
-    );
-
-    descriptionInput.value = expense.description;
-    amountInput.value = String(expense.amount);
-    dateInput.value = expense.date;
-    categorySelect.innerHTML = buildCategoryOptions();
-    categorySelect.value = hasCategory(expense.category)
-      ? expense.category
-      : state.categoryDefinitions[0]?.name || "Casa";
-    methodSelect.innerHTML = PAYMENT_OPTIONS.map(
-      (option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`
-    ).join("");
-    methodSelect.value = PAYMENT_OPTIONS.includes(expense.paymentMethod)
-      ? expense.paymentMethod
-      : "Efectivo";
-
-    fragment.querySelector(".expense-save-button").addEventListener("click", () => {
-      const nextAmount = Number(amountInput.value);
-      if (!descriptionInput.value.trim() || !dateInput.value || Number.isNaN(nextAmount) || nextAmount <= 0) {
-        return;
-      }
-
-      const nextCategory = categorySelect.value;
-      handleUpdateExpense(expense.id, {
-        description: descriptionInput.value.trim(),
-        amount: nextAmount,
-        date: dateInput.value,
-        category: nextCategory,
-        subcategory: "General",
-        paymentMethod: methodSelect.value,
+    duplicateButton.addEventListener("click", () => {
+      state.tasks.unshift({
+        ...task,
+        id: crypto.randomUUID(),
+        status: "Pendiente",
       });
+      saveState();
+      renderApp();
     });
 
-    fragment.querySelector(".expense-delete-button").addEventListener("click", () => {
-      handleDeleteExpense(expense.id);
+    deleteButton.addEventListener("click", () => {
+      state.tasks = state.tasks.filter((item) => item.id !== task.id);
+      saveState();
+      renderApp();
     });
 
-    expenseList.appendChild(fragment);
+    target.appendChild(fragment);
   });
 }
 
-function renderMethodCategoryChecklist(container) {
-  const selectedValues = new Set(
-    Array.from(container.querySelectorAll('input[type="checkbox"][data-category]:checked')).map(
-      (input) => input.value
-    )
-  );
-
-  const options = state.categoryDefinitions.map((category) => category.name);
-  const allSelected = selectedValues.size === 0 || selectedValues.size === options.length;
-
-  container.innerHTML = `
-    <label class="category-checklist__item">
-      <input type="checkbox" data-all="true" ${allSelected ? "checked" : ""} />
-      <span>Todas</span>
-    </label>
-    ${options
-      .map(
-        (category) => `
-          <label class="category-checklist__item">
-            <input
-              type="checkbox"
-              data-category="true"
-              value="${escapeHtml(category)}"
-              ${allSelected || selectedValues.has(category) ? "checked" : ""}
-            />
-            <span>${escapeHtml(category)}</span>
-          </label>
-        `
-      )
-      .join("")}
-  `;
-}
-
-function handleMethodChecklistChange(event) {
-  const target = event.target;
-  if (!(target instanceof HTMLInputElement)) {
-    return;
-  }
-
-  const container = target.closest(".category-checklist");
-  if (!container) {
-    renderApp();
-    return;
-  }
-
-  const allInput = container.querySelector('input[data-all="true"]');
-  const categoryInputs = Array.from(container.querySelectorAll('input[data-category="true"]'));
-
-  if (target.dataset.all === "true") {
-    categoryInputs.forEach((input) => {
-      input.checked = target.checked;
-    });
-  } else if (allInput instanceof HTMLInputElement) {
-    const checkedCount = categoryInputs.filter((input) => input.checked).length;
-    allInput.checked = checkedCount === categoryInputs.length;
-  }
-
-  renderApp();
-}
-
-function getSelectedMethodCategories(method) {
-  const container = method === "Tarjeta" ? cardCategoryList : cashCategoryList;
-  const allInput = container.querySelector('input[data-all="true"]');
-  const categoryInputs = Array.from(container.querySelectorAll('input[data-category="true"]'));
-
-  if (allInput instanceof HTMLInputElement && allInput.checked) {
-    return null;
-  }
-
-  const selected = categoryInputs.filter((input) => input.checked).map((input) => input.value);
-  return selected.length === categoryInputs.length ? null : selected;
-}
-
-function buildRangeText(startDate, endDate, label) {
-  if (!startDate && !endDate) {
-    return `Rango de ${label}: todos los movimientos.`;
-  }
-
-  if (startDate && endDate) {
-    return `Rango de ${label}: ${formatDate(startDate)} al ${formatDate(endDate)}.`;
-  }
-
-  if (startDate) {
-    return `Rango de ${label}: desde ${formatDate(startDate)}.`;
-  }
-
-  return `Rango de ${label}: hasta ${formatDate(endDate)}.`;
-}
-
-function renderMethodSummary(expenses, targetElement, totalElement, methodLabel) {
-  const expenseOnly = expenses.filter((expense) => expense.entryType !== "ingreso");
-  const methodTotal = expenseOnly.reduce((sum, expense) => sum + Number(expense.amount), 0);
-  totalElement.textContent = formatCurrency(methodTotal);
-
-  if (expenseOnly.length === 0) {
-    targetElement.innerHTML =
-      '<div class="category-card"><span>Sin datos</span><strong>No hay gastos en el rango seleccionado</strong></div>';
-    return;
-  }
-
-  const grouped = expenseOnly.reduce((accumulator, expense) => {
-    if (!accumulator[expense.category]) {
-      accumulator[expense.category] = 0;
-    }
-
-    accumulator[expense.category] += Number(expense.amount);
-    return accumulator;
-  }, {});
-
-  const categoryEntries = Object.entries(grouped).sort((a, b) => b[1] - a[1]);
-
-  targetElement.innerHTML = `
-    <article class="category-summary-total">
-      <span>Total ${escapeHtml(methodLabel.toLowerCase())}</span>
-      <strong>${formatCurrency(methodTotal)}</strong>
-    </article>
-    ${categoryEntries
-      .map(([category, total]) => {
-        return `
-          <article class="category-group-card">
-            <div class="category-group-card__header">
-              <div>
-                <span>Categoria</span>
-                <h4>${escapeHtml(category)}</h4>
-              </div>
-              <strong>${formatCurrency(total)}</strong>
-            </div>
-          </article>
-        `;
-      })
-      .join("")}
-  `;
-}
-
-function renderCombinedPaymentSummary(cardExpenses, cashExpenses) {
-  const totalCard = cardExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const totalCash = cashExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-  const combinedTotal = totalCard + totalCash;
-  const combinedExpenses = [...cardExpenses, ...cashExpenses];
-  const totalsByCategory = combinedExpenses.reduce((accumulator, expense) => {
-    accumulator[expense.category] = (accumulator[expense.category] || 0) + Number(expense.amount);
-    return accumulator;
-  }, {});
-  const categoryRows = Object.entries(totalsByCategory)
-    .sort((a, b) => b[1] - a[1])
-    .map(
-      ([category, total]) => `
-        <div class="payment-total-card__row">
-          <span>${escapeHtml(category)}</span>
-          <strong>${formatCurrency(total)}</strong>
-        </div>
-      `
-    )
-    .join("");
-  const splitCategoryRows = Object.entries(totalsByCategory)
-    .sort((a, b) => b[1] - a[1])
-    .map(
-      ([category, total]) => `
-        <div class="payment-total-card__row">
-          <span>${escapeHtml(category)}</span>
-          <strong>${formatCurrency(total / 2)}</strong>
-        </div>
-      `
-    )
-    .join("");
-  const splitTotal = combinedTotal / 2;
-
-  categorySummary.innerHTML = `
-    <article class="payment-total-card">
-      <div class="payment-total-card__row">
-        <span>Total tarjeta</span>
-        <strong>${formatCurrency(totalCard)}</strong>
-      </div>
-      <div class="payment-total-card__row">
-        <span>Total efectivo</span>
-        <strong>${formatCurrency(totalCash)}</strong>
-      </div>
-      <div class="payment-total-card__row payment-total-card__row--grand">
-        <span>Total general seleccionado</span>
-        <strong>${formatCurrency(combinedTotal)}</strong>
-      </div>
-      ${categoryRows}
-    </article>
-    <article class="payment-total-card">
-      <div class="payment-total-card__row payment-total-card__row--grand">
-        <span>Tabla de pagos JC</span>
-        <strong>${formatCurrency(splitTotal)}</strong>
-      </div>
-      ${splitCategoryRows}
-    </article>
-    <article class="payment-total-card">
-      <div class="payment-total-card__row payment-total-card__row--grand">
-        <span>Tabla de pagos</span>
-        <strong>${formatCurrency(splitTotal)}</strong>
-      </div>
-      ${splitCategoryRows}
-    </article>
-  `;
-}
-
-function renderCategoryManager() {
-  categoryManagerList.innerHTML = "";
-
-  state.categoryDefinitions.forEach((category) => {
-    const card = document.createElement("article");
-    card.className = "category-manager-card";
-    card.innerHTML = `
-      <strong>${escapeHtml(category.name)}</strong>
-      <div class="manager-note">Categoria fija activa para registro, historial, importacion y resumen.</div>
-    `;
-    categoryManagerList.appendChild(card);
-  });
-}
-
-async function handleImportFile(event) {
-  const [file] = event.target.files || [];
-  if (!file) {
-    return;
-  }
-
-  hideImportMessage();
-
-  try {
-    const rows = await readStatementRows(file);
-    importedExpenses = rows.map((row, index) => mapBankRow(row, index)).filter(Boolean);
-
-    if (!importedExpenses.length) {
-      showImportMessage(
-        "No encontre filas con fecha, descripcion y monto. Prueba con otro archivo o revisa los encabezados."
-      );
-    } else {
-      showImportMessage(
-        `Se detectaron ${importedExpenses.length} movimientos. Ajusta categorias y guarda.`
-      );
-    }
-  } catch (error) {
-    importedExpenses = [];
-    showImportMessage(
-      "No pude leer ese archivo. Prueba con Excel o CSV exportado directamente desde tu banco."
-    );
-  }
-
-  renderApp();
-}
-
-async function readStatementRows(file) {
-  if (file.name.toLowerCase().endsWith(".csv")) {
-    const text = await file.text();
-    const workbook = XLSX.read(text, { type: "string" });
-    return readFirstSheet(workbook);
-  }
-
-  const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: "array" });
-  return readFirstSheet(workbook);
-}
-
-function readFirstSheet(workbook) {
-  const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rawRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: "" });
-  const firstRow = rawRows[0] || [];
-  const isHeaderlessBankFormat =
-    firstRow.length >= 3 &&
-    (firstRow[0] instanceof Date || typeof firstRow[0] === "number") &&
-    typeof firstRow[1] === "string" &&
-    (typeof firstRow[2] === "number" || typeof firstRow[2] === "string");
-
-  if (isHeaderlessBankFormat) {
-    return rawRows.map((row) => mapHeaderlessRow(row)).filter(Boolean);
-  }
-
-  return XLSX.utils.sheet_to_json(firstSheet, { defval: "" });
-}
-
-function mapBankRow(row, index) {
-  if (Array.isArray(row)) {
-    row = mapHeaderlessRow(row);
-  }
-
-  if (!row) {
-    return null;
-  }
-
-  const normalizedEntries = Object.entries(row).reduce((accumulator, [key, value]) => {
-    accumulator[normalizeHeader(key)] = value;
-    return accumulator;
-  }, {});
-
-  const description =
-    pickValue(normalizedEntries, [
-      "descripcion",
-      "detalle",
-      "concepto",
-      "glosa",
-      "referencia",
-      "comercio",
-      "nombre",
-      "movimiento",
-    ]) || "";
-
-  const dateValue = pickValue(normalizedEntries, [
-    "fecha",
-    "fechacontable",
-    "fechamovimiento",
-    "posteddate",
-    "transactiondate",
-  ]);
-
-  const directAmount = pickValue(normalizedEntries, [
-    "monto",
-    "valor",
-    "importe",
-    "cargo",
-    "debito",
-  ]);
-  const creditAmount = pickValue(normalizedEntries, ["credito", "abono"]);
-  const amount = parseAmount(directAmount ?? creditAmount);
-  const parsedDate = parseImportedDate(dateValue);
-
-  if (!description || !amount || !parsedDate) {
-    return null;
-  }
-
-  const category = suggestCategory(String(description));
-  return {
-    id: `import-${index}-${crypto.randomUUID()}`,
-    description: String(description).trim(),
-    amount: Math.abs(amount),
-    date: parsedDate,
-    entryType: "gasto",
-    category,
-    subcategory: "General",
-    paymentMethod: "Tarjeta",
-    notes: "Importado desde estado de cuenta",
-  };
-}
-
-function mapHeaderlessRow(row) {
-  if (!Array.isArray(row) || row.length < 3) {
-    return null;
-  }
-
-  const [date, description, amount, extra] = row;
-  if (!date && !description && !amount) {
-    return null;
-  }
-
-  return {
-    fecha: date,
-    descripcion: description,
-    monto: amount,
-    nota: extra,
-  };
-}
-
-function normalizeHeader(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "")
-    .toLowerCase();
-}
-
-function pickValue(source, candidates) {
-  const exactMatch = candidates.find((candidate) => source[candidate] !== undefined && source[candidate] !== "");
-  if (exactMatch) {
-    return source[exactMatch];
-  }
-
-  for (const [key, value] of Object.entries(source)) {
-    if (value === "") {
-      continue;
-    }
-    if (candidates.some((candidate) => key.includes(candidate))) {
-      return value;
-    }
-  }
-
-  return null;
-}
-
-function parseAmount(value) {
-  if (typeof value === "number") {
-    return value;
-  }
-
-  const cleaned = String(value || "")
-    .replace(/[Q$,]/g, "")
-    .replace(/\s+/g, "")
-    .replace(/\.(?=\d{3}(\D|$))/g, "")
-    .replace(",", ".");
-
-  const number = Number(cleaned);
-  return Number.isFinite(number) ? number : null;
-}
-
-function parseImportedDate(value) {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(
-      value.getDate()
-    ).padStart(2, "0")}`;
-  }
-
-  if (typeof value === "number") {
-    const dateCode = XLSX.SSF.parse_date_code(value);
-    if (!dateCode) {
-      return null;
-    }
-
-    return `${dateCode.y}-${String(dateCode.m).padStart(2, "0")}-${String(dateCode.d).padStart(
-      2,
-      "0"
-    )}`;
-  }
-
-  const raw = String(value || "").trim();
-  if (!raw) {
-    return null;
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-    return raw;
-  }
-
-  const slashMatch = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
-  if (slashMatch) {
-    const [, day, month, year] = slashMatch;
-    const normalizedYear = year.length === 2 ? `20${year}` : year;
-    return `${normalizedYear}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-  }
-
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-
-  return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(
-    parsed.getDate()
-  ).padStart(2, "0")}`;
-}
-
-function suggestCategory(description) {
-  const text = description.toLowerCase();
-
-  if (/(office|papeleria|copias|toner|impresion|computadora|software)/.test(text)) return "Oficina";
-  if (/(super|market|despensa|walmart|paiz|maxi|agua|luz|energia|electric|internet|telefono|gas|servicio|tigo|limpieza|detergente|jabon|papel)/.test(text)) return "Casa";
-  return "Gastos Externos";
-}
-
-function renderImportedExpenses() {
-  importPreview.innerHTML = "";
-  importPreviewShell.classList.toggle("hidden", importedExpenses.length === 0);
-  importAllButton.disabled = importedExpenses.length === 0;
-
-  importedExpenses.forEach((expense) => {
-    const item = document.createElement("article");
-    item.className = "import-item";
-
-    const descriptionBlock = document.createElement("div");
-    descriptionBlock.className = "import-item__desc";
-    descriptionBlock.innerHTML = `
-      <strong>${escapeHtml(expense.description)}</strong>
-      <div class="import-item__meta">${formatDate(expense.date)} · ${escapeHtml(
-        expense.notes
-      )}</div>
-    `;
-
-    const amountBlock = document.createElement("div");
-    amountBlock.className = "import-item__amount";
-    amountBlock.textContent = formatCurrency(expense.amount);
-
-    const paymentSelect = document.createElement("select");
-    paymentSelect.innerHTML = PAYMENT_OPTIONS.map(
-      (option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`
-    ).join("");
-    paymentSelect.value = expense.paymentMethod;
-    paymentSelect.addEventListener("change", (event) => {
-      expense.paymentMethod = event.target.value;
-    });
-
-    const categoryField = document.createElement("div");
-    const categoryPicker = document.createElement("select");
-
-    categoryPicker.innerHTML = buildCategoryOptions();
-    categoryPicker.value = hasCategory(expense.category) ? expense.category : "Casa";
-
-    categoryPicker.addEventListener("change", (event) => {
-      expense.category = event.target.value;
-      expense.subcategory = "General";
-    });
-
-    categoryField.append(categoryPicker);
-    categoryField.style.display = "grid";
-    categoryField.style.gap = "10px";
-
-    const saveButton = document.createElement("button");
-    saveButton.type = "button";
-    saveButton.className = "primary-button import-item__save";
-    saveButton.textContent = "Guardar";
-    saveButton.addEventListener("click", () => saveSingleImportedExpense(expense.id));
-
-    item.append(descriptionBlock, amountBlock, paymentSelect, categoryField, saveButton);
-    importPreview.appendChild(item);
-  });
-}
-
-function saveSingleImportedExpense(id) {
-  const expense = importedExpenses.find((item) => item.id === id);
-  if (!expense) {
-    return;
-  }
-
-  state.expenses.unshift({
-    ...expense,
-    id: crypto.randomUUID(),
-  });
-
-  importedExpenses = importedExpenses.filter((item) => item.id !== id);
+function updateTask(id, updates) {
+  state.tasks = state.tasks.map((task) => (task.id === id ? { ...task, ...updates } : task));
   saveState();
   renderApp();
 }
 
-function handleSaveImportedExpenses() {
-  if (!importedExpenses.length) {
+function setActiveGroup(groupName) {
+  if (!GROUP_OPTIONS.includes(groupName)) {
     return;
   }
 
-  const nextExpenses = importedExpenses.map((expense) => ({
-    ...expense,
-    id: crypto.randomUUID(),
-  }));
-
-  state.expenses = [...nextExpenses.reverse(), ...state.expenses];
-  importedExpenses = [];
-  saveState();
+  activeGroup = groupName;
   renderApp();
-  showImportMessage("Los movimientos importados ya fueron agregados al historial.");
 }
 
-function findCategoryDefinition(categoryName) {
-  return state.categoryDefinitions.find((category) => category.name === categoryName) || null;
+function getTodayIso() {
+  return new Date().toISOString().split("T")[0];
 }
 
-function hasCategory(categoryName) {
-  return Boolean(findCategoryDefinition(categoryName));
-}
+function formatDate(value) {
+  if (!value) {
+    return "--";
+  }
 
-function getDefaultSubcategory(categoryName) {
-  return findCategoryDefinition(categoryName)?.subcategories?.[0] || "General";
-}
-
-function buildCategoryOptions() {
-  return state.categoryDefinitions
-    .map((category) => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`)
-    .join("");
-}
-
-function showImportMessage(message) {
-  importMessage.textContent = message;
-  importMessage.classList.remove("hidden");
-}
-
-function hideImportMessage() {
-  importMessage.textContent = "";
-  importMessage.classList.add("hidden");
+  return new Intl.DateTimeFormat("es-GT", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(`${value}T12:00:00`));
 }
 
 function escapeHtml(value) {
@@ -1091,20 +315,4 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
-}
-
-function formatCurrency(value) {
-  return currencyFormatter.format(Number(value) || 0);
-}
-
-function formatDate(value) {
-  return new Intl.DateTimeFormat("es-GT", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(`${value}T12:00:00`));
-}
-
-function capitalizeEntryType(value) {
-  return value === "ingreso" ? "Ingreso" : "Gasto";
 }
