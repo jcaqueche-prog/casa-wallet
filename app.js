@@ -1,87 +1,43 @@
-const STORAGE_KEY = "iglesia-servicios-checklist";
-
-const GROUP_OPTIONS = [
-  "Puertas y Bienvenidas",
-  "Anexo A y B",
-  "Anexo C y M",
-  "Anexd D, E y F",
-];
-
-const TEMPLATE_TASKS = {
-  domingo: [
-    { title: "Revisar puertas principales", group: "Puertas y Bienvenidas", priority: "Alta" },
-    { title: "Coordinar bienvenida del ingreso", group: "Puertas y Bienvenidas", priority: "Alta" },
-    { title: "Verificar sillas y orden Anexo A", group: "Anexo A y B", priority: "Media" },
-    { title: "Revisar limpieza Anexo C", group: "Anexo C y M", priority: "Media" },
-    { title: "Preparar apoyo de orden Anexo D", group: "Anexd D, E y F", priority: "Alta" },
-  ],
-  oracion: [
-    { title: "Abrir puertas de ingreso", group: "Puertas y Bienvenidas", priority: "Alta" },
-    { title: "Ordenar Anexo B", group: "Anexo A y B", priority: "Media" },
-    { title: "Preparar Anexo M", group: "Anexo C y M", priority: "Media" },
-  ],
-  especial: [
-    { title: "Equipo extra de bienvenida", group: "Puertas y Bienvenidas", priority: "Alta" },
-    { title: "Cobertura completa Anexo A", group: "Anexo A y B", priority: "Alta" },
-    { title: "Apoyo especial Anexo C", group: "Anexo C y M", priority: "Alta" },
-    { title: "Reforzar atencion Anexo E", group: "Anexd D, E y F", priority: "Alta" },
-  ],
-};
+const STORAGE_KEY = "iglesia-servidores-app";
 
 const defaultState = {
-  tasks: [],
+  servers: [],
+  attendance: {},
 };
 
 const state = loadState();
-let activeGroup = GROUP_OPTIONS[0];
 
-const taskForm = document.getElementById("taskForm");
-const taskGroup = document.getElementById("taskGroup");
-const taskDate = document.getElementById("taskDate");
-const filterStatus = document.getElementById("filterStatus");
-const filterDate = document.getElementById("filterDate");
-const searchInput = document.getElementById("searchInput");
-const clearCompletedButton = document.getElementById("clearCompletedButton");
+const serverForm = document.getElementById("serverForm");
+const serverBirthday = document.getElementById("serverBirthday");
+const attendanceDate = document.getElementById("attendanceDate");
+const serverSearch = document.getElementById("serverSearch");
 const todayLabel = document.getElementById("todayLabel");
-const boardTitle = document.getElementById("boardTitle");
-const groupTabs = Array.from(document.querySelectorAll(".tab-button"));
-const taskTemplate = document.getElementById("taskTemplate");
-const pendingList = document.getElementById("pendingList");
-const progressList = document.getElementById("progressList");
-const doneList = document.getElementById("doneList");
-const totalTasks = document.getElementById("totalTasks");
-const pendingTasks = document.getElementById("pendingTasks");
-const progressTasks = document.getElementById("progressTasks");
-const doneTasks = document.getElementById("doneTasks");
-const pendingCountBadge = document.getElementById("pendingCountBadge");
-const progressCountBadge = document.getElementById("progressCountBadge");
-const doneCountBadge = document.getElementById("doneCountBadge");
-const quickTemplateButtons = Array.from(document.querySelectorAll(".quick-template"));
+const totalServers = document.getElementById("totalServers");
+const presentToday = document.getElementById("presentToday");
+const absentToday = document.getElementById("absentToday");
+const serverCards = document.getElementById("serverCards");
+const attendanceList = document.getElementById("attendanceList");
+const serverCardTemplate = document.getElementById("serverCardTemplate");
+const attendanceRowTemplate = document.getElementById("attendanceRowTemplate");
+const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+const views = Array.from(document.querySelectorAll(".view"));
 
-taskForm.addEventListener("submit", handleCreateTask);
-filterStatus.addEventListener("change", renderApp);
-filterDate.addEventListener("change", renderApp);
-searchInput.addEventListener("input", renderApp);
-clearCompletedButton.addEventListener("click", handleClearCompleted);
-quickTemplateButtons.forEach((button) => {
-  button.addEventListener("click", () => createTemplateTasks(button.dataset.template));
-});
-groupTabs.forEach((button) => {
-  button.addEventListener("click", () => setActiveGroup(button.dataset.group));
+serverForm.addEventListener("submit", handleCreateServer);
+attendanceDate.addEventListener("change", renderApp);
+serverSearch.addEventListener("input", renderApp);
+tabButtons.forEach((button) => {
+  button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
 });
 
 initializeControls();
 renderApp();
+setActiveView("servidores");
 
 function initializeControls() {
-  taskGroup.innerHTML = buildGroupOptions();
-  taskDate.value = getTodayIso();
-  todayLabel.textContent = formatDate(getTodayIso());
-  taskGroup.value = activeGroup;
-}
-
-function buildGroupOptions() {
-  return GROUP_OPTIONS.map((group) => `<option value="${escapeHtml(group)}">${escapeHtml(group)}</option>`).join("");
+  const today = getTodayIso();
+  todayLabel.textContent = formatDate(today);
+  attendanceDate.value = today;
+  serverBirthday.value = today;
 }
 
 function loadState() {
@@ -93,7 +49,8 @@ function loadState() {
 
     const parsed = JSON.parse(saved);
     return {
-      tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
+      servers: Array.isArray(parsed.servers) ? parsed.servers : [],
+      attendance: parsed.attendance && typeof parsed.attendance === "object" ? parsed.attendance : {},
     };
   } catch (error) {
     return structuredClone(defaultState);
@@ -104,192 +61,167 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function handleCreateTask(event) {
+function handleCreateServer(event) {
   event.preventDefault();
-  const formData = new FormData(taskForm);
-  const title = String(formData.get("title") || "").trim();
-  const group = String(formData.get("group") || activeGroup);
-  const responsible = String(formData.get("responsible") || "").trim();
-  const date = String(formData.get("date") || "");
-  const priority = String(formData.get("priority") || "Media");
-  const notes = String(formData.get("notes") || "").trim();
+  const formData = new FormData(serverForm);
+  const name = String(formData.get("name") || "").trim();
+  const birthday = String(formData.get("birthday") || "");
+  const phone = String(formData.get("phone") || "").trim();
+  const address = String(formData.get("address") || "").trim();
 
-  if (!title || !responsible || !date) {
+  if (!name || !birthday || !phone || !address) {
     return;
   }
 
-  state.tasks.unshift({
+  state.servers.unshift({
     id: crypto.randomUUID(),
-    title,
-    group,
-    responsible,
-    date,
-    priority,
-    notes,
-    status: "Pendiente",
+    name,
+    birthday,
+    phone,
+    address,
   });
 
   saveState();
-  taskForm.reset();
-  taskDate.value = getTodayIso();
-  taskGroup.value = activeGroup;
+  serverForm.reset();
+  serverBirthday.value = getTodayIso();
   renderApp();
-}
-
-function createTemplateTasks(templateName) {
-  const template = TEMPLATE_TASKS[templateName];
-  if (!template) {
-    return;
-  }
-
-  const today = getTodayIso();
-  template.forEach((item) => {
-    state.tasks.unshift({
-      id: crypto.randomUUID(),
-      title: item.title,
-      group: item.group,
-      responsible: "Asignar responsable",
-      date: today,
-      priority: item.priority,
-      notes: "",
-      status: "Pendiente",
-    });
-  });
-
-  saveState();
-  renderApp();
-}
-
-function handleClearCompleted() {
-  state.tasks = state.tasks.filter((task) => task.status !== "Completado");
-  saveState();
-  renderApp();
-}
-
-function getFilteredTasks() {
-  const status = filterStatus.value;
-  const date = filterDate.value;
-  const query = searchInput.value.trim().toLowerCase();
-
-  return state.tasks.filter((task) => {
-    const matchesGroup = task.group === activeGroup;
-    const matchesStatus = status === "Todos" || task.status === status;
-    const matchesDate = !date || task.date === date;
-    const matchesQuery =
-      !query ||
-      [task.title, task.group, task.responsible, task.notes]
-        .join(" ")
-        .toLowerCase()
-        .includes(query);
-
-    return matchesGroup && matchesStatus && matchesDate && matchesQuery;
-  });
 }
 
 function renderApp() {
-  const tasks = getFilteredTasks();
-  const pending = tasks.filter((task) => task.status === "Pendiente");
-  const progress = tasks.filter((task) => task.status === "En proceso");
-  const done = tasks.filter((task) => task.status === "Completado");
-
-  renderTaskList(pendingList, pending);
-  renderTaskList(progressList, progress);
-  renderTaskList(doneList, done);
-
-  totalTasks.textContent = String(tasks.length);
-  pendingTasks.textContent = String(pending.length);
-  progressTasks.textContent = String(progress.length);
-  doneTasks.textContent = String(done.length);
-  pendingCountBadge.textContent = String(pending.length);
-  progressCountBadge.textContent = String(progress.length);
-  doneCountBadge.textContent = String(done.length);
-  boardTitle.textContent = activeGroup;
-  taskGroup.value = activeGroup;
-
-  groupTabs.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.group === activeGroup);
-  });
+  renderSummary();
+  renderServerCards();
+  renderAttendanceList();
 }
 
-function renderTaskList(target, tasks) {
-  target.innerHTML = "";
+function renderSummary() {
+  const dateKey = attendanceDate.value || getTodayIso();
+  const attendanceForDate = state.attendance[dateKey] || {};
+  const presentCount = state.servers.filter(
+    (server) => attendanceForDate[server.id]?.status === "Asistio"
+  ).length;
+  const absentCount = state.servers.filter(
+    (server) => attendanceForDate[server.id]?.status === "No asistio"
+  ).length;
 
-  if (!tasks.length) {
-    const empty = document.createElement("div");
-    empty.className = "task-card";
-    empty.innerHTML = `<p class="task-notes">No hay tareas en esta columna.</p>`;
-    target.appendChild(empty);
+  totalServers.textContent = String(state.servers.length);
+  presentToday.textContent = String(presentCount);
+  absentToday.textContent = String(absentCount);
+}
+
+function renderServerCards() {
+  serverCards.innerHTML = "";
+  const query = serverSearch.value.trim().toLowerCase();
+
+  const filteredServers = state.servers.filter((server) => {
+    if (!query) {
+      return true;
+    }
+
+    return [server.name, server.phone, server.address].join(" ").toLowerCase().includes(query);
+  });
+
+  if (!filteredServers.length) {
+    serverCards.innerHTML = `
+      <article class="server-card">
+        <p class="server-card__details">No hay servidores registrados todavia.</p>
+      </article>
+    `;
     return;
   }
 
-  tasks.forEach((task) => {
-    const fragment = taskTemplate.content.cloneNode(true);
-    const card = fragment.querySelector(".task-card");
-    const group = fragment.querySelector(".task-group");
-    const priority = fragment.querySelector(".task-priority");
-    const title = fragment.querySelector(".task-title");
-    const responsible = fragment.querySelector(".task-responsible");
-    const date = fragment.querySelector(".task-date");
-    const notes = fragment.querySelector(".task-notes");
-    const statusSelect = fragment.querySelector(".task-status-select");
-    const duplicateButton = fragment.querySelector(".task-duplicate-button");
-    const deleteButton = fragment.querySelector(".task-delete-button");
-
-    group.textContent = task.group;
-    priority.textContent = task.priority;
-    title.textContent = task.title;
-    responsible.textContent = task.responsible;
-    date.textContent = formatDate(task.date);
-    statusSelect.value = task.status;
-
-    if (task.notes) {
-      notes.textContent = task.notes;
-      notes.classList.remove("hidden");
-    }
-
-    if (task.status === "Completado") {
-      card.style.borderColor = "rgba(31, 138, 99, 0.18)";
-    } else if (task.status === "En proceso") {
-      card.style.borderColor = "rgba(211, 131, 39, 0.2)";
-    }
-
-    statusSelect.addEventListener("change", (event) => {
-      updateTask(task.id, { status: event.target.value });
+  filteredServers.forEach((server) => {
+    const fragment = serverCardTemplate.content.cloneNode(true);
+    fragment.querySelector(".server-card__name").textContent = server.name;
+    fragment.querySelector(".server-card__birthday").textContent = formatDate(server.birthday);
+    fragment.querySelector(".server-card__phone").textContent = server.phone;
+    fragment.querySelector(".server-card__address").textContent = server.address;
+    fragment.querySelector(".server-card__delete").addEventListener("click", () => {
+      deleteServer(server.id);
     });
-
-    duplicateButton.addEventListener("click", () => {
-      state.tasks.unshift({
-        ...task,
-        id: crypto.randomUUID(),
-        status: "Pendiente",
-      });
-      saveState();
-      renderApp();
-    });
-
-    deleteButton.addEventListener("click", () => {
-      state.tasks = state.tasks.filter((item) => item.id !== task.id);
-      saveState();
-      renderApp();
-    });
-
-    target.appendChild(fragment);
+    serverCards.appendChild(fragment);
   });
 }
 
-function updateTask(id, updates) {
-  state.tasks = state.tasks.map((task) => (task.id === id ? { ...task, ...updates } : task));
+function renderAttendanceList() {
+  attendanceList.innerHTML = "";
+
+  if (!state.servers.length) {
+    attendanceList.innerHTML = `
+      <article class="attendance-row">
+        <div class="attendance-cell">No hay servidores registrados.</div>
+      </article>
+    `;
+    return;
+  }
+
+  const dateKey = attendanceDate.value || getTodayIso();
+  if (!state.attendance[dateKey]) {
+    state.attendance[dateKey] = {};
+  }
+
+  state.servers.forEach((server) => {
+    const fragment = attendanceRowTemplate.content.cloneNode(true);
+    const record = state.attendance[dateKey][server.id] || {
+      status: "Pendiente",
+      note: "",
+    };
+
+    fragment.querySelector(".attendance-name").textContent = server.name;
+    fragment.querySelector(".attendance-phone").textContent = server.phone;
+
+    const statusSelect = fragment.querySelector(".attendance-status");
+    const noteInput = fragment.querySelector(".attendance-note");
+
+    statusSelect.value = record.status;
+    noteInput.value = record.note;
+
+    statusSelect.addEventListener("change", (event) => {
+      updateAttendance(dateKey, server.id, {
+        status: event.target.value,
+        note: noteInput.value.trim(),
+      });
+    });
+
+    noteInput.addEventListener("change", (event) => {
+      updateAttendance(dateKey, server.id, {
+        status: statusSelect.value,
+        note: event.target.value.trim(),
+      });
+    });
+
+    attendanceList.appendChild(fragment);
+  });
+}
+
+function updateAttendance(dateKey, serverId, nextValue) {
+  if (!state.attendance[dateKey]) {
+    state.attendance[dateKey] = {};
+  }
+
+  state.attendance[dateKey][serverId] = nextValue;
+  saveState();
+  renderSummary();
+}
+
+function deleteServer(serverId) {
+  state.servers = state.servers.filter((server) => server.id !== serverId);
+  Object.keys(state.attendance).forEach((dateKey) => {
+    if (state.attendance[dateKey][serverId]) {
+      delete state.attendance[dateKey][serverId];
+    }
+  });
   saveState();
   renderApp();
 }
 
-function setActiveGroup(groupName) {
-  if (!GROUP_OPTIONS.includes(groupName)) {
-    return;
-  }
+function setActiveView(viewName) {
+  tabButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.viewTarget === viewName);
+  });
 
-  activeGroup = groupName;
-  renderApp();
+  views.forEach((view) => {
+    view.classList.toggle("view--active", view.dataset.view === viewName);
+  });
 }
 
 function getTodayIso() {
@@ -306,13 +238,4 @@ function formatDate(value) {
     month: "long",
     year: "numeric",
   }).format(new Date(`${value}T12:00:00`));
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }
