@@ -51,6 +51,23 @@ textarea {
   padding: 20px 0 32px;
 }
 
+.cover-banner {
+  margin-bottom: 18px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  background: var(--surface-strong);
+}
+
+.cover-banner__image {
+  display: block;
+  width: 100%;
+  max-height: 340px;
+  object-fit: cover;
+  object-position: center;
+}
+
 .tabbar {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -144,6 +161,17 @@ label {
   margin: 14px 0 0;
   max-width: 52ch;
   line-height: 1.65;
+}
+
+.hero__brand {
+  margin-bottom: 14px;
+}
+
+.hero__logo {
+  width: min(220px, 100%);
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgba(36, 79, 158, 0.12));
 }
 
 .hero__panel {
@@ -457,6 +485,10 @@ textarea {
   .app-shell {
     width: min(100% - 14px, 1000px);
     padding-top: 10px;
+  }
+
+  .cover-banner__image {
+    max-height: 220px;
   }
 
   .hero,
