@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20260430i" />
+    <link rel="stylesheet" href="./styles.css?v=20260430j" />
   </head>
   <body>
     <div class="app-shell">
@@ -129,7 +129,8 @@
 
             <div class="attendance-header">
               <span>Servidor</span>
-              <span>Asistencia</span>
+              <span>Si</span>
+              <span>No</span>
             </div>
             <div id="attendanceList" class="attendance-list"></div>
 
@@ -196,7 +197,17 @@
                 <h2>Alfolis</h2>
                 <p>Registra servidores y servidoras con posicion.</p>
               </div>
-              <button id="alfolisShareButton" type="button" class="primary-button">Generar imagen para compartir</button>
+              <div class="service-actions">
+                <label class="inline-select">
+                  Nuevo ingreso
+                  <select id="newIngresoType">
+                    <option value="male">Servidor</option>
+                    <option value="female">Servidora</option>
+                  </select>
+                </label>
+                <button id="newIngresoButton" type="button" class="primary-button">Nuevo ingreso</button>
+                <button id="alfolisShareButton" type="button" class="primary-button">Generar imagen para compartir</button>
+              </div>
             </div>
 
             <div class="alfolis-groups">
@@ -235,6 +246,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260430i"></script>
+    <script src="./app.js?v=20260430j"></script>
   </body>
 </html>

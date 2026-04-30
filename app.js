@@ -77,6 +77,8 @@ const summaryShareButton = document.getElementById("summaryShareButton");
 const summaryCards = document.getElementById("summaryCards");
 const summaryPreview = document.getElementById("summaryPreview");
 const alfolisShareButton = document.getElementById("alfolisShareButton");
+const newIngresoType = document.getElementById("newIngresoType");
+const newIngresoButton = document.getElementById("newIngresoButton");
 const addMaleLineButton = document.getElementById("addMaleLineButton");
 const addFemaleLineButton = document.getElementById("addFemaleLineButton");
 const maleAlfolisList = document.getElementById("maleAlfolisList");
@@ -109,6 +111,7 @@ summaryCards.addEventListener("click", handleSummaryCardClick);
 summaryShareButton.addEventListener("click", shareSummaryRange);
 addMaleLineButton.addEventListener("click", () => addAlfoliLine("male"));
 addFemaleLineButton.addEventListener("click", () => addAlfoliLine("female"));
+newIngresoButton.addEventListener("click", () => addAlfoliLine(newIngresoType.value));
 alfolisShareButton.addEventListener("click", shareAlfolis);
 serverSearch.addEventListener("input", renderServers);
 tabButtons.forEach((button) => {
@@ -260,6 +263,12 @@ function handleAddServiceLine() {
 
 function handleSaveService(event) {
   event.preventDefault();
+  const current = getCurrentService();
+  if (current && !isServiceAttendanceComplete(current)) {
+    window.alert("Asistencia no completada. Marca Si o No para todos antes de agregar otro servicio.");
+    return;
+  }
+
   const date = serviceDate.value || getTodayIso();
   const lines = pendingServiceLines.map((l) => l.trim()).filter(Boolean);
   if (!lines.length) return;
@@ -285,6 +294,13 @@ function getCurrentService() {
   return state.services.find((s) => s.id === currentServiceId) || null;
 }
 
+function isServiceAttendanceComplete(service) {
+  return state.servers.every((server) => {
+    const status = service.attendance[server.id];
+    return status === "Si" || status === "No";
+  });
+}
+
 function renderServiceAttendance() {
   attendanceList.innerHTML = "";
   const service = getCurrentService();
@@ -305,25 +321,39 @@ function renderServiceAttendance() {
   state.servers.forEach((server) => {
     const status = service.attendance[server.id] || "";
     const row = document.createElement("article");
-    row.className = "attendance-row attendance-row--2";
+    row.className = "attendance-row attendance-row--3";
     row.innerHTML = `
       <div class="attendance-cell attendance-name">${escapeHtml(server.name)}</div>
       <div class="attendance-cell">
-        <select data-server-id="${server.id}">
-          <option value="">Seleccionar</option>
-          <option value="Si" ${status === "Si" ? "selected" : ""}>Si</option>
-          <option value="No" ${status === "No" ? "selected" : ""}>No</option>
-        </select>
+        <input type="checkbox" class="attendance-check-yes" data-server-id="${server.id}" ${status === "Si" ? "checked" : ""} />
+      </div>
+      <div class="attendance-cell">
+        <input type="checkbox" class="attendance-check-no" data-server-id="${server.id}" ${status === "No" ? "checked" : ""} />
       </div>
     `;
     attendanceList.appendChild(row);
   });
 
-  attendanceList.querySelectorAll("select[data-server-id]").forEach((select) => {
-    select.addEventListener("change", (event) => {
+  attendanceList.querySelectorAll(".attendance-check-yes").forEach((input) => {
+    input.addEventListener("change", (event) => {
       const serverId = event.target.dataset.serverId;
-      const next = event.target.value;
-      service.attendance[serverId] = next;
+      const checked = event.target.checked;
+      service.attendance[serverId] = checked ? "Si" : "";
+      const other = attendanceList.querySelector(`.attendance-check-no[data-server-id="${serverId}"]`);
+      if (other && checked) other.checked = false;
+      saveState();
+      renderServiceStats();
+      renderServers();
+    });
+  });
+
+  attendanceList.querySelectorAll(".attendance-check-no").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const serverId = event.target.dataset.serverId;
+      const checked = event.target.checked;
+      service.attendance[serverId] = checked ? "No" : "";
+      const other = attendanceList.querySelector(`.attendance-check-yes[data-server-id="${serverId}"]`);
+      if (other && checked) other.checked = false;
       saveState();
       renderServiceStats();
       renderServers();
@@ -460,6 +490,7 @@ function renderSummary() {
           <p><strong>no asistieron:</strong> ${stats.noCount}</p>
           <div class="service-actions">
             <button type="button" class="primary-button summary-open-btn" data-service-id="${service.id}">Ver grafica</button>
+            <button type="button" class="primary-button summary-edit-btn" data-service-id="${service.id}">Editar</button>
             <button type="button" class="ghost-button summary-delete-btn" data-service-id="${service.id}">Eliminar</button>
           </div>
         </article>
@@ -482,6 +513,22 @@ function handleSummaryCardClick(event) {
     const confirmed = window.confirm(`Eliminar estadistica de ${formatDate(service.date)}?`);
     if (!confirmed) return;
     service.statsSaved = false;
+    saveState();
+    renderSummary();
+    return;
+  }
+
+  const editBtn = event.target.closest(".summary-edit-btn");
+  if (editBtn) {
+    const serviceId = editBtn.dataset.serviceId;
+    const service = state.services.find((s) => s.id === serviceId);
+    if (!service) return;
+    const nextDate = window.prompt("Editar fecha de servicio (YYYY-MM-DD):", service.date);
+    if (!nextDate) return;
+    const nextLines = window.prompt("Editar lineas de servicio separadas por coma:", service.lines.join(", "));
+    if (!nextLines) return;
+    service.date = nextDate.trim();
+    service.lines = nextLines.split(",").map((line) => line.trim()).filter(Boolean);
     saveState();
     renderSummary();
     return;

@@ -161,6 +161,7 @@ textarea { resize: vertical; }
 
 .service-meta-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .service-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.inline-select { min-width: 170px; }
 .service-lines { margin-bottom: 8px; }
 .service-line-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
 .service-active-text { margin: 0 0 10px; color: var(--muted); font-weight: 600; }
@@ -185,6 +186,18 @@ textarea { resize: vertical; }
   align-items: center;
   padding: 10px;
   border-radius: var(--radius-md);
+}
+
+.attendance-row--3 {
+  grid-template-columns: 1fr 80px 80px;
+}
+
+.attendance-check-yes,
+.attendance-check-no {
+  width: 20px;
+  height: 20px;
+  margin: 0 auto;
+  display: block;
 }
 
 .attendance-name { font-weight: 700; color: var(--text); }
@@ -266,5 +279,6 @@ textarea { resize: vertical; }
   .panel__header--split, .server-card__top, .service-line-row { display: grid; align-items: stretch; }
   .search-input { min-width: 0; }
   .attendance-header, .attendance-row { grid-template-columns: 1fr; }
+  .attendance-row--3 { grid-template-columns: 1fr; }
   .alfolis-row { grid-template-columns: 1fr; }
 }
