@@ -1,5 +1,5 @@
 const STORAGE_KEY = "iglesia-servidores-app";
-const DATABASE_SOURCE_VERSION = "grupo-5-excel-2026-04-30-checklist-v3";
+const DATABASE_SOURCE_VERSION = "grupo-5-excel-2026-04-30-checklist-v4";
 const CONCILIATION_LEADERS = [
   "Juan Carlos Aqueche",
   "Giovany Alvarado",
@@ -92,6 +92,7 @@ const defaultState = {
   sourceVersion: DATABASE_SOURCE_VERSION,
   servers: SEED_SERVERS.map((server) => ({ ...server })),
   attendance: {},
+  alfolis: [{ id: "line-1", name: "", position: "" }],
 };
 
 const state = loadState();
@@ -123,6 +124,9 @@ const summaryMonth = document.getElementById("summaryMonth");
 const summaryServiceSelect = document.getElementById("summaryServiceSelect");
 const summaryPdfButton = document.getElementById("summaryPdfButton");
 const summaryPreview = document.getElementById("summaryPreview");
+const addAlfoliLineButton = document.getElementById("addAlfoliLineButton");
+const finalizeAlfolisButton = document.getElementById("finalizeAlfolisButton");
+const alfolisList = document.getElementById("alfolisList");
 const savedServicesSelect = document.getElementById("savedServicesSelect");
 const deleteServiceButton = document.getElementById("deleteServiceButton");
 const serverSearch = document.getElementById("serverSearch");
@@ -157,6 +161,8 @@ summaryPdfButton.addEventListener("click", exportMonthlySummaryPdf);
 savedServicesSelect.addEventListener("change", handleSavedServiceSelection);
 deleteServiceButton.addEventListener("click", handleDeleteService);
 areaButtons.addEventListener("click", handleAreaButtonClick);
+addAlfoliLineButton.addEventListener("click", handleAddAlfoliLine);
+finalizeAlfolisButton.addEventListener("click", exportAlfolisPdf);
 serverSearch.addEventListener("input", renderApp);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
@@ -197,6 +203,9 @@ function loadState() {
       sourceVersion: DATABASE_SOURCE_VERSION,
       servers: Array.isArray(parsed.servers) ? parsed.servers : [],
       attendance: parsed.attendance && typeof parsed.attendance === "object" ? parsed.attendance : {},
+      alfolis: Array.isArray(parsed.alfolis) && parsed.alfolis.length
+        ? parsed.alfolis
+        : [{ id: "line-1", name: "", position: "" }],
     };
   } catch (error) {
     return structuredClone(defaultState);
@@ -276,6 +285,7 @@ function renderApp() {
   renderServiceMetrics();
   renderConciliationBoard();
   renderSummaryView();
+  renderAlfolis();
 }
 
 function getCurrentServiceMeta() {
@@ -359,6 +369,117 @@ function handleDeleteService() {
   }
 
   renderApp();
+}
+
+function createLocalId(prefix = "line") {
+  if (crypto?.randomUUID) {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+}
+
+function renderAlfolis() {
+  alfolisList.innerHTML = "";
+  state.alfolis.forEach((line, index) => {
+    const row = document.createElement("div");
+    row.className = "alfolis-row";
+    row.innerHTML = `
+      <label>
+        Nombre
+        <input type="text" data-field="name" data-id="${line.id}" value="${escapeHtml(line.name)}" placeholder="Ej. Juan Perez" />
+      </label>
+      <label>
+        Posicion
+        <input type="text" data-field="position" data-id="${line.id}" value="${escapeHtml(line.position)}" placeholder="Ej. 2" />
+      </label>
+      <button type="button" class="ghost-button alfolis-remove" data-id="${line.id}" ${state.alfolis.length === 1 ? "disabled" : ""}>
+        Quitar
+      </button>
+      <span class="alfolis-index">Linea ${index + 1}</span>
+    `;
+    alfolisList.appendChild(row);
+  });
+
+  alfolisList.querySelectorAll("input").forEach((input) => {
+    input.addEventListener("input", handleAlfolisInputChange);
+  });
+  alfolisList.querySelectorAll(".alfolis-remove").forEach((button) => {
+    button.addEventListener("click", handleRemoveAlfoliLine);
+  });
+}
+
+function handleAddAlfoliLine() {
+  state.alfolis.push({ id: createLocalId(), name: "", position: "" });
+  saveState();
+  renderAlfolis();
+}
+
+function handleAlfolisInputChange(event) {
+  const id = event.target.dataset.id;
+  const field = event.target.dataset.field;
+  const line = state.alfolis.find((item) => item.id === id);
+  if (!line || !field) return;
+  line[field] = event.target.value;
+  saveState();
+}
+
+function handleRemoveAlfoliLine(event) {
+  const id = event.target.dataset.id;
+  state.alfolis = state.alfolis.filter((item) => item.id !== id);
+  if (!state.alfolis.length) {
+    state.alfolis = [{ id: createLocalId(), name: "", position: "" }];
+  }
+  saveState();
+  renderAlfolis();
+}
+
+function exportAlfolisPdf() {
+  const rows = state.alfolis
+    .filter((line) => line.name.trim() || line.position.trim())
+    .map(
+      (line) =>
+        `<tr><td>${escapeHtml(line.name.trim() || "-")}</td><td>${escapeHtml(line.position.trim() || "-")}</td></tr>`
+    )
+    .join("");
+  if (!rows) {
+    window.alert("No hay datos en Alfolis para generar PDF.");
+    return;
+  }
+
+  const printedOn = new Date().toISOString().slice(0, 10);
+  const printable = window.open("", "_blank", "width=900,height=800");
+  if (!printable) return;
+  printable.document.write(`
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Alfolis - ${printedOn}</title>
+      <style>
+        @page { size: A4 portrait; margin: 14mm; }
+        body { font-family: Arial, sans-serif; color: #1b2940; margin: 0; }
+        h1 { margin: 0 0 10px; font-size: 22px; }
+        p { margin: 0 0 12px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #c8d2e5; padding: 6px; text-align: left; }
+        th { background: #eef4ff; }
+      </style>
+    </head>
+    <body>
+      <h1>Alfolis - ${printedOn}</h1>
+      <p>Documento para autoridades</p>
+      <table>
+        <thead>
+          <tr><th>Nombre</th><th>Posicion</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </body>
+    </html>
+  `);
+  printable.document.close();
+  printable.focus();
+  printable.print();
 }
 
 function ensureAttendanceRecord(serviceKey, serverId) {

@@ -2,7 +2,10 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Servidores Iglesia</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -10,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260430e" />
+    <link rel="stylesheet" href="./styles.css?v=20260430f" />
   </head>
   <body>
     <div class="app-shell">
@@ -42,11 +45,17 @@
         <button class="tab-button" type="button" data-view-target="checklist">
           CHECKLIST
         </button>
+        <button class="tab-button" type="button" data-view-target="asistencia">
+          ASISTENCIA
+        </button>
         <button class="tab-button" type="button" data-view-target="conciliacion">
           CONCILIACION
         </button>
         <button class="tab-button" type="button" data-view-target="resumen">
           RESUMEN
+        </button>
+        <button class="tab-button" type="button" data-view-target="alfolis">
+          ALFOLIS
         </button>
       </nav>
 
@@ -201,15 +210,7 @@
             <div class="panel__header panel__header--split">
               <div>
                 <h2>Checklist</h2>
-                <p>Marca si cada servidor asistio o no asistio al servicio activo.</p>
-              </div>
-              <div class="service-actions">
-                <button id="exportPdfButton" type="button" class="primary-button">
-                  Generar PDF
-                </button>
-                <button id="finalizeServiceButton" type="button" class="primary-button">
-                  Finalizar servicio
-                </button>
+                <p>Checklist por area con instrucciones y control Si/No.</p>
               </div>
             </div>
 
@@ -243,6 +244,26 @@
                 </thead>
                 <tbody id="areaChecklistBody"></tbody>
               </table>
+            </div>
+
+          </section>
+        </section>
+
+        <section class="view" data-view="asistencia">
+          <section class="panel">
+            <div class="panel__header panel__header--split">
+              <div>
+                <h2>Asistencia</h2>
+                <p>Marca si cada servidor asistio o no asistio al servicio activo.</p>
+              </div>
+              <div class="service-actions">
+                <button id="exportPdfButton" type="button" class="primary-button">
+                  Generar PDF
+                </button>
+                <button id="finalizeServiceButton" type="button" class="primary-button">
+                  Finalizar servicio
+                </button>
+              </div>
             </div>
 
             <div class="attendance-header">
@@ -320,6 +341,26 @@
             <div id="summaryPreview" class="panel"></div>
           </section>
         </section>
+
+        <section class="view" data-view="alfolis">
+          <section class="panel">
+            <div class="panel__header panel__header--split">
+              <div>
+                <h2>Alfolis</h2>
+                <p>Agrega nombre y posicion por linea y genera PDF para autoridades.</p>
+              </div>
+              <div class="service-actions">
+                <button id="addAlfoliLineButton" type="button" class="primary-button">
+                  Agregar linea
+                </button>
+                <button id="finalizeAlfolisButton" type="button" class="primary-button">
+                  Finalizar y PDF
+                </button>
+              </div>
+            </div>
+            <div id="alfolisList" class="alfolis-list"></div>
+          </section>
+        </section>
       </main>
     </div>
 
@@ -350,6 +391,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260430e"></script>
+    <script src="./app.js?v=20260430f"></script>
   </body>
 </html>
