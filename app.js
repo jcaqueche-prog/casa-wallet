@@ -83,6 +83,7 @@ const exportServiceExcelButton = document.getElementById("exportServiceExcelButt
 const shareServicePdfButton = document.getElementById("shareServicePdfButton");
 const shareServiceExcelButton = document.getElementById("shareServiceExcelButton");
 const generateConciliationButton = document.getElementById("generateConciliationButton");
+const conciliationGroupCount = document.getElementById("conciliationGroupCount");
 const conciliationBoard = document.getElementById("conciliationBoard");
 const summaryDateFrom = document.getElementById("summaryDateFrom");
 const summaryDateTo = document.getElementById("summaryDateTo");
@@ -564,12 +565,12 @@ function generateConciliation() {
   if (signature === lastConciliationSignature) list.reverse();
   lastConciliationSignature = list.map((s) => s.id).join("|");
 
-  const groups = [
-    { name: "Grupo 1", members: [] },
-    { name: "Grupo 2", members: [] },
-    { name: "Grupo 3", members: [] },
-    { name: "Grupo 4", members: [] },
-  ];
+  const requested = Number(conciliationGroupCount?.value || 4);
+  const groupCount = Math.max(1, Math.min(5, Number.isFinite(requested) ? requested : 4));
+  const groups = Array.from({ length: groupCount }, (_, i) => ({
+    name: `Grupo ${i + 1}`,
+    members: [],
+  }));
 
   list.forEach((server, idx) => {
     groups[idx % groups.length].members.push(server);

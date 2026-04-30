@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20260430u" />
+    <link rel="stylesheet" href="./styles.css?v=20260430v" />
   </head>
   <body>
     <div class="app-shell">
@@ -190,7 +190,19 @@
                 <h2>Conciliacion</h2>
                 <p>Genera grupos aleatorios con todos los servidores.</p>
               </div>
-              <button id="generateConciliationButton" type="button" class="primary-button">Generar grupos</button>
+              <div class="service-actions">
+                <label class="inline-select">
+                  Cantidad de grupos
+                  <select id="conciliationGroupCount">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4" selected>4</option>
+                    <option value="5">5</option>
+                  </select>
+                </label>
+                <button id="generateConciliationButton" type="button" class="primary-button">Generar grupos</button>
+              </div>
             </div>
             <div id="conciliationBoard" class="conciliation-board"></div>
           </section>
@@ -283,6 +295,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260430u"></script>
+    <script src="./app.js?v=20260430v"></script>
   </body>
 </html>
