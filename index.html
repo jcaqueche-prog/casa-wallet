@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20260430m" />
+    <link rel="stylesheet" href="./styles.css?v=20260430n" />
   </head>
   <body>
     <div class="app-shell">
@@ -159,7 +159,11 @@
                   <h3>Estadistica del servicio</h3>
                   <p id="serviceTotalsText">Aun sin datos para este servicio.</p>
                 </div>
-                <button id="saveServiceStatsButton" type="button" class="primary-button">Guardar estadistica</button>
+                <div class="service-actions">
+                  <button id="exportServicePdfButton" type="button" class="primary-button">Exportar PDF</button>
+                  <button id="exportServiceExcelButton" type="button" class="primary-button">Exportar Excel</button>
+                  <button id="saveServiceStatsButton" type="button" class="primary-button">Guardar estadistica</button>
+                </div>
               </div>
               <div class="chart-wrap">
                 <div id="pieChart" class="pie-chart"></div>
@@ -268,6 +272,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260430m"></script>
+    <script src="./app.js?v=20260430n"></script>
   </body>
 </html>

@@ -78,6 +78,8 @@ const pieChart = document.getElementById("pieChart");
 const yesPctText = document.getElementById("yesPctText");
 const noPctText = document.getElementById("noPctText");
 const saveServiceStatsButton = document.getElementById("saveServiceStatsButton");
+const exportServicePdfButton = document.getElementById("exportServicePdfButton");
+const exportServiceExcelButton = document.getElementById("exportServiceExcelButton");
 const generateConciliationButton = document.getElementById("generateConciliationButton");
 const conciliationBoard = document.getElementById("conciliationBoard");
 const summaryDateFrom = document.getElementById("summaryDateFrom");
@@ -115,6 +117,8 @@ serverForm.addEventListener("submit", handleCreateServer);
 serviceForm.addEventListener("submit", handleSaveService);
 addServiceLineButton.addEventListener("click", handleAddServiceLine);
 saveServiceStatsButton.addEventListener("click", handleSaveServiceStats);
+exportServicePdfButton.addEventListener("click", exportCurrentServicePdf);
+exportServiceExcelButton.addEventListener("click", exportCurrentServiceExcel);
 generateConciliationButton.addEventListener("click", generateConciliation);
 conciliationBoard.addEventListener("click", handleConciliationActions);
 summaryDateFrom.addEventListener("change", renderSummary);
@@ -422,6 +426,8 @@ function getServiceStats(service) {
 function renderServiceStats() {
   const service = getCurrentService();
   const stats = getServiceStats(service);
+  exportServicePdfButton.disabled = !service;
+  exportServiceExcelButton.disabled = !service;
 
   if (!service) {
     serviceTotalsText.textContent = "Aun sin datos para este servicio.";
@@ -436,6 +442,85 @@ function renderServiceStats() {
   pieChart.style.background = `conic-gradient(#2cae7a 0deg, #2cae7a ${yesDeg}deg, #d97878 ${yesDeg}deg, #d97878 360deg)`;
   yesPctText.textContent = `Si: ${stats.yesPct}%`;
   noPctText.textContent = `No: ${stats.noPct}%`;
+}
+
+function exportCurrentServicePdf() {
+  const service = getCurrentService();
+  if (!service) return;
+  const stats = getServiceStats(service);
+  const rows = state.servers
+    .map((server) => {
+      const status = service.attendance[server.id] || "Pendiente";
+      return `<tr><td>${escapeHtml(server.name)}</td><td>${escapeHtml(status)}</td></tr>`;
+    })
+    .join("");
+
+  const printable = window.open("", "_blank", "width=1000,height=820");
+  if (!printable) return;
+  printable.document.write(`
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Asistencia - ${escapeHtml(service.date)}</title>
+      <style>
+        @page { size: A4 portrait; margin: 14mm; }
+        body { font-family: Arial, sans-serif; color: #1b2940; margin: 0; }
+        h1 { margin: 0 0 8px; font-size: 22px; }
+        p { margin: 0 0 8px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        th, td { border: 1px solid #c8d2e5; padding: 6px; text-align: left; }
+        th { background: #eef4ff; }
+      </style>
+    </head>
+    <body>
+      <h1>Asistencia por Servicio</h1>
+      <p><strong>Fecha de servicio:</strong> ${escapeHtml(formatDate(service.date))}</p>
+      <p><strong>Lineas:</strong> ${escapeHtml(service.lines.join(" / "))}</p>
+      <p><strong>Asistieron:</strong> ${stats.yesCount} | <strong>No asistieron:</strong> ${stats.noCount}</p>
+      <table>
+        <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </body>
+    </html>
+  `);
+  printable.document.close();
+  printable.focus();
+  printable.print();
+}
+
+function exportCurrentServiceExcel() {
+  const service = getCurrentService();
+  if (!service) return;
+  const headers = ["Fecha de servicio", "Lineas", "Servidor", "Asistencia"];
+  const linesText = service.lines.join(" / ");
+  const rows = state.servers.map((server) => {
+    const status = service.attendance[server.id] || "Pendiente";
+    return [service.date, linesText, server.name, status];
+  });
+
+  const csv = [headers, ...rows]
+    .map((row) => row.map(csvEscape).join(","))
+    .join("\n");
+
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `asistencia-${service.date}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+  return text;
 }
 
 function handleSaveServiceStats() {
