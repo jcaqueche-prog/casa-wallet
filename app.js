@@ -78,6 +78,10 @@ const yesPctText = document.getElementById("yesPctText");
 const noPctText = document.getElementById("noPctText");
 const yesList = document.getElementById("yesList");
 const noList = document.getElementById("noList");
+const summaryMonth = document.getElementById("summaryMonth");
+const summaryServiceSelect = document.getElementById("summaryServiceSelect");
+const summaryPdfButton = document.getElementById("summaryPdfButton");
+const summaryPreview = document.getElementById("summaryPreview");
 const serverSearch = document.getElementById("serverSearch");
 const todayLabel = document.getElementById("todayLabel");
 const totalServers = document.getElementById("totalServers");
@@ -102,6 +106,9 @@ serviceShift.addEventListener("change", syncShiftVisibility);
 exportPdfButton.addEventListener("click", exportCurrentChecklistPdf);
 finalizeServiceButton.addEventListener("click", finalizeCurrentService);
 generateConciliationButton.addEventListener("click", generateConciliationList);
+summaryMonth.addEventListener("change", renderSummaryView);
+summaryServiceSelect.addEventListener("change", renderSummaryView);
+summaryPdfButton.addEventListener("click", exportMonthlySummaryPdf);
 serverSearch.addEventListener("input", renderApp);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
@@ -123,6 +130,7 @@ function initializeControls() {
   exportPdfButton.disabled = true;
   finalizeServiceButton.disabled = true;
   generateConciliationButton.disabled = true;
+  summaryMonth.value = today.slice(0, 7);
 }
 
 function loadState() {
@@ -171,6 +179,11 @@ function handleSaveService(event) {
   event.preventDefault();
   syncShiftVisibility();
   serviceReady = true;
+  const key = getServiceKey(getCurrentServiceMeta());
+  if (!state.attendance[key]) {
+    state.attendance[key] = {};
+  }
+  saveState();
   serviceConfigForm.hidden = true;
   addServiceButton.disabled = false;
   renderApp();
@@ -212,6 +225,7 @@ function renderApp() {
   renderResultLists();
   renderServiceMetrics();
   renderConciliationBoard();
+  renderSummaryView();
 }
 
 function getCurrentServiceMeta() {
@@ -487,6 +501,141 @@ function renderServiceMetrics() {
   noBar.style.width = `${stats.noPct}%`;
   yesPctText.textContent = `Si: ${stats.yesPct}%`;
   noPctText.textContent = `No: ${stats.noPct}%`;
+}
+
+function renderSummaryView() {
+  const monthValue = summaryMonth.value;
+  const options = getServiceKeysByMonth(monthValue);
+  const current = summaryServiceSelect.value;
+  summaryServiceSelect.innerHTML = "";
+
+  if (!options.length) {
+    summaryServiceSelect.innerHTML = `<option value="">Sin servicios en este mes</option>`;
+    summaryPdfButton.disabled = true;
+    summaryPreview.innerHTML = `<p class="result-empty">No hay servicios guardados para el mes seleccionado.</p>`;
+    return;
+  }
+
+  options.forEach((serviceKey) => {
+    const option = document.createElement("option");
+    option.value = serviceKey;
+    option.textContent = formatServiceKeyLabel(serviceKey);
+    summaryServiceSelect.appendChild(option);
+  });
+
+  if (options.includes(current)) {
+    summaryServiceSelect.value = current;
+  } else {
+    summaryServiceSelect.value = options[0];
+  }
+
+  summaryPdfButton.disabled = false;
+  const selectedKey = summaryServiceSelect.value;
+  const stats = getStatsByServiceKey(selectedKey);
+  summaryPreview.innerHTML = `
+    <div class="panel__header">
+      <h3>${escapeHtml(formatServiceKeyLabel(selectedKey))}</h3>
+      <p>Total: ${stats.total} | Llegaron: ${stats.yesRows.length} (${stats.yesPct}%) | Faltaron: ${stats.noRows.length} (${stats.noPct}%)</p>
+    </div>
+    <div class="result-grid">
+      <article class="result-card">
+        <h3>Asistieron (Si)</h3>
+        ${renderSummaryTable(stats.yesRows)}
+      </article>
+      <article class="result-card">
+        <h3>No asistieron (No)</h3>
+        ${renderSummaryTable(stats.noRows)}
+      </article>
+    </div>
+  `;
+}
+
+function getServiceKeysByMonth(monthValue) {
+  if (!monthValue) {
+    return Object.keys(state.attendance).sort().reverse();
+  }
+  return Object.keys(state.attendance)
+    .filter((key) => key.startsWith(monthValue))
+    .sort()
+    .reverse();
+}
+
+function parseServiceKey(serviceKey) {
+  const [date, day, shift] = String(serviceKey).split("__");
+  return { date: date || "", day: day || "", shift: shift || "NA" };
+}
+
+function formatServiceKeyLabel(serviceKey) {
+  const meta = parseServiceKey(serviceKey);
+  const shiftText = meta.shift === "NA" ? "" : ` - Turno ${meta.shift}`;
+  return `${formatDate(meta.date)} - ${meta.day}${shiftText}`;
+}
+
+function getStatsByServiceKey(serviceKey) {
+  const rows = state.attendance[serviceKey] || {};
+  const yesRows = state.servers.filter((server) => rows[server.id]?.status === "Si");
+  const noRows = state.servers.filter((server) => rows[server.id]?.status === "No");
+  const total = state.servers.length;
+  const yesPct = total ? Math.round((yesRows.length / total) * 100) : 0;
+  const noPct = total ? Math.round((noRows.length / total) * 100) : 0;
+  return { yesRows, noRows, total, yesPct, noPct };
+}
+
+function renderSummaryTable(items) {
+  if (!items.length) {
+    return `<p class="result-empty">Sin registros.</p>`;
+  }
+  const rows = items
+    .map((item) => `<tr><td>${escapeHtml(item.name)}</td></tr>`)
+    .join("");
+  return `<table class="result-table"><thead><tr><th>Nombre</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function exportMonthlySummaryPdf() {
+  const selectedKey = summaryServiceSelect.value;
+  if (!selectedKey) return;
+
+  const stats = getStatsByServiceKey(selectedKey);
+  const printable = window.open("", "_blank", "width=1100,height=850");
+  if (!printable) return;
+
+  printable.document.write(`
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Resumen de Servicio</title>
+      <style>
+        @page { size: A4 portrait; margin: 14mm; }
+        body { font-family: Arial, sans-serif; color: #1b2940; margin: 0; }
+        h1 { margin: 0 0 8px; font-size: 22px; }
+        p { margin: 0 0 12px; font-size: 13px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #c8d2e5; padding: 6px; text-align: left; }
+        th { background: #eef4ff; }
+      </style>
+    </head>
+    <body>
+      <h1>Resumen de Servicio</h1>
+      <p>${escapeHtml(formatServiceKeyLabel(selectedKey))}</p>
+      <p>Total: ${stats.total} | Llegaron: ${stats.yesRows.length} (${stats.yesPct}%) | Faltaron: ${stats.noRows.length} (${stats.noPct}%)</p>
+      <div class="grid">
+        <section>
+          <h3>Asistieron (Si)</h3>
+          ${renderPrintableTable(stats.yesRows)}
+        </section>
+        <section>
+          <h3>No asistieron (No)</h3>
+          ${renderPrintableTable(stats.noRows)}
+        </section>
+      </div>
+    </body>
+    </html>
+  `);
+  printable.document.close();
+  printable.focus();
+  printable.print();
 }
 
 function finalizeCurrentService() {

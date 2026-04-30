@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260430b" />
+    <link rel="stylesheet" href="./styles.css?v=20260430c" />
   </head>
   <body>
     <div class="app-shell">
@@ -36,8 +36,17 @@
         <button class="tab-button is-active" type="button" data-view-target="servidores">
           SERVIDORES
         </button>
+        <button class="tab-button" type="button" data-view-target="servicios">
+          SERVICIOS
+        </button>
         <button class="tab-button" type="button" data-view-target="checklist">
-          CHECKLIST DE SERVICIO
+          CHECKLIST
+        </button>
+        <button class="tab-button" type="button" data-view-target="conciliacion">
+          CONCILIACION
+        </button>
+        <button class="tab-button" type="button" data-view-target="resumen">
+          RESUMEN
         </button>
       </nav>
 
@@ -134,22 +143,16 @@
           </section>
         </section>
 
-        <section class="view" data-view="checklist">
+        <section class="view" data-view="servicios">
           <section class="panel">
             <div class="panel__header panel__header--split">
               <div>
-                <h2>Checklist de servicio</h2>
-                <p>Selecciona el servicio y marca si cada servidor asistio o no asistio.</p>
+                <h2>Servicios</h2>
+                <p>Crea y activa un servicio para luego registrar asistencia en checklist.</p>
               </div>
               <div class="service-actions">
                 <button id="addServiceButton" type="button" class="primary-button">
                   Agregar servicio
-                </button>
-                <button id="exportPdfButton" type="button" class="primary-button">
-                  Generar PDF
-                </button>
-                <button id="finalizeServiceButton" type="button" class="primary-button">
-                  Finalizar servicio
                 </button>
               </div>
             </div>
@@ -180,6 +183,25 @@
               </label>
               <button type="submit" class="primary-button">Guardar servicio</button>
             </form>
+          </section>
+        </section>
+
+        <section class="view" data-view="checklist">
+          <section class="panel">
+            <div class="panel__header panel__header--split">
+              <div>
+                <h2>Checklist</h2>
+                <p>Marca si cada servidor asistio o no asistio al servicio activo.</p>
+              </div>
+              <div class="service-actions">
+                <button id="exportPdfButton" type="button" class="primary-button">
+                  Generar PDF
+                </button>
+                <button id="finalizeServiceButton" type="button" class="primary-button">
+                  Finalizar servicio
+                </button>
+              </div>
+            </div>
 
             <div class="attendance-header">
               <span>Servidor</span>
@@ -216,19 +238,44 @@
                 </div>
               </div>
             </section>
+          </section>
+        </section>
 
-            <section class="panel">
-              <div class="panel__header panel__header--split">
-                <div>
-                  <h3>Listado de conciliacion</h3>
-                  <p>Grupos mezclados para seguimiento telefonico.</p>
-                </div>
-                <button id="generateConciliationButton" type="button" class="primary-button">
-                  Generar listado de conciliacion
-                </button>
+        <section class="view" data-view="conciliacion">
+          <section class="panel">
+            <div class="panel__header panel__header--split">
+              <div>
+                <h3>Listado de conciliacion</h3>
+                <p>Grupos mezclados para seguimiento telefonico.</p>
               </div>
-              <div id="conciliationBoard" class="conciliation-board"></div>
-            </section>
+              <button id="generateConciliationButton" type="button" class="primary-button">
+                Generar listado de conciliacion
+              </button>
+            </div>
+            <div id="conciliationBoard" class="conciliation-board"></div>
+          </section>
+        </section>
+
+        <section class="view" data-view="resumen">
+          <section class="panel">
+            <div class="panel__header">
+              <h2>Resumen mensual</h2>
+              <p>Busca por mes y por servicio, revisa resultados y exporta el resumen en PDF.</p>
+            </div>
+            <div class="service-meta-grid">
+              <label>
+                Mes
+                <input id="summaryMonth" type="month" />
+              </label>
+              <label>
+                Servicio del mes
+                <select id="summaryServiceSelect"></select>
+              </label>
+              <button id="summaryPdfButton" type="button" class="primary-button">
+                Descargar PDF resumen
+              </button>
+            </div>
+            <div id="summaryPreview" class="panel"></div>
           </section>
         </section>
       </main>
@@ -261,6 +308,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260430b"></script>
+    <script src="./app.js?v=20260430c"></script>
   </body>
 </html>
