@@ -984,14 +984,22 @@ function shareSummaryRangeExcel() {
   const headers = ["Fecha", "Servicio", "Asistieron", "No asistieron"];
   const rows = records.map((s) => {
     const st = getServiceStats(s);
-    return [s.date, s.lines.join(" / "), st.yesCount, st.noCount];
+    return [formatDate(s.date), s.lines.join(" / "), st.yesCount, st.noCount];
   });
-  const csv = [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
-  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
   const fromName = from ? formatDateForFile(from) : "sin inicio";
   const toName = to ? formatDateForFile(to) : "sin fin";
-  const fileName = `${sanitizeFileName(`Resumen ${fromName} a ${toName}`)}.csv`;
-  shareFileBlob(blob, fileName, "text/csv;charset=utf-8;");
+  const fileName = `${sanitizeFileName(`Resumen ${fromName} a ${toName}`)}.xls`;
+  const meta = [
+    ["Rango", `${fromName} a ${toName}`],
+    ["Total de servicios", String(records.length)],
+  ];
+  exportStyledExcel({
+    fileName,
+    title: "Resumen de Servicios",
+    meta,
+    headers,
+    rows,
+  });
 }
 
 function renderAlfolis() {
@@ -1171,15 +1179,63 @@ function exportSingleSummaryPdf(service) {
 }
 
 function exportSingleSummaryExcel(service) {
-  const headers = ["Fecha de servicio", "Tipo de servicio", "Servidor", "Asistencia"];
-  const rows = state.servers.map((server) => {
+  const stats = getServiceStats(service);
+  const headers = ["No.", "Servidor", "Asistencia"];
+  const rows = state.servers.map((server, index) => {
     const status = service.attendance[server.id] || "Pendiente";
-    return [formatDate(service.date), service.lines.join(" / "), server.name, status];
+    return [String(index + 1), server.name, status];
   });
-  const csv = [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
-  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
-  const fileName = `${buildServiceFileBase(service)}.csv`;
-  shareFileBlob(blob, fileName, "text/csv;charset=utf-8;");
+  const fileName = `${buildServiceFileBase(service)}.xls`;
+  const meta = [
+    ["Fecha de servicio", formatDate(service.date)],
+    ["Tipo de servicio", service.lines.join(" / ")],
+    ["Asistieron", String(stats.yesCount)],
+    ["No asistieron", String(stats.noCount)],
+  ];
+  exportStyledExcel({
+    fileName,
+    title: "Resumen de Servicio",
+    meta,
+    headers,
+    rows,
+  });
+}
+
+function exportStyledExcel({ fileName, title, meta = [], headers = [], rows = [] }) {
+  const metaRows = meta
+    .map(([label, value]) => `<tr><td class="meta-label">${escapeHtml(label)}</td><td class="meta-value">${escapeHtml(value)}</td></tr>`)
+    .join("");
+  const headerCells = headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("");
+  const bodyRows = rows
+    .map((row) => `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`)
+    .join("");
+
+  const html = `<!doctype html>
+  <html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { font-family: "Segoe UI", Arial, sans-serif; color:#1f2b42; }
+      h1 { color:#1f3f75; margin:0 0 10px; }
+      table { border-collapse: collapse; width: 100%; margin-bottom: 12px; }
+      th, td { border:1px solid #c5d2e8; padding:7px; font-size:12px; }
+      th { background:#e8effc; color:#24467f; font-weight:700; }
+      .meta-label { background:#f1f5fd; font-weight:700; width: 220px; }
+      .meta-value { background:#ffffff; }
+    </style>
+  </head>
+  <body>
+    <h1>${escapeHtml(title)}</h1>
+    <table>${metaRows}</table>
+    <table>
+      <thead><tr>${headerCells}</tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+  </body>
+  </html>`;
+
+  const blob = new Blob([`\uFEFF${html}`], { type: "application/vnd.ms-excel;charset=utf-8;" });
+  shareFileBlob(blob, fileName, "application/vnd.ms-excel");
 }
 
 function openJpegPreview(title, lines, includeShareHint = false) {
