@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20260430l" />
+    <link rel="stylesheet" href="./styles.css?v=20260430m" />
   </head>
   <body>
     <div class="app-shell">
@@ -25,7 +25,8 @@
       </header>
 
       <nav class="tabbar">
-        <button class="tab-button is-active" type="button" data-view-target="servidores">SERVIDORES</button>
+        <button class="tab-button is-active" type="button" data-view-target="inicio">INICIO</button>
+        <button class="tab-button" type="button" data-view-target="servidores">SERVIDORES</button>
         <button class="tab-button" type="button" data-view-target="servicios">SERVICIOS</button>
         <button class="tab-button" type="button" data-view-target="conciliacion">CONCILIACION</button>
         <button class="tab-button" type="button" data-view-target="resumen">RESUMEN</button>
@@ -33,7 +34,20 @@
       </nav>
 
       <main class="views">
-        <section class="view view--active" data-view="servidores">
+        <section class="view view--active" data-view="inicio">
+          <section class="panel home-panel">
+            <div class="home-grid">
+              <img class="home-image" src="./deleite.jpg" alt="2026 Año del Deleite" />
+              <article class="home-verse-card">
+                <p class="eyebrow">Versiculo del dia</p>
+                <blockquote id="homeVerseText" class="home-verse-text">--</blockquote>
+                <p id="homeVerseRef" class="home-verse-ref">--</p>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" data-view="servidores">
           <div class="layout-grid">
             <section class="panel panel--form">
               <div class="panel__header">
@@ -254,6 +268,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260430l"></script>
+    <script src="./app.js?v=20260430m"></script>
   </body>
 </html>

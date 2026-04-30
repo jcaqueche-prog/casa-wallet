@@ -1,5 +1,13 @@
 const STORAGE_KEY = "iglesia-servidores-app";
 const DATABASE_SOURCE_VERSION = "v5-replanteado-2026-04-30";
+const ENCOURAGEMENT_VERSES = [
+  { text: "Este es el dia que hizo Jehova; nos gozaremos y alegraremos en el.", ref: "Salmos 118:24" },
+  { text: "El gozo de Jehova es vuestra fuerza.", ref: "Nehemias 8:10" },
+  { text: "Los que esperan a Jehova tendran nuevas fuerzas.", ref: "Isaias 40:31" },
+  { text: "Echando toda vuestra ansiedad sobre el, porque el tiene cuidado de vosotros.", ref: "1 Pedro 5:7" },
+  { text: "Todo lo puedo en Cristo que me fortalece.", ref: "Filipenses 4:13" },
+  { text: "No temas, porque yo estoy contigo; no desmayes, porque yo soy tu Dios.", ref: "Isaias 41:10" },
+];
 
 const SEED_SERVERS = [
   { id: "seed-1", name: "Freddy Armando Figueroa Enriquez", birthday: "1970-02-15", phone: "45240179", address: "3 av 3-15 Fuentes 1 chinautla" },
@@ -84,6 +92,8 @@ const addMaleLineButton = document.getElementById("addMaleLineButton");
 const addFemaleLineButton = document.getElementById("addFemaleLineButton");
 const maleAlfolisList = document.getElementById("maleAlfolisList");
 const femaleAlfolisList = document.getElementById("femaleAlfolisList");
+const homeVerseText = document.getElementById("homeVerseText");
+const homeVerseRef = document.getElementById("homeVerseRef");
 
 const serverSearch = document.getElementById("serverSearch");
 const todayLabel = document.getElementById("todayLabel");
@@ -128,8 +138,16 @@ function initialize() {
   serviceDate.value = today;
   summaryDateFrom.value = today.slice(0, 8) + "01";
   summaryDateTo.value = today;
-  setActiveView("servidores");
+  renderHomeVerse();
+  setActiveView("inicio");
   renderAll();
+}
+
+function renderHomeVerse() {
+  const index = Math.floor(Math.random() * ENCOURAGEMENT_VERSES.length);
+  const verse = ENCOURAGEMENT_VERSES[index];
+  homeVerseText.textContent = verse.text;
+  homeVerseRef.textContent = verse.ref;
 }
 
 function loadState() {
