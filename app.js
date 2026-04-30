@@ -56,6 +56,7 @@ const defaultState = {
   sourceVersion: DATABASE_SOURCE_VERSION,
   servers: SEED_SERVERS.map((server) => ({ ...server })),
   services: [],
+  summarySnapshots: [],
   alfolis: {
     male: [{ id: "m-1", name: "", position: "" }],
     female: [{ id: "f-1", name: "", position: "" }],
@@ -84,9 +85,11 @@ const generateConciliationButton = document.getElementById("generateConciliation
 const conciliationBoard = document.getElementById("conciliationBoard");
 const summaryDateFrom = document.getElementById("summaryDateFrom");
 const summaryDateTo = document.getElementById("summaryDateTo");
+const summarySaveGeneralButton = document.getElementById("summarySaveGeneralButton");
 const summaryShareButton = document.getElementById("summaryShareButton");
 const summaryCards = document.getElementById("summaryCards");
 const summaryPreview = document.getElementById("summaryPreview");
+const summaryGeneralCards = document.getElementById("summaryGeneralCards");
 const alfolisShareButton = document.getElementById("alfolisShareButton");
 const newIngresoType = document.getElementById("newIngresoType");
 const newIngresoButton = document.getElementById("newIngresoButton");
@@ -123,7 +126,9 @@ generateConciliationButton.addEventListener("click", generateConciliation);
 conciliationBoard.addEventListener("click", handleConciliationActions);
 summaryDateFrom.addEventListener("change", renderSummary);
 summaryDateTo.addEventListener("change", renderSummary);
+summarySaveGeneralButton.addEventListener("click", saveGeneralSummarySnapshot);
 summaryCards.addEventListener("click", handleSummaryCardClick);
+summaryGeneralCards.addEventListener("click", handleSummarySnapshotClick);
 summaryShareButton.addEventListener("click", shareSummaryRange);
 addMaleLineButton.addEventListener("click", () => addAlfoliLine("male"));
 addFemaleLineButton.addEventListener("click", () => addAlfoliLine("female"));
@@ -183,6 +188,7 @@ function loadState() {
       sourceVersion: DATABASE_SOURCE_VERSION,
       servers: Array.isArray(parsed.servers) ? parsed.servers : [],
       services: Array.isArray(parsed.services) ? parsed.services : [],
+      summarySnapshots: Array.isArray(parsed.summarySnapshots) ? parsed.summarySnapshots : [],
       alfolis: parsed.alfolis && typeof parsed.alfolis === "object"
         ? {
             male: Array.isArray(parsed.alfolis.male) && parsed.alfolis.male.length ? parsed.alfolis.male : [{ id: "m-1", name: "", position: "" }],
@@ -605,6 +611,7 @@ function renderSummary() {
   if (!records.length) {
     summaryCards.innerHTML = `<p class="result-empty">No hay estadisticas guardadas en este rango.</p>`;
     summaryPreview.innerHTML = "";
+    renderSummarySnapshots();
     return;
   }
 
@@ -630,6 +637,73 @@ function renderSummary() {
     ? summaryPreview.dataset.serviceId
     : records[0].id;
   renderSummaryPreview(chosenId);
+  renderSummarySnapshots();
+}
+
+function saveGeneralSummarySnapshot() {
+  const from = summaryDateFrom.value || "";
+  const to = summaryDateTo.value || "";
+  const records = state.services
+    .filter((s) => s.statsSaved)
+    .filter((s) => (!from || s.date >= from) && (!to || s.date <= to));
+
+  if (!records.length) {
+    window.alert("No hay datos en ese rango para guardar un resumen general.");
+    return;
+  }
+
+  let yesCount = 0;
+  let noCount = 0;
+  records.forEach((service) => {
+    const stats = getServiceStats(service);
+    yesCount += stats.yesCount;
+    noCount += stats.noCount;
+  });
+
+  state.summarySnapshots.unshift({
+    id: createId("sum"),
+    from,
+    to,
+    servicesCount: records.length,
+    yesCount,
+    noCount,
+    createdAt: new Date().toISOString(),
+  });
+  saveState();
+  renderSummarySnapshots();
+  window.alert("Resumen general guardado.");
+}
+
+function renderSummarySnapshots() {
+  if (!summaryGeneralCards) return;
+  const snapshots = Array.isArray(state.summarySnapshots) ? state.summarySnapshots : [];
+  if (!snapshots.length) {
+    summaryGeneralCards.innerHTML = "";
+    return;
+  }
+
+  summaryGeneralCards.innerHTML = snapshots
+    .map((snap) => `
+      <article class="summary-card">
+        <p><strong>resumen general:</strong> ${escapeHtml(snap.from || "(sin inicio)")} a ${escapeHtml(snap.to || "(sin fin)")}</p>
+        <p><strong>servicios incluidos:</strong> ${snap.servicesCount}</p>
+        <p><strong>asistieron:</strong> ${snap.yesCount}</p>
+        <p><strong>no asistieron:</strong> ${snap.noCount}</p>
+        <div class="service-actions">
+          <button type="button" class="ghost-button summary-snapshot-delete-btn" data-snapshot-id="${snap.id}">Eliminar</button>
+        </div>
+      </article>
+    `)
+    .join("");
+}
+
+function handleSummarySnapshotClick(event) {
+  const deleteBtn = event.target.closest(".summary-snapshot-delete-btn");
+  if (!deleteBtn) return;
+  const snapshotId = deleteBtn.dataset.snapshotId;
+  state.summarySnapshots = (state.summarySnapshots || []).filter((item) => item.id !== snapshotId);
+  saveState();
+  renderSummarySnapshots();
 }
 
 function handleSummaryCardClick(event) {
