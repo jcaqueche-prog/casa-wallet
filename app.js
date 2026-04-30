@@ -97,7 +97,6 @@ const addMaleLineButton = document.getElementById("addMaleLineButton");
 const addFemaleLineButton = document.getElementById("addFemaleLineButton");
 const maleAlfolisList = document.getElementById("maleAlfolisList");
 const femaleAlfolisList = document.getElementById("femaleAlfolisList");
-const homeImage = document.getElementById("homeImage");
 const homeVerseText = document.getElementById("homeVerseText");
 const homeVerseRef = document.getElementById("homeVerseRef");
 
@@ -148,27 +147,9 @@ function initialize() {
   serviceDate.value = today;
   summaryDateFrom.value = today.slice(0, 8) + "01";
   summaryDateTo.value = today;
-  ensureHomeImage();
   renderHomeVerse();
   setActiveView("inicio");
   renderAll();
-}
-
-function ensureHomeImage() {
-  if (!homeImage) return;
-  const candidates = [
-    "./deleite.jpg?v=20260430",
-    "./deleite.jpg",
-    "deleite.jpg",
-  ];
-  let idx = 0;
-  homeImage.onerror = () => {
-    idx += 1;
-    if (idx < candidates.length) {
-      homeImage.src = candidates[idx];
-    }
-  };
-  homeImage.src = candidates[idx];
 }
 
 function renderHomeVerse() {
