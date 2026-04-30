@@ -74,7 +74,7 @@ const conciliationBoard = document.getElementById("conciliationBoard");
 const summaryDateFrom = document.getElementById("summaryDateFrom");
 const summaryDateTo = document.getElementById("summaryDateTo");
 const summaryShareButton = document.getElementById("summaryShareButton");
-const summaryButtons = document.getElementById("summaryButtons");
+const summaryCards = document.getElementById("summaryCards");
 const summaryPreview = document.getElementById("summaryPreview");
 const alfolisShareButton = document.getElementById("alfolisShareButton");
 const addMaleLineButton = document.getElementById("addMaleLineButton");
@@ -105,7 +105,7 @@ generateConciliationButton.addEventListener("click", generateConciliation);
 conciliationBoard.addEventListener("click", handleConciliationActions);
 summaryDateFrom.addEventListener("change", renderSummary);
 summaryDateTo.addEventListener("change", renderSummary);
-summaryButtons.addEventListener("click", handleSummaryButtonClick);
+summaryCards.addEventListener("click", handleSummaryCardClick);
 summaryShareButton.addEventListener("click", shareSummaryRange);
 addMaleLineButton.addEventListener("click", () => addAlfoliLine("male"));
 addFemaleLineButton.addEventListener("click", () => addAlfoliLine("female"));
@@ -443,21 +443,29 @@ function renderSummary() {
     .filter((s) => (!from || s.date >= from) && (!to || s.date <= to))
     .sort((a, b) => b.date.localeCompare(a.date));
 
-  summaryButtons.innerHTML = "";
+  summaryCards.innerHTML = "";
   if (!records.length) {
-    summaryButtons.innerHTML = `<p class="result-empty">No hay estadisticas guardadas en este rango.</p>`;
+    summaryCards.innerHTML = `<p class="result-empty">No hay estadisticas guardadas en este rango.</p>`;
     summaryPreview.innerHTML = "";
     return;
   }
 
-  records.forEach((service) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "tab-button summary-service-btn";
-    btn.dataset.serviceId = service.id;
-    btn.textContent = `${formatDate(service.date)} | ${service.lines.join(" / ")}`;
-    summaryButtons.appendChild(btn);
-  });
+  summaryCards.innerHTML = records
+    .map((service) => {
+      const stats = getServiceStats(service);
+      return `
+        <article class="summary-card">
+          <p><strong>fecha de servicio:</strong> ${escapeHtml(formatDate(service.date))}</p>
+          <p><strong>asistieron:</strong> ${stats.yesCount}</p>
+          <p><strong>no asistieron:</strong> ${stats.noCount}</p>
+          <div class="service-actions">
+            <button type="button" class="primary-button summary-open-btn" data-service-id="${service.id}">Ver grafica</button>
+            <button type="button" class="ghost-button summary-delete-btn" data-service-id="${service.id}">Eliminar</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
 
   const chosenId = summaryPreview.dataset.serviceId && records.some((r) => r.id === summaryPreview.dataset.serviceId)
     ? summaryPreview.dataset.serviceId
@@ -465,10 +473,23 @@ function renderSummary() {
   renderSummaryPreview(chosenId);
 }
 
-function handleSummaryButtonClick(event) {
-  const btn = event.target.closest(".summary-service-btn");
-  if (!btn) return;
-  renderSummaryPreview(btn.dataset.serviceId);
+function handleSummaryCardClick(event) {
+  const deleteBtn = event.target.closest(".summary-delete-btn");
+  if (deleteBtn) {
+    const serviceId = deleteBtn.dataset.serviceId;
+    const service = state.services.find((s) => s.id === serviceId);
+    if (!service) return;
+    const confirmed = window.confirm(`Eliminar estadistica de ${formatDate(service.date)}?`);
+    if (!confirmed) return;
+    service.statsSaved = false;
+    saveState();
+    renderSummary();
+    return;
+  }
+
+  const openBtn = event.target.closest(".summary-open-btn");
+  if (!openBtn) return;
+  renderSummaryPreview(openBtn.dataset.serviceId);
 }
 
 function renderSummaryPreview(serviceId) {

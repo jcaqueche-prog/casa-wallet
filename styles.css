@@ -213,8 +213,23 @@ textarea { resize: vertical; }
 .conciliation-card__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
 .conciliation-card ol { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
 
-.summary-buttons { grid-template-columns: 1fr; margin: 10px 0; }
-.summary-service-btn { text-align: left; }
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.summary-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.88);
+  padding: 12px;
+}
+
+.summary-card p {
+  margin: 0 0 8px;
+}
 .summary-preview-row { display: grid; gap: 8px; justify-items: center; }
 
 .alfolis-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
