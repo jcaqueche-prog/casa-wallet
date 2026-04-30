@@ -93,7 +93,8 @@ const summarySharePdfButton = document.getElementById("summarySharePdfButton");
 const summaryShareExcelButton = document.getElementById("summaryShareExcelButton");
 const summaryCards = document.getElementById("summaryCards");
 const summaryGeneralCards = document.getElementById("summaryGeneralCards");
-const alfolisShareButton = document.getElementById("alfolisShareButton");
+const alfolisPdfButton = document.getElementById("alfolisPdfButton");
+const alfolisExcelButton = document.getElementById("alfolisExcelButton");
 const newIngresoType = document.getElementById("newIngresoType");
 const newIngresoButton = document.getElementById("newIngresoButton");
 const addMaleLineButton = document.getElementById("addMaleLineButton");
@@ -142,7 +143,8 @@ summaryShareExcelButton.addEventListener("click", shareSummaryRangeExcel);
 addMaleLineButton.addEventListener("click", () => addAlfoliLine("male"));
 addFemaleLineButton.addEventListener("click", () => addAlfoliLine("female"));
 newIngresoButton.addEventListener("click", () => addAlfoliLine(newIngresoType.value));
-alfolisShareButton.addEventListener("click", shareAlfolis);
+alfolisPdfButton.addEventListener("click", exportAlfolisPdf);
+alfolisExcelButton.addEventListener("click", exportAlfolisExcel);
 serverSearch.addEventListener("input", renderServers);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
@@ -496,7 +498,7 @@ function exportCurrentServiceExcel() {
     .join("\n");
 
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
-  downloadBlob(blob, `asistencia-${service.date}.csv`);
+  downloadBlob(blob, `${buildServiceFileBase(service)}.csv`);
 }
 
 function shareCurrentServicePdf() {
@@ -519,7 +521,7 @@ function shareCurrentServiceExcel() {
   });
   const csv = [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
-  const fileName = `asistencia-${service.date}.csv`;
+  const fileName = `${buildServiceFileBase(service)}.csv`;
   shareFileBlob(blob, fileName, "text/csv;charset=utf-8;");
 }
 
@@ -740,7 +742,8 @@ function renderSummary() {
           <p><strong>no asistieron:</strong> ${stats.noCount}</p>
           <div class="service-actions">
             <button type="button" class="primary-button summary-open-btn" data-service-id="${service.id}">${expanded ? "Ocultar detalle" : "Ver detalle"}</button>
-            <button type="button" class="primary-button summary-share-btn" data-service-id="${service.id}">Compartir</button>
+            <button type="button" class="primary-button summary-share-pdf-btn" data-service-id="${service.id}">Compartir PDF</button>
+            <button type="button" class="primary-button summary-share-excel-btn" data-service-id="${service.id}">Compartir Excel</button>
             <button type="button" class="primary-button summary-edit-btn" data-service-id="${service.id}">Editar</button>
             <button type="button" class="ghost-button summary-delete-btn" data-service-id="${service.id}">Eliminar</button>
           </div>
@@ -860,22 +863,19 @@ function handleSummaryCardClick(event) {
     return;
   }
 
-  const shareBtn = event.target.closest(".summary-share-btn");
-  if (shareBtn) {
-    const service = state.services.find((s) => s.id === shareBtn.dataset.serviceId);
+  const sharePdfBtn = event.target.closest(".summary-share-pdf-btn");
+  if (sharePdfBtn) {
+    const service = state.services.find((s) => s.id === sharePdfBtn.dataset.serviceId);
     if (!service) return;
-    const stats = getServiceStats(service);
-    const lines = [
-      `Servicio: ${formatDate(service.date)}`,
-      `Tipo: ${service.lines.join(" / ")}`,
-      `Asistieron: ${stats.yesCount}`,
-      `No asistieron: ${stats.noCount}`,
-      "",
-      "Listado de asistencia:",
-      ...state.servers.map((server) => `${server.name}: ${service.attendance[server.id] || "Pendiente"}`),
-    ];
-    openJpegPreview("Resumen de Servicio", lines, true);
-    shareJpeg("Resumen de Servicio", lines);
+    exportSingleSummaryPdf(service);
+    return;
+  }
+
+  const shareExcelBtn = event.target.closest(".summary-share-excel-btn");
+  if (shareExcelBtn) {
+    const service = state.services.find((s) => s.id === shareExcelBtn.dataset.serviceId);
+    if (!service) return;
+    exportSingleSummaryExcel(service);
     return;
   }
 
@@ -988,7 +988,9 @@ function shareSummaryRangeExcel() {
   });
   const csv = [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
-  const fileName = `resumen-${from || "inicio"}-${to || "fin"}.csv`;
+  const fromName = from ? formatDateForFile(from) : "sin inicio";
+  const toName = to ? formatDateForFile(to) : "sin fin";
+  const fileName = `${sanitizeFileName(`Resumen ${fromName} a ${toName}`)}.csv`;
   shareFileBlob(blob, fileName, "text/csv;charset=utf-8;");
 }
 
@@ -1045,13 +1047,139 @@ function addAlfoliLine(type) {
   renderAlfolis();
 }
 
-function shareAlfolis() {
-  const lines = ["Alfolis", "", "Servidores:"];
-  state.alfolis.male.forEach((r, i) => lines.push(`${i + 1}. ${r.name || "-"} | Posicion ${r.position || "-"}`));
-  lines.push("", "Servidoras:");
-  state.alfolis.female.forEach((r, i) => lines.push(`${i + 1}. ${r.name || "-"} | Posicion ${r.position || "-"}`));
-  openJpegPreview("Alfolis", lines, true);
-  shareJpeg("Alfolis", lines);
+function exportAlfolisPdf() {
+  const maleRows = state.alfolis.male
+    .map((row, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(row.name || "-")}</td><td>${escapeHtml(row.position || "-")}</td></tr>`)
+    .join("");
+  const femaleRows = state.alfolis.female
+    .map((row, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(row.name || "-")}</td><td>${escapeHtml(row.position || "-")}</td></tr>`)
+    .join("");
+
+  const printable = window.open("", "_blank", "width=1100,height=860");
+  if (!printable) return;
+  printable.document.write(`
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Alfolis</title>
+      <style>
+        @page { size: A4 portrait; margin: 14mm; }
+        body { font-family: "Segoe UI", Arial, sans-serif; color:#1f2b42; margin:0; background:#f4f7fc; }
+        .actions { display:flex; gap:10px; margin:0 0 10px; }
+        button { padding:10px 14px; border:0; border-radius:999px; background:#2f5ca8; color:#fff; font-weight:700; cursor:pointer; }
+        .sheet { background:#fff; border:1px solid #d6e0f0; border-radius:14px; padding:18px; }
+        h1 { margin:0 0 8px; color:#1f3f75; }
+        h2 { margin:14px 0 6px; color:#24467f; font-size:16px; }
+        table { width:100%; border-collapse:collapse; font-size:12px; }
+        th, td { border:1px solid #c5d2e8; padding:7px; text-align:left; }
+        th { background:#e8effc; color:#24467f; }
+      </style>
+    </head>
+    <body>
+      <div class="actions">
+        <button onclick="window.print()">Imprimir PDF</button>
+        <button type="button" onclick="window.close()">Regresar a la APP</button>
+      </div>
+      <div class="sheet">
+        <h1>Alfolis</h1>
+        <h2>Servidores</h2>
+        <table>
+          <thead><tr><th>#</th><th>Nombre</th><th>Posicion</th></tr></thead>
+          <tbody>${maleRows}</tbody>
+        </table>
+        <h2>Servidoras</h2>
+        <table>
+          <thead><tr><th>#</th><th>Nombre</th><th>Posicion</th></tr></thead>
+          <tbody>${femaleRows}</tbody>
+        </table>
+      </div>
+    </body>
+    </html>
+  `);
+  printable.document.close();
+  printable.focus();
+}
+
+function exportAlfolisExcel() {
+  const headers = ["Grupo", "No.", "Nombre", "Posicion"];
+  const rows = [];
+  state.alfolis.male.forEach((row, i) => rows.push(["Servidores", i + 1, row.name || "-", row.position || "-"]));
+  state.alfolis.female.forEach((row, i) => rows.push(["Servidoras", i + 1, row.name || "-", row.position || "-"]));
+  const csv = [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  const fileName = `${sanitizeFileName(`Alfolis - ${formatDateForFile(getTodayIso())}`)}.csv`;
+  shareFileBlob(blob, fileName, "text/csv;charset=utf-8;");
+}
+
+function exportSingleSummaryPdf(service) {
+  const stats = getServiceStats(service);
+  const yesDeg = Math.round((stats.yesPct / 100) * 360);
+  const rows = state.servers
+    .map((server) => {
+      const status = service.attendance[server.id] || "Pendiente";
+      return `<tr><td>${escapeHtml(server.name)}</td><td>${escapeHtml(status)}</td></tr>`;
+    })
+    .join("");
+  const printable = window.open("", "_blank", "width=1100,height=860");
+  if (!printable) return;
+
+  printable.document.write(`
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>${escapeHtml(buildServiceFileBase(service))}</title>
+      <style>
+        @page { size: A4 portrait; margin: 14mm; }
+        body { font-family: "Segoe UI", Arial, sans-serif; color:#1f2b42; margin:0; background:#f4f7fc; }
+        .actions { display:flex; gap:10px; margin:0 0 10px; }
+        button { padding:10px 14px; border:0; border-radius:999px; background:#2f5ca8; color:#fff; font-weight:700; cursor:pointer; }
+        .sheet { background:#fff; border:1px solid #d6e0f0; border-radius:14px; padding:18px; }
+        h1 { margin:0 0 8px; color:#1f3f75; }
+        p { margin:0 0 8px; font-size:13px; }
+        .preview { display:flex; align-items:center; gap:12px; margin:8px 0 12px; }
+        .pie { width:74px; height:74px; border-radius:50%; background: conic-gradient(#2cae7a 0deg, #2cae7a ${yesDeg}deg, #d97878 ${yesDeg}deg, #d97878 360deg); border:1px solid #c5d2e8; }
+        table { width:100%; border-collapse:collapse; font-size:12px; }
+        th, td { border:1px solid #c5d2e8; padding:7px; text-align:left; }
+        th { background:#e8effc; color:#24467f; }
+      </style>
+    </head>
+    <body>
+      <div class="actions">
+        <button onclick="window.print()">Imprimir PDF</button>
+        <button type="button" onclick="window.close()">Regresar a la APP</button>
+      </div>
+      <div class="sheet">
+        <h1>Resumen de Servicio</h1>
+        <p><strong>Fecha de servicio:</strong> ${escapeHtml(formatDate(service.date))}</p>
+        <p><strong>Tipo de servicio:</strong> ${escapeHtml(service.lines.join(" / "))}</p>
+        <div class="preview">
+          <div class="pie"></div>
+          <p><strong>Asistieron:</strong> ${stats.yesCount} | <strong>No asistieron:</strong> ${stats.noCount}</p>
+        </div>
+        <table>
+          <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </body>
+    </html>
+  `);
+  printable.document.close();
+  printable.focus();
+}
+
+function exportSingleSummaryExcel(service) {
+  const headers = ["Fecha de servicio", "Tipo de servicio", "Servidor", "Asistencia"];
+  const rows = state.servers.map((server) => {
+    const status = service.attendance[server.id] || "Pendiente";
+    return [formatDate(service.date), service.lines.join(" / "), server.name, status];
+  });
+  const csv = [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  const fileName = `${buildServiceFileBase(service)}.csv`;
+  shareFileBlob(blob, fileName, "text/csv;charset=utf-8;");
 }
 
 function openJpegPreview(title, lines, includeShareHint = false) {
@@ -1244,6 +1372,24 @@ function getTodayIso() {
 function formatDate(value) {
   if (!value) return "--";
   return new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(`${value}T12:00:00`));
+}
+
+function formatDateForFile(value) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat("es-GT", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${value}T12:00:00`));
+}
+
+function buildServiceFileBase(service) {
+  const serviceName = service?.lines?.[0] || "servicio";
+  const dateLong = formatDateForFile(service?.date || getTodayIso());
+  return sanitizeFileName(`${serviceName} - ${dateLong}`);
+}
+
+function sanitizeFileName(value) {
+  return String(value)
+    .replace(/[\\/:*?"<>|]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function escapeHtml(value) {
