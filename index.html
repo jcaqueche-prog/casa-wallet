@@ -2,18 +2,12 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Servidores Iglesia</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./styles.css?v=20260430f" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css?v=20260430h" />
   </head>
   <body>
     <div class="app-shell">
@@ -21,42 +15,21 @@
         <div class="hero__copy">
           <p class="eyebrow">Ministerio y seguimiento</p>
           <h1>Control de Servidores</h1>
-          <p class="hero__text">
-            Registra fichas de servidores, controla asistencia y da seguimiento
-            a quienes no llegaron.
-          </p>
+          <p class="hero__text">Gestiona servidores, servicios, conciliacion, resumen y alfolis desde el mismo sistema.</p>
         </div>
         <div class="hero__panel">
           <span class="hero__label">Hoy</span>
           <strong id="todayLabel">--</strong>
-          <p class="hero__note">
-            La informacion queda guardada en este navegador.
-          </p>
+          <p class="hero__note">La informacion queda guardada en este navegador.</p>
         </div>
       </header>
 
       <nav class="tabbar">
-        <button class="tab-button is-active" type="button" data-view-target="servidores">
-          SERVIDORES
-        </button>
-        <button class="tab-button" type="button" data-view-target="servicios">
-          SERVICIOS
-        </button>
-        <button class="tab-button" type="button" data-view-target="checklist">
-          CHECKLIST
-        </button>
-        <button class="tab-button" type="button" data-view-target="asistencia">
-          ASISTENCIA
-        </button>
-        <button class="tab-button" type="button" data-view-target="conciliacion">
-          CONCILIACION
-        </button>
-        <button class="tab-button" type="button" data-view-target="resumen">
-          RESUMEN
-        </button>
-        <button class="tab-button" type="button" data-view-target="alfolis">
-          ALFOLIS
-        </button>
+        <button class="tab-button is-active" type="button" data-view-target="servidores">SERVIDORES</button>
+        <button class="tab-button" type="button" data-view-target="servicios">SERVICIOS</button>
+        <button class="tab-button" type="button" data-view-target="conciliacion">CONCILIACION</button>
+        <button class="tab-button" type="button" data-view-target="resumen">RESUMEN</button>
+        <button class="tab-button" type="button" data-view-target="alfolis">ALFOLIS</button>
       </nav>
 
       <main class="views">
@@ -71,13 +44,7 @@
               <form id="serverForm" class="form-grid">
                 <label>
                   Nombre del servidor
-                  <input
-                    id="serverName"
-                    name="name"
-                    type="text"
-                    placeholder="Ej. Juan Carlos Aqueche"
-                    required
-                  />
+                  <input id="serverName" name="name" type="text" placeholder="Ej. Juan Carlos Aqueche" required />
                 </label>
 
                 <label>
@@ -87,24 +54,12 @@
 
                 <label>
                   Numero de telefono
-                  <input
-                    id="serverPhone"
-                    name="phone"
-                    type="tel"
-                    placeholder="Ej. 5555-5555"
-                    required
-                  />
+                  <input id="serverPhone" name="phone" type="tel" placeholder="Ej. 5555-5555" required />
                 </label>
 
                 <label>
                   Direccion
-                  <textarea
-                    id="serverAddress"
-                    name="address"
-                    rows="4"
-                    placeholder="Ej. Zona, colonia, referencia"
-                    required
-                  ></textarea>
+                  <textarea id="serverAddress" name="address" rows="4" placeholder="Ej. Zona, colonia, referencia" required></textarea>
                 </label>
 
                 <button type="submit" class="primary-button">Guardar servidor</button>
@@ -123,11 +78,11 @@
                   <strong id="totalServers">0</strong>
                 </article>
                 <article class="stat-card">
-                  <span>Con asistencia hoy</span>
+                  <span>Asistieron (servicio activo)</span>
                   <strong id="presentToday">0</strong>
                 </article>
                 <article class="stat-card">
-                  <span>No llegaron hoy</span>
+                  <span>No asistieron (servicio activo)</span>
                   <strong id="absentToday">0</strong>
                 </article>
               </div>
@@ -140,12 +95,7 @@
                 <h2>Fichas de servidores</h2>
                 <p>Cada servidor aparece en forma de tarjeta con su informacion.</p>
               </div>
-              <input
-                id="serverSearch"
-                class="search-input"
-                type="search"
-                placeholder="Buscar por nombre o telefono"
-              />
+              <input id="serverSearch" class="search-input" type="search" placeholder="Buscar por nombre o telefono" />
             </div>
 
             <div id="serverCards" class="cards-grid"></div>
@@ -157,144 +107,42 @@
             <div class="panel__header panel__header--split">
               <div>
                 <h2>Servicios</h2>
-                <p>Crea y activa un servicio para luego registrar asistencia en checklist.</p>
-              </div>
-              <div class="service-actions">
-                <button id="addServiceButton" type="button" class="primary-button">
-                  Agregar servicio
-                </button>
+                <p>Registra fecha y lineas de servicio, luego marca asistencia.</p>
               </div>
             </div>
 
-            <p id="activeServiceText" class="service-active-text">No hay servicio seleccionado.</p>
-
-            <form id="serviceConfigForm" class="service-meta-grid" hidden>
+            <form id="serviceForm" class="service-meta-grid">
               <label>
                 Fecha de servicio
-                <input id="attendanceDate" type="date" />
+                <input id="serviceDate" type="date" required />
               </label>
-              <label>
-                Dia de servicio
-                <select id="serviceDay">
-                  <option value="Lunes">Lunes</option>
-                  <option value="Miercoles">Miercoles</option>
-                  <option value="Viernes">Viernes</option>
-                  <option value="Sabado">Sabado</option>
-                  <option value="Domingo">Domingo</option>
-                </select>
-              </label>
-              <label id="serviceShiftWrap">
-                Turno
-                <select id="serviceShift">
-                  <option value="AM">AM</option>
-                  <option value="PM">PM</option>
-                </select>
-              </label>
-              <button type="submit" class="primary-button">Guardar servicio</button>
+              <div>
+                <button id="addServiceLineButton" type="button" class="primary-button">Agregar linea</button>
+              </div>
+              <div>
+                <button type="submit" class="primary-button">Guardar</button>
+              </div>
             </form>
 
-            <div class="service-meta-grid">
-              <label>
-                Servicios guardados
-                <select id="savedServicesSelect"></select>
-              </label>
-              <button id="deleteServiceButton" type="button" class="ghost-button">
-                Borrar servicio seleccionado
-              </button>
-            </div>
-          </section>
-        </section>
-
-        <section class="view" data-view="checklist">
-          <section class="panel">
-            <div class="panel__header panel__header--split">
-              <div>
-                <h2>Checklist</h2>
-                <p>Checklist por area con instrucciones y control Si/No.</p>
-              </div>
-            </div>
-
-            <div class="area-buttons" id="areaButtons">
-              <button type="button" class="tab-button area-button is-active" data-area-key="puertas">
-                1- Puertas y Bienvenida
-              </button>
-              <button type="button" class="tab-button area-button" data-area-key="anexo_ab">
-                2- Anexo A y B
-              </button>
-              <button type="button" class="tab-button area-button" data-area-key="anexo_cm">
-                3- Anexo C y M
-              </button>
-              <button type="button" class="tab-button area-button" data-area-key="anexo_def">
-                4- Anexo D, E y F
-              </button>
-            </div>
-
-            <div class="panel">
-              <div class="panel__header">
-                <h3 id="areaChecklistTitle">Puertas y Bienvenida</h3>
-              </div>
-              <table class="result-table">
-                <thead>
-                  <tr>
-                    <th>Numero</th>
-                    <th>Instruccion</th>
-                    <th>Si</th>
-                    <th>No</th>
-                  </tr>
-                </thead>
-                <tbody id="areaChecklistBody"></tbody>
-              </table>
-            </div>
-
-          </section>
-        </section>
-
-        <section class="view" data-view="asistencia">
-          <section class="panel">
-            <div class="panel__header panel__header--split">
-              <div>
-                <h2>Asistencia</h2>
-                <p>Marca si cada servidor asistio o no asistio al servicio activo.</p>
-              </div>
-              <div class="service-actions">
-                <button id="exportPdfButton" type="button" class="primary-button">
-                  Generar PDF
-                </button>
-                <button id="finalizeServiceButton" type="button" class="primary-button">
-                  Finalizar servicio
-                </button>
-              </div>
-            </div>
+            <div id="serviceLines" class="service-lines"></div>
+            <p id="activeServiceText" class="service-active-text">No hay servicio activo.</p>
 
             <div class="attendance-header">
               <span>Servidor</span>
-              <span>Telefono</span>
-              <span>Si</span>
-              <span>No</span>
+              <span>Asistencia</span>
             </div>
             <div id="attendanceList" class="attendance-list"></div>
 
-            <div class="result-grid">
-              <article class="result-card">
-                <h3>Asistieron (Si)</h3>
-                <div id="yesList" class="result-list"></div>
-              </article>
-              <article class="result-card">
-                <h3>No asistieron (No)</h3>
-                <div id="noList" class="result-list"></div>
-              </article>
-            </div>
-
             <section class="panel panel--summary metrics-panel">
-              <div class="panel__header">
-                <h3>Resumen del servicio</h3>
-                <p id="serviceTotalsText">Aun sin datos para este servicio.</p>
+              <div class="panel__header panel__header--split">
+                <div>
+                  <h3>Estadistica del servicio</h3>
+                  <p id="serviceTotalsText">Aun sin datos para este servicio.</p>
+                </div>
+                <button id="saveServiceStatsButton" type="button" class="primary-button">Guardar estadistica</button>
               </div>
               <div class="chart-wrap">
-                <div class="chart-bar">
-                  <div id="yesBar" class="chart-segment chart-segment--yes"></div>
-                  <div id="noBar" class="chart-segment chart-segment--no"></div>
-                </div>
+                <div id="pieChart" class="pie-chart"></div>
                 <div class="chart-legend">
                   <span id="yesPctText">Si: 0%</span>
                   <span id="noPctText">No: 0%</span>
@@ -308,12 +156,10 @@
           <section class="panel">
             <div class="panel__header panel__header--split">
               <div>
-                <h3>Listado de conciliacion</h3>
-                <p>Grupos mezclados para seguimiento telefonico.</p>
+                <h2>Conciliacion</h2>
+                <p>Genera grupos aleatorios con todos los servidores.</p>
               </div>
-              <button id="generateConciliationButton" type="button" class="primary-button">
-                Generar listado de conciliacion
-              </button>
+              <button id="generateConciliationButton" type="button" class="primary-button">Generar grupos</button>
             </div>
             <div id="conciliationBoard" class="conciliation-board"></div>
           </section>
@@ -322,22 +168,23 @@
         <section class="view" data-view="resumen">
           <section class="panel">
             <div class="panel__header">
-              <h2>Resumen mensual</h2>
-              <p>Busca por mes y por servicio, revisa resultados y exporta el resumen en PDF.</p>
+              <h2>Resumen</h2>
+              <p>Consulta estadisticas guardadas por servicio y comparte por rango de fechas.</p>
             </div>
+
             <div class="service-meta-grid">
               <label>
-                Mes
-                <input id="summaryMonth" type="month" />
+                Fecha inicio
+                <input id="summaryDateFrom" type="date" />
               </label>
               <label>
-                Servicio del mes
-                <select id="summaryServiceSelect"></select>
+                Fecha fin
+                <input id="summaryDateTo" type="date" />
               </label>
-              <button id="summaryPdfButton" type="button" class="primary-button">
-                Descargar PDF resumen
-              </button>
+              <button id="summaryShareButton" type="button" class="primary-button">Generar imagen para compartir</button>
             </div>
+
+            <div id="summaryButtons" class="summary-buttons"></div>
             <div id="summaryPreview" class="panel"></div>
           </section>
         </section>
@@ -347,18 +194,28 @@
             <div class="panel__header panel__header--split">
               <div>
                 <h2>Alfolis</h2>
-                <p>Agrega nombre y posicion por linea y genera PDF para autoridades.</p>
+                <p>Registra servidores y servidoras con posicion.</p>
               </div>
-              <div class="service-actions">
-                <button id="addAlfoliLineButton" type="button" class="primary-button">
-                  Agregar linea
-                </button>
-                <button id="finalizeAlfolisButton" type="button" class="primary-button">
-                  Finalizar y PDF
-                </button>
-              </div>
+              <button id="alfolisShareButton" type="button" class="primary-button">Generar imagen para compartir</button>
             </div>
-            <div id="alfolisList" class="alfolis-list"></div>
+
+            <div class="alfolis-groups">
+              <section class="result-card">
+                <div class="panel__header panel__header--split">
+                  <h3>Servidores</h3>
+                  <button id="addMaleLineButton" type="button" class="primary-button">Agregar linea</button>
+                </div>
+                <div id="maleAlfolisList" class="alfolis-list"></div>
+              </section>
+
+              <section class="result-card">
+                <div class="panel__header panel__header--split">
+                  <h3>Servidoras</h3>
+                  <button id="addFemaleLineButton" type="button" class="primary-button">Agregar linea</button>
+                </div>
+                <div id="femaleAlfolisList" class="alfolis-list"></div>
+              </section>
+            </div>
           </section>
         </section>
       </main>
@@ -378,19 +235,6 @@
       </article>
     </template>
 
-    <template id="attendanceRowTemplate">
-      <article class="attendance-row">
-        <div class="attendance-cell attendance-name"></div>
-        <div class="attendance-cell attendance-phone"></div>
-        <div class="attendance-cell">
-          <input class="attendance-yes" type="radio" value="Si" />
-        </div>
-        <div class="attendance-cell">
-          <input class="attendance-no" type="radio" value="No" />
-        </div>
-      </article>
-    </template>
-
-    <script src="./app.js?v=20260430f"></script>
+    <script src="./app.js?v=20260430h"></script>
   </body>
 </html>
