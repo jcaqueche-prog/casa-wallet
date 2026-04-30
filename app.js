@@ -1,5 +1,5 @@
 const STORAGE_KEY = "iglesia-servidores-app";
-const DATABASE_SOURCE_VERSION = "grupo-5-excel-2026-04-29";
+const DATABASE_SOURCE_VERSION = "grupo-5-excel-2026-04-30-checklist";
 
 const SEED_SERVERS = [
   { id: "seed-1", name: "Freddy Armando Figueroa Enriquez", birthday: "1970-02-15", phone: "45240179", address: "3 av 3-15 Fuentes 1 chinautla" },
@@ -54,7 +54,16 @@ const state = loadState();
 
 const serverForm = document.getElementById("serverForm");
 const serverBirthday = document.getElementById("serverBirthday");
+const addServiceButton = document.getElementById("addServiceButton");
+const serviceConfigForm = document.getElementById("serviceConfigForm");
+const activeServiceText = document.getElementById("activeServiceText");
 const attendanceDate = document.getElementById("attendanceDate");
+const serviceDay = document.getElementById("serviceDay");
+const serviceShift = document.getElementById("serviceShift");
+const serviceShiftWrap = document.getElementById("serviceShiftWrap");
+const exportPdfButton = document.getElementById("exportPdfButton");
+const yesList = document.getElementById("yesList");
+const noList = document.getElementById("noList");
 const serverSearch = document.getElementById("serverSearch");
 const todayLabel = document.getElementById("todayLabel");
 const totalServers = document.getElementById("totalServers");
@@ -66,9 +75,15 @@ const serverCardTemplate = document.getElementById("serverCardTemplate");
 const attendanceRowTemplate = document.getElementById("attendanceRowTemplate");
 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const views = Array.from(document.querySelectorAll(".view"));
+let serviceReady = false;
 
 serverForm.addEventListener("submit", handleCreateServer);
-attendanceDate.addEventListener("change", renderApp);
+addServiceButton.addEventListener("click", handleAddServiceClick);
+serviceConfigForm.addEventListener("submit", handleSaveService);
+attendanceDate.addEventListener("change", syncShiftVisibility);
+serviceDay.addEventListener("change", syncShiftVisibility);
+serviceShift.addEventListener("change", syncShiftVisibility);
+exportPdfButton.addEventListener("click", exportCurrentChecklistPdf);
 serverSearch.addEventListener("input", renderApp);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
@@ -83,6 +98,11 @@ function initializeControls() {
   todayLabel.textContent = formatDate(today);
   attendanceDate.value = today;
   serverBirthday.value = today;
+  serviceDay.value = "Domingo";
+  serviceShift.value = "AM";
+  syncShiftVisibility();
+  serviceConfigForm.hidden = true;
+  exportPdfButton.disabled = true;
 }
 
 function loadState() {
@@ -109,6 +129,31 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function syncShiftVisibility() {
+  const day = serviceDay.value;
+  const weekend = day === "Sabado" || day === "Domingo";
+  serviceShiftWrap.hidden = !weekend;
+  if (!weekend) {
+    serviceShift.value = "NA";
+  } else if (serviceShift.value === "NA") {
+    serviceShift.value = "AM";
+  }
+}
+
+function handleAddServiceClick() {
+  serviceConfigForm.hidden = false;
+  addServiceButton.disabled = true;
+}
+
+function handleSaveService(event) {
+  event.preventDefault();
+  syncShiftVisibility();
+  serviceReady = true;
+  serviceConfigForm.hidden = true;
+  addServiceButton.disabled = false;
+  renderApp();
 }
 
 function handleCreateServer(event) {
@@ -138,20 +183,47 @@ function handleCreateServer(event) {
 }
 
 function renderApp() {
+  exportPdfButton.disabled = !serviceReady;
   renderSummary();
   renderServerCards();
   renderAttendanceList();
+  renderResultLists();
+}
+
+function getCurrentServiceMeta() {
+  const date = attendanceDate.value || getTodayIso();
+  const day = serviceDay.value || "Domingo";
+  const weekend = day === "Sabado" || day === "Domingo";
+  const shift = weekend ? serviceShift.value || "AM" : "NA";
+  return { date, day, shift };
+}
+
+function getServiceKey(meta) {
+  return `${meta.date}__${meta.day}__${meta.shift}`;
+}
+
+function ensureAttendanceRecord(serviceKey, serverId) {
+  if (!state.attendance[serviceKey]) {
+    state.attendance[serviceKey] = {};
+  }
+  if (!state.attendance[serviceKey][serverId]) {
+    state.attendance[serviceKey][serverId] = { status: "" };
+  }
+  return state.attendance[serviceKey][serverId];
 }
 
 function renderSummary() {
-  const dateKey = attendanceDate.value || getTodayIso();
-  const attendanceForDate = state.attendance[dateKey] || {};
-  const presentCount = state.servers.filter(
-    (server) => attendanceForDate[server.id]?.status === "Asistio"
-  ).length;
-  const absentCount = state.servers.filter(
-    (server) => attendanceForDate[server.id]?.status === "No asistio"
-  ).length;
+  if (!serviceReady) {
+    totalServers.textContent = String(state.servers.length);
+    presentToday.textContent = "0";
+    absentToday.textContent = "0";
+    return;
+  }
+
+  const key = getServiceKey(getCurrentServiceMeta());
+  const serviceRows = state.attendance[key] || {};
+  const presentCount = state.servers.filter((server) => serviceRows[server.id]?.status === "Si").length;
+  const absentCount = state.servers.filter((server) => serviceRows[server.id]?.status === "No").length;
 
   totalServers.textContent = String(state.servers.length);
   presentToday.textContent = String(presentCount);
@@ -166,7 +238,6 @@ function renderServerCards() {
     if (!query) {
       return true;
     }
-
     return [server.name, server.phone, server.address].join(" ").toLowerCase().includes(query);
   });
 
@@ -185,15 +256,22 @@ function renderServerCards() {
     fragment.querySelector(".server-card__birthday").textContent = formatDate(server.birthday);
     fragment.querySelector(".server-card__phone").textContent = server.phone;
     fragment.querySelector(".server-card__address").textContent = server.address;
-    fragment.querySelector(".server-card__delete").addEventListener("click", () => {
-      deleteServer(server.id);
-    });
+    fragment.querySelector(".server-card__delete").addEventListener("click", () => deleteServer(server.id));
     serverCards.appendChild(fragment);
   });
 }
 
 function renderAttendanceList() {
   attendanceList.innerHTML = "";
+  if (!serviceReady) {
+    attendanceList.innerHTML = `
+      <article class="attendance-row">
+        <div class="attendance-cell">Pulsa "Agregar servicio" para crear el checklist.</div>
+      </article>
+    `;
+    activeServiceText.textContent = "No hay servicio seleccionado.";
+    return;
+  }
 
   if (!state.servers.length) {
     attendanceList.innerHTML = `
@@ -204,60 +282,175 @@ function renderAttendanceList() {
     return;
   }
 
-  const dateKey = attendanceDate.value || getTodayIso();
-  if (!state.attendance[dateKey]) {
-    state.attendance[dateKey] = {};
-  }
-
+  const serviceKey = getServiceKey(getCurrentServiceMeta());
+  activeServiceText.textContent = getServiceLabel(getCurrentServiceMeta());
   state.servers.forEach((server) => {
     const fragment = attendanceRowTemplate.content.cloneNode(true);
-    const record = state.attendance[dateKey][server.id] || {
-      status: "Pendiente",
-      note: "",
-    };
+    const record = ensureAttendanceRecord(serviceKey, server.id);
+    const rowName = `attendance-${serviceKey}-${server.id}`;
 
     fragment.querySelector(".attendance-name").textContent = server.name;
     fragment.querySelector(".attendance-phone").textContent = server.phone;
 
-    const statusSelect = fragment.querySelector(".attendance-status");
-    const noteInput = fragment.querySelector(".attendance-note");
+    const yesInput = fragment.querySelector(".attendance-yes");
+    const noInput = fragment.querySelector(".attendance-no");
+    yesInput.name = rowName;
+    noInput.name = rowName;
+    yesInput.checked = record.status === "Si";
+    noInput.checked = record.status === "No";
 
-    statusSelect.value = record.status;
-    noteInput.value = record.note;
-
-    statusSelect.addEventListener("change", (event) => {
-      updateAttendance(dateKey, server.id, {
-        status: event.target.value,
-        note: noteInput.value.trim(),
-      });
-    });
-
-    noteInput.addEventListener("change", (event) => {
-      updateAttendance(dateKey, server.id, {
-        status: statusSelect.value,
-        note: event.target.value.trim(),
-      });
-    });
-
+    yesInput.addEventListener("change", () => updateAttendance(serviceKey, server.id, "Si"));
+    noInput.addEventListener("change", () => updateAttendance(serviceKey, server.id, "No"));
     attendanceList.appendChild(fragment);
   });
 }
 
-function updateAttendance(dateKey, serverId, nextValue) {
-  if (!state.attendance[dateKey]) {
-    state.attendance[dateKey] = {};
+function renderResultLists() {
+  if (!serviceReady) {
+    yesList.innerHTML = `<p class="result-empty">No hay registros en Si.</p>`;
+    noList.innerHTML = `<p class="result-empty">No hay registros en No.</p>`;
+    return;
   }
 
-  state.attendance[dateKey][serverId] = nextValue;
+  const key = getServiceKey(getCurrentServiceMeta());
+  const rows = state.attendance[key] || {};
+  const yesRows = [];
+  const noRows = [];
+
+  state.servers.forEach((server) => {
+    const status = rows[server.id]?.status;
+    if (status === "Si") {
+      yesRows.push(server);
+    } else if (status === "No") {
+      noRows.push(server);
+    }
+  });
+
+  yesList.innerHTML = renderResultTableHtml(yesRows, "No hay registros en Si.");
+  noList.innerHTML = renderResultTableHtml(noRows, "No hay registros en No.");
+}
+
+function renderResultTableHtml(items, emptyText) {
+  if (!items.length) {
+    return `<p class="result-empty">${emptyText}</p>`;
+  }
+
+  const rows = items
+    .map(
+      (item) => `
+        <tr>
+          <td>${escapeHtml(item.name)}</td>
+          <td>${escapeHtml(item.phone)}</td>
+        </tr>
+      `
+    )
+    .join("");
+
+  return `
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Telefono</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function updateAttendance(serviceKey, serverId, status) {
+  ensureAttendanceRecord(serviceKey, serverId).status = status;
   saveState();
   renderSummary();
+  renderResultLists();
+}
+
+function exportCurrentChecklistPdf() {
+  if (!serviceReady) {
+    return;
+  }
+
+  const meta = getCurrentServiceMeta();
+  const key = getServiceKey(meta);
+  const rows = state.attendance[key] || {};
+  const yesRows = state.servers.filter((server) => rows[server.id]?.status === "Si");
+  const noRows = state.servers.filter((server) => rows[server.id]?.status === "No");
+  const shiftLabel = meta.shift === "NA" ? "N/A" : meta.shift;
+  const printable = window.open("", "_blank", "width=1000,height=800");
+  if (!printable) return;
+
+  printable.document.write(`
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Checklist de Servicio</title>
+      <style>
+        body { font-family: Arial, sans-serif; color: #1b2940; margin: 28px; }
+        h1 { margin: 0 0 10px; }
+        .meta { margin-bottom: 18px; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        table { border-collapse: collapse; width: 100%; font-size: 13px; }
+        th, td { border: 1px solid #c8d2e5; padding: 8px; text-align: left; }
+        th { background: #eef4ff; }
+        h2 { font-size: 16px; margin: 0 0 8px; }
+      </style>
+    </head>
+    <body>
+      <h1>Checklist de Servicio</h1>
+      <div class="meta">
+        <strong>Fecha:</strong> ${escapeHtml(formatDate(meta.date))}<br />
+        <strong>Dia:</strong> ${escapeHtml(meta.day)}<br />
+        <strong>Turno:</strong> ${escapeHtml(shiftLabel)}
+      </div>
+      <div class="grid">
+        <section>
+          <h2>Asistieron (Si): ${yesRows.length}</h2>
+          ${renderPrintableTable(yesRows)}
+        </section>
+        <section>
+          <h2>No asistieron (No): ${noRows.length}</h2>
+          ${renderPrintableTable(noRows)}
+        </section>
+      </div>
+    </body>
+    </html>
+  `);
+  printable.document.close();
+  printable.focus();
+  printable.print();
+}
+
+function getServiceLabel(meta) {
+  const shiftText = meta.shift === "NA" ? "" : ` - Turno ${meta.shift}`;
+  return `Servicio activo: ${formatDate(meta.date)} - ${meta.day}${shiftText}`;
+}
+
+function renderPrintableTable(items) {
+  if (!items.length) {
+    return "<p>No hay datos.</p>";
+  }
+  const rows = items
+    .map((item) => `<tr><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.phone)}</td></tr>`)
+    .join("");
+  return `<table><thead><tr><th>Nombre</th><th>Telefono</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function deleteServer(serverId) {
   state.servers = state.servers.filter((server) => server.id !== serverId);
-  Object.keys(state.attendance).forEach((dateKey) => {
-    if (state.attendance[dateKey][serverId]) {
-      delete state.attendance[dateKey][serverId];
+  Object.keys(state.attendance).forEach((serviceKey) => {
+    if (state.attendance[serviceKey][serverId]) {
+      delete state.attendance[serviceKey][serverId];
     }
   });
   saveState();
@@ -279,10 +472,7 @@ function getTodayIso() {
 }
 
 function formatDate(value) {
-  if (!value) {
-    return "--";
-  }
-
+  if (!value) return "--";
   return new Intl.DateTimeFormat("es-GT", {
     day: "2-digit",
     month: "long",

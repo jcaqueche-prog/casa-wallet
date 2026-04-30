@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260427b" />
+    <link rel="stylesheet" href="./styles.css?v=20260430a" />
   </head>
   <body>
     <div class="app-shell">
@@ -138,22 +138,64 @@
           <section class="panel">
             <div class="panel__header panel__header--split">
               <div>
-                <h2>Asistencia y seguimiento</h2>
-                <p>Marca quienes llegaron y revisa seguimiento para quienes faltaron.</p>
+                <h2>Checklist de servicio</h2>
+                <p>Selecciona el servicio y marca si cada servidor asistio o no asistio.</p>
               </div>
-              <label class="date-filter">
-                Fecha de asistencia
+              <div class="service-actions">
+                <button id="addServiceButton" type="button" class="primary-button">
+                  Agregar servicio
+                </button>
+                <button id="exportPdfButton" type="button" class="primary-button">
+                  Generar PDF
+                </button>
+              </div>
+            </div>
+
+            <p id="activeServiceText" class="service-active-text">No hay servicio seleccionado.</p>
+
+            <form id="serviceConfigForm" class="service-meta-grid" hidden>
+              <label>
+                Fecha de servicio
                 <input id="attendanceDate" type="date" />
               </label>
-            </div>
+              <label>
+                Dia de servicio
+                <select id="serviceDay">
+                  <option value="Lunes">Lunes</option>
+                  <option value="Miercoles">Miercoles</option>
+                  <option value="Viernes">Viernes</option>
+                  <option value="Sabado">Sabado</option>
+                  <option value="Domingo">Domingo</option>
+                </select>
+              </label>
+              <label id="serviceShiftWrap">
+                Turno
+                <select id="serviceShift">
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </label>
+              <button type="submit" class="primary-button">Guardar servicio</button>
+            </form>
 
             <div class="attendance-header">
               <span>Servidor</span>
               <span>Telefono</span>
-              <span>Estado</span>
-              <span>Seguimiento</span>
+              <span>Si</span>
+              <span>No</span>
             </div>
             <div id="attendanceList" class="attendance-list"></div>
+
+            <div class="result-grid">
+              <article class="result-card">
+                <h3>Asistieron (Si)</h3>
+                <div id="yesList" class="result-list"></div>
+              </article>
+              <article class="result-card">
+                <h3>No asistieron (No)</h3>
+                <div id="noList" class="result-list"></div>
+              </article>
+            </div>
           </section>
         </section>
       </main>
@@ -178,22 +220,14 @@
         <div class="attendance-cell attendance-name"></div>
         <div class="attendance-cell attendance-phone"></div>
         <div class="attendance-cell">
-          <select class="attendance-status">
-            <option value="Pendiente">Pendiente</option>
-            <option value="Asistio">Asistio</option>
-            <option value="No asistio">No asistio</option>
-          </select>
+          <input class="attendance-yes" type="radio" value="Si" />
         </div>
         <div class="attendance-cell">
-          <textarea
-            class="attendance-note"
-            rows="2"
-            placeholder="Llamar, escribir, visitar, etc."
-          ></textarea>
+          <input class="attendance-no" type="radio" value="No" />
         </div>
       </article>
     </template>
 
-    <script src="./app.js?v=20260427b"></script>
+    <script src="./app.js?v=20260430a"></script>
   </body>
 </html>
