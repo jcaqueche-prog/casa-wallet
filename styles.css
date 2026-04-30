@@ -291,6 +291,35 @@ textarea { resize: vertical; }
 }
 .summary-preview-row { display: grid; gap: 8px; justify-items: center; }
 
+.summary-detail {
+  display: none;
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  gap: 10px;
+}
+
+.summary-detail.is-open {
+  display: grid;
+}
+
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .92rem;
+}
+
+.result-table th,
+.result-table td {
+  border: 1px solid var(--line);
+  padding: 7px;
+  text-align: left;
+}
+
+.result-table th {
+  background: rgba(60, 115, 217, 0.08);
+}
+
 .alfolis-groups { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .alfolis-row {
   display: grid;

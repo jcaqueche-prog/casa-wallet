@@ -70,8 +70,7 @@ const serverBirthday = document.getElementById("serverBirthday");
 const serverPhoto = document.getElementById("serverPhoto");
 const serviceForm = document.getElementById("serviceForm");
 const serviceDate = document.getElementById("serviceDate");
-const serviceLines = document.getElementById("serviceLines");
-const addServiceLineButton = document.getElementById("addServiceLineButton");
+const serviceType = document.getElementById("serviceType");
 const attendanceList = document.getElementById("attendanceList");
 const activeServiceText = document.getElementById("activeServiceText");
 const serviceTotalsText = document.getElementById("serviceTotalsText");
@@ -81,6 +80,8 @@ const noPctText = document.getElementById("noPctText");
 const saveServiceStatsButton = document.getElementById("saveServiceStatsButton");
 const exportServicePdfButton = document.getElementById("exportServicePdfButton");
 const exportServiceExcelButton = document.getElementById("exportServiceExcelButton");
+const shareServicePdfButton = document.getElementById("shareServicePdfButton");
+const shareServiceExcelButton = document.getElementById("shareServiceExcelButton");
 const generateConciliationButton = document.getElementById("generateConciliationButton");
 const conciliationBoard = document.getElementById("conciliationBoard");
 const summaryDateFrom = document.getElementById("summaryDateFrom");
@@ -88,7 +89,6 @@ const summaryDateTo = document.getElementById("summaryDateTo");
 const summarySaveGeneralButton = document.getElementById("summarySaveGeneralButton");
 const summaryShareButton = document.getElementById("summaryShareButton");
 const summaryCards = document.getElementById("summaryCards");
-const summaryPreview = document.getElementById("summaryPreview");
 const summaryGeneralCards = document.getElementById("summaryGeneralCards");
 const alfolisShareButton = document.getElementById("alfolisShareButton");
 const newIngresoType = document.getElementById("newIngresoType");
@@ -111,16 +111,17 @@ const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const views = Array.from(document.querySelectorAll(".view"));
 
 let currentServiceId = state.services[0]?.id || "";
-let pendingServiceLines = ["Servicio 1", "Servicio 2"];
 let currentConciliation = null;
 let lastConciliationSignature = "";
+let expandedSummaryServiceId = "";
 
 serverForm.addEventListener("submit", handleCreateServer);
 serviceForm.addEventListener("submit", handleSaveService);
-addServiceLineButton.addEventListener("click", handleAddServiceLine);
 saveServiceStatsButton.addEventListener("click", handleSaveServiceStats);
 exportServicePdfButton.addEventListener("click", exportCurrentServicePdf);
 exportServiceExcelButton.addEventListener("click", exportCurrentServiceExcel);
+shareServicePdfButton.addEventListener("click", shareCurrentServicePdf);
+shareServiceExcelButton.addEventListener("click", shareCurrentServiceExcel);
 generateConciliationButton.addEventListener("click", generateConciliation);
 conciliationBoard.addEventListener("click", handleConciliationActions);
 summaryDateFrom.addEventListener("change", renderSummary);
@@ -145,6 +146,7 @@ function initialize() {
   todayLabel.textContent = formatDate(today);
   serverBirthday.value = today;
   serviceDate.value = today;
+  serviceType.selectedIndex = 0;
   summaryDateFrom.value = today.slice(0, 8) + "01";
   summaryDateTo.value = today;
   renderHomeVerse();
@@ -188,7 +190,6 @@ function saveState() {
 
 function renderAll() {
   renderServers();
-  renderServiceFormLines();
   renderServiceAttendance();
   renderServiceStats();
   renderConciliation();
@@ -258,43 +259,6 @@ function deleteServer(serverId) {
   renderAll();
 }
 
-function renderServiceFormLines() {
-  serviceLines.innerHTML = "";
-  pendingServiceLines.forEach((line, index) => {
-    const row = document.createElement("div");
-    row.className = "service-line-row";
-    row.innerHTML = `
-      <label>
-        Linea ${index + 1}
-        <input type="text" data-index="${index}" value="${escapeHtml(line)}" />
-      </label>
-      <button type="button" class="ghost-button" data-remove-index="${index}" ${pendingServiceLines.length <= 1 ? "disabled" : ""}>Quitar</button>
-    `;
-    serviceLines.appendChild(row);
-  });
-
-  serviceLines.querySelectorAll("input").forEach((input) => {
-    input.addEventListener("input", (event) => {
-      const idx = Number(event.target.dataset.index);
-      pendingServiceLines[idx] = event.target.value;
-    });
-  });
-
-  serviceLines.querySelectorAll("button[data-remove-index]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const idx = Number(button.dataset.removeIndex);
-      pendingServiceLines.splice(idx, 1);
-      if (!pendingServiceLines.length) pendingServiceLines = ["Servicio 1"];
-      renderServiceFormLines();
-    });
-  });
-}
-
-function handleAddServiceLine() {
-  pendingServiceLines.push(`Servicio ${pendingServiceLines.length + 1}`);
-  renderServiceFormLines();
-}
-
 function handleSaveService(event) {
   event.preventDefault();
   const current = getCurrentService();
@@ -304,8 +268,9 @@ function handleSaveService(event) {
   }
 
   const date = serviceDate.value || getTodayIso();
-  const lines = pendingServiceLines.map((l) => l.trim()).filter(Boolean);
-  if (!lines.length) return;
+  const selectedType = String(serviceType.value || "").trim();
+  if (!selectedType) return;
+  const lines = [selectedType];
 
   const service = {
     id: createId("svc"),
@@ -319,8 +284,8 @@ function handleSaveService(event) {
   state.services.unshift(service);
   currentServiceId = service.id;
   saveState();
-  pendingServiceLines = ["Servicio 1", "Servicio 2"];
   serviceDate.value = getTodayIso();
+  serviceType.selectedIndex = 0;
   renderAll();
 }
 
@@ -415,6 +380,8 @@ function renderServiceStats() {
   const stats = getServiceStats(service);
   exportServicePdfButton.disabled = !service;
   exportServiceExcelButton.disabled = !service;
+  shareServicePdfButton.disabled = !service;
+  shareServiceExcelButton.disabled = !service;
 
   if (!service) {
     serviceTotalsText.textContent = "Aun sin datos para este servicio.";
@@ -442,7 +409,7 @@ function exportCurrentServicePdf() {
     })
     .join("");
 
-  const printable = window.open("", "_blank", "width=1000,height=820");
+  const printable = window.open("", "_blank", "width=1100,height=860");
   if (!printable) return;
   printable.document.write(`
     <!doctype html>
@@ -452,35 +419,60 @@ function exportCurrentServicePdf() {
       <title>Asistencia - ${escapeHtml(service.date)}</title>
       <style>
         @page { size: A4 portrait; margin: 14mm; }
-        body { font-family: Arial, sans-serif; color: #1b2940; margin: 0; }
-        h1 { margin: 0 0 8px; font-size: 22px; }
+        body { font-family: Arial, sans-serif; color: #1b2940; margin: 0; background:#f6f9ff; }
+        .sheet { background:#fff; border:1px solid #d8e1f1; border-radius:14px; padding:18px; }
+        h1 { margin: 0 0 10px; font-size: 24px; color:#23406d; }
         p { margin: 0 0 8px; font-size: 13px; }
+        .meta { display:grid; gap:6px; margin-bottom:10px; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         th, td { border: 1px solid #c8d2e5; padding: 6px; text-align: left; }
-        th { background: #eef4ff; }
+        th { background: #e9f0ff; color:#23406d; }
+        .actions { display:flex; gap:10px; margin:0 0 10px; }
+        button { padding:10px 14px; border:0; border-radius:999px; background:#2e5fc1; color:#fff; font-weight:700; cursor:pointer; }
       </style>
     </head>
     <body>
-      <h1>Asistencia por Servicio</h1>
-      <p><strong>Fecha de servicio:</strong> ${escapeHtml(formatDate(service.date))}</p>
-      <p><strong>Lineas:</strong> ${escapeHtml(service.lines.join(" / "))}</p>
-      <p><strong>Asistieron:</strong> ${stats.yesCount} | <strong>No asistieron:</strong> ${stats.noCount}</p>
-      <table>
-        <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div class="actions">
+        <button onclick="window.print()">Imprimir</button>
+        <button id="shareBtn" type="button">Compartir</button>
+      </div>
+      <div class="sheet">
+        <h1>Asistencia por Servicio</h1>
+        <div class="meta">
+          <p><strong>Fecha de servicio:</strong> ${escapeHtml(formatDate(service.date))}</p>
+          <p><strong>Tipo de servicio:</strong> ${escapeHtml(service.lines.join(" / "))}</p>
+          <p><strong>Asistieron:</strong> ${stats.yesCount} | <strong>No asistieron:</strong> ${stats.noCount}</p>
+        </div>
+        <table>
+          <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <script>
+        document.getElementById("shareBtn").addEventListener("click", async () => {
+          if (!navigator.share) {
+            alert("Compartir no disponible en este navegador.");
+            return;
+          }
+          try {
+            await navigator.share({
+              title: "Asistencia ${escapeHtml(service.date)}",
+              text: "Servicio: ${escapeHtml(service.lines.join(" / "))}. Asistieron: ${stats.yesCount}. No asistieron: ${stats.noCount}.",
+            });
+          } catch {}
+        });
+      </script>
     </body>
     </html>
   `);
   printable.document.close();
   printable.focus();
-  printable.print();
 }
 
 function exportCurrentServiceExcel() {
   const service = getCurrentService();
   if (!service) return;
-  const headers = ["Fecha de servicio", "Lineas", "Servidor", "Asistencia"];
+  const headers = ["Fecha de servicio", "Tipo de servicio", "Servidor", "Asistencia"];
   const linesText = service.lines.join(" / ");
   const rows = state.servers.map((server) => {
     const status = service.attendance[server.id] || "Pendiente";
@@ -492,14 +484,60 @@ function exportCurrentServiceExcel() {
     .join("\n");
 
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  downloadBlob(blob, `asistencia-${service.date}.csv`);
+}
+
+function shareCurrentServicePdf() {
+  const service = getCurrentService();
+  if (!service) return;
+  const lines = [`Asistencia por servicio`, `Fecha: ${service.date}`, `Tipo: ${service.lines.join(" / ")}`];
+  const stats = getServiceStats(service);
+  lines.push(`Asistieron: ${stats.yesCount}`, `No asistieron: ${stats.noCount}`);
+  shareText(lines.join("\n"));
+}
+
+function shareCurrentServiceExcel() {
+  const service = getCurrentService();
+  if (!service) return;
+  const headers = ["Fecha de servicio", "Tipo de servicio", "Servidor", "Asistencia"];
+  const linesText = service.lines.join(" / ");
+  const rows = state.servers.map((server) => {
+    const status = service.attendance[server.id] || "Pendiente";
+    return [service.date, linesText, server.name, status];
+  });
+  const csv = [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  const fileName = `asistencia-${service.date}.csv`;
+  shareFileBlob(blob, fileName, "text/csv;charset=utf-8;");
+}
+
+function downloadBlob(blob, fileName) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `asistencia-${service.date}.csv`;
+  link.download = fileName;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+async function shareFileBlob(blob, fileName, mimeType) {
+  if (!navigator.share || typeof navigator.canShare !== "function") {
+    downloadBlob(blob, fileName);
+    return;
+  }
+  try {
+    const file = new File([blob], fileName, { type: mimeType });
+    const shareData = { files: [file], title: fileName };
+    if (!navigator.canShare(shareData)) {
+      downloadBlob(blob, fileName);
+      return;
+    }
+    await navigator.share(shareData);
+  } catch {
+    downloadBlob(blob, fileName);
+  }
 }
 
 function csvEscape(value) {
@@ -591,7 +629,6 @@ function renderSummary() {
   summaryCards.innerHTML = "";
   if (!records.length) {
     summaryCards.innerHTML = `<p class="result-empty">No hay estadisticas guardadas en este rango.</p>`;
-    summaryPreview.innerHTML = "";
     renderSummarySnapshots();
     return;
   }
@@ -599,25 +636,41 @@ function renderSummary() {
   summaryCards.innerHTML = records
     .map((service) => {
       const stats = getServiceStats(service);
+      const expanded = expandedSummaryServiceId === service.id;
+      const yesDeg = Math.round((stats.yesPct / 100) * 360);
+      const attendanceRows = state.servers
+        .map((server) => {
+          const status = service.attendance[server.id] || "Pendiente";
+          return `<tr><td>${escapeHtml(server.name)}</td><td>${escapeHtml(status)}</td></tr>`;
+        })
+        .join("");
       return `
         <article class="summary-card">
           <p><strong>fecha de servicio:</strong> ${escapeHtml(formatDate(service.date))}</p>
           <p><strong>asistieron:</strong> ${stats.yesCount}</p>
           <p><strong>no asistieron:</strong> ${stats.noCount}</p>
           <div class="service-actions">
-            <button type="button" class="primary-button summary-open-btn" data-service-id="${service.id}">Ver grafica</button>
+            <button type="button" class="primary-button summary-open-btn" data-service-id="${service.id}">${expanded ? "Ocultar detalle" : "Ver detalle"}</button>
             <button type="button" class="primary-button summary-edit-btn" data-service-id="${service.id}">Editar</button>
             <button type="button" class="ghost-button summary-delete-btn" data-service-id="${service.id}">Eliminar</button>
+          </div>
+          <div class="summary-detail ${expanded ? "is-open" : ""}">
+            <div class="summary-preview-row">
+              <div class="pie-chart" style="background: conic-gradient(#2cae7a 0deg, #2cae7a ${yesDeg}deg, #d97878 ${yesDeg}deg, #d97878 360deg)"></div>
+              <div class="chart-legend">
+                <span>Si: ${stats.yesPct}%</span>
+                <span>No: ${stats.noPct}%</span>
+              </div>
+            </div>
+            <table class="result-table">
+              <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
+              <tbody>${attendanceRows}</tbody>
+            </table>
           </div>
         </article>
       `;
     })
     .join("");
-
-  const chosenId = summaryPreview.dataset.serviceId && records.some((r) => r.id === summaryPreview.dataset.serviceId)
-    ? summaryPreview.dataset.serviceId
-    : records[0].id;
-  renderSummaryPreview(chosenId);
   renderSummarySnapshots();
 }
 
@@ -719,32 +772,9 @@ function handleSummaryCardClick(event) {
 
   const openBtn = event.target.closest(".summary-open-btn");
   if (!openBtn) return;
-  renderSummaryPreview(openBtn.dataset.serviceId);
-}
-
-function renderSummaryPreview(serviceId) {
-  const service = state.services.find((s) => s.id === serviceId);
-  if (!service) {
-    summaryPreview.innerHTML = "";
-    return;
-  }
-  summaryPreview.dataset.serviceId = service.id;
-  const stats = getServiceStats(service);
-  const yesDeg = Math.round((stats.yesPct / 100) * 360);
-
-  summaryPreview.innerHTML = `
-    <div class="panel__header">
-      <h3>${formatDate(service.date)} | ${escapeHtml(service.lines.join(" / "))}</h3>
-      <p>Asistieron: ${stats.yesCount} | No asistieron: ${stats.noCount}</p>
-    </div>
-    <div class="summary-preview-row">
-      <div class="pie-chart" style="background: conic-gradient(#2cae7a 0deg, #2cae7a ${yesDeg}deg, #d97878 ${yesDeg}deg, #d97878 360deg)"></div>
-      <div class="chart-legend">
-        <span>Si: ${stats.yesPct}%</span>
-        <span>No: ${stats.noPct}%</span>
-      </div>
-    </div>
-  `;
+  const targetId = openBtn.dataset.serviceId;
+  expandedSummaryServiceId = expandedSummaryServiceId === targetId ? "" : targetId;
+  renderSummary();
 }
 
 function shareSummaryRange() {

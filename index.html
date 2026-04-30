@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20260430p" />
+    <link rel="stylesheet" href="./styles.css?v=20260430s" />
   </head>
   <body>
     <div class="app-shell">
@@ -134,15 +134,23 @@
                 Fecha de servicio
                 <input id="serviceDate" type="date" required />
               </label>
-              <div>
-                <button id="addServiceLineButton" type="button" class="primary-button">Agregar linea</button>
-              </div>
-              <div>
+              <label>
+                Tipo de servicio
+                <select id="serviceType" required>
+                  <option value="Lunes - Servicio Familiar">Lunes - Servicio Familiar</option>
+                  <option value="Miercoles - Servicio Devocional">Miercoles - Servicio Devocional</option>
+                  <option value="Viernes - Servicio Devocional">Viernes - Servicio Devocional</option>
+                  <option value="Sabado - Santa Cena">Sabado - Santa Cena</option>
+                  <option value="Domingo - Santa Cena">Domingo - Santa Cena</option>
+                  <option value="Domingo - Servicio Devocional">Domingo - Servicio Devocional</option>
+                </select>
+              </label>
+              <div class="service-actions">
                 <button type="submit" class="primary-button">Guardar</button>
+                <button id="shareServicePdfButton" type="button" class="primary-button">Compartir PDF</button>
+                <button id="shareServiceExcelButton" type="button" class="primary-button">Compartir Excel</button>
               </div>
             </form>
-
-            <div id="serviceLines" class="service-lines"></div>
             <p id="activeServiceText" class="service-active-text">No hay servicio activo.</p>
 
             <div class="attendance-header">
@@ -211,7 +219,6 @@
             </div>
 
             <div id="summaryCards" class="summary-cards"></div>
-            <div id="summaryPreview" class="panel"></div>
             <div id="summaryGeneralCards" class="summary-cards"></div>
           </section>
         </section>
@@ -275,6 +282,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260430p"></script>
+    <script src="./app.js?v=20260430s"></script>
   </body>
 </html>
