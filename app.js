@@ -1,5 +1,11 @@
 const STORAGE_KEY = "iglesia-servidores-app";
-const DATABASE_SOURCE_VERSION = "grupo-5-excel-2026-04-30-checklist";
+const DATABASE_SOURCE_VERSION = "grupo-5-excel-2026-04-30-checklist-v2";
+const CONCILIATION_LEADERS = [
+  "Juan Carlos Aqueche",
+  "Giovany Alvarado",
+  "Rafael Ortiz",
+  "Freddy garcia",
+];
 
 const SEED_SERVERS = [
   { id: "seed-1", name: "Freddy Armando Figueroa Enriquez", birthday: "1970-02-15", phone: "45240179", address: "3 av 3-15 Fuentes 1 chinautla" },
@@ -57,11 +63,19 @@ const serverBirthday = document.getElementById("serverBirthday");
 const addServiceButton = document.getElementById("addServiceButton");
 const serviceConfigForm = document.getElementById("serviceConfigForm");
 const activeServiceText = document.getElementById("activeServiceText");
+const finalizeServiceButton = document.getElementById("finalizeServiceButton");
+const generateConciliationButton = document.getElementById("generateConciliationButton");
+const conciliationBoard = document.getElementById("conciliationBoard");
 const attendanceDate = document.getElementById("attendanceDate");
 const serviceDay = document.getElementById("serviceDay");
 const serviceShift = document.getElementById("serviceShift");
 const serviceShiftWrap = document.getElementById("serviceShiftWrap");
 const exportPdfButton = document.getElementById("exportPdfButton");
+const serviceTotalsText = document.getElementById("serviceTotalsText");
+const yesBar = document.getElementById("yesBar");
+const noBar = document.getElementById("noBar");
+const yesPctText = document.getElementById("yesPctText");
+const noPctText = document.getElementById("noPctText");
 const yesList = document.getElementById("yesList");
 const noList = document.getElementById("noList");
 const serverSearch = document.getElementById("serverSearch");
@@ -76,6 +90,8 @@ const attendanceRowTemplate = document.getElementById("attendanceRowTemplate");
 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const views = Array.from(document.querySelectorAll(".view"));
 let serviceReady = false;
+let currentConciliation = null;
+let lastConciliationSignature = "";
 
 serverForm.addEventListener("submit", handleCreateServer);
 addServiceButton.addEventListener("click", handleAddServiceClick);
@@ -84,6 +100,8 @@ attendanceDate.addEventListener("change", syncShiftVisibility);
 serviceDay.addEventListener("change", syncShiftVisibility);
 serviceShift.addEventListener("change", syncShiftVisibility);
 exportPdfButton.addEventListener("click", exportCurrentChecklistPdf);
+finalizeServiceButton.addEventListener("click", finalizeCurrentService);
+generateConciliationButton.addEventListener("click", generateConciliationList);
 serverSearch.addEventListener("input", renderApp);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
@@ -103,6 +121,8 @@ function initializeControls() {
   syncShiftVisibility();
   serviceConfigForm.hidden = true;
   exportPdfButton.disabled = true;
+  finalizeServiceButton.disabled = true;
+  generateConciliationButton.disabled = true;
 }
 
 function loadState() {
@@ -184,10 +204,14 @@ function handleCreateServer(event) {
 
 function renderApp() {
   exportPdfButton.disabled = !serviceReady;
+  finalizeServiceButton.disabled = !serviceReady;
+  generateConciliationButton.disabled = !serviceReady;
   renderSummary();
   renderServerCards();
   renderAttendanceList();
   renderResultLists();
+  renderServiceMetrics();
+  renderConciliationBoard();
 }
 
 function getCurrentServiceMeta() {
@@ -364,6 +388,7 @@ function updateAttendance(serviceKey, serverId, status) {
   saveState();
   renderSummary();
   renderResultLists();
+  renderServiceMetrics();
 }
 
 function exportCurrentChecklistPdf() {
@@ -387,14 +412,16 @@ function exportCurrentChecklistPdf() {
       <meta charset="utf-8" />
       <title>Checklist de Servicio</title>
       <style>
+        @page { size: A4 landscape; margin: 12mm; }
         body { font-family: Arial, sans-serif; color: #1b2940; margin: 28px; }
-        h1 { margin: 0 0 10px; }
-        .meta { margin-bottom: 18px; font-size: 14px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-        table { border-collapse: collapse; width: 100%; font-size: 13px; }
-        th, td { border: 1px solid #c8d2e5; padding: 8px; text-align: left; }
+        h1 { margin: 0 0 8px; font-size: 22px; }
+        .meta { margin-bottom: 12px; font-size: 12px; line-height: 1.4; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        table { border-collapse: collapse; width: 100%; font-size: 11px; }
+        th, td { border: 1px solid #c8d2e5; padding: 4px 6px; text-align: left; }
         th { background: #eef4ff; }
-        h2 { font-size: 16px; margin: 0 0 8px; }
+        h2 { font-size: 13px; margin: 0 0 6px; }
+        p { margin: 0; font-size: 11px; }
       </style>
     </head>
     <body>
@@ -431,10 +458,104 @@ function renderPrintableTable(items) {
   if (!items.length) {
     return "<p>No hay datos.</p>";
   }
-  const rows = items
-    .map((item) => `<tr><td>${escapeHtml(item.name)}</td><td>${escapeHtml(item.phone)}</td></tr>`)
+  const rows = items.map((item) => `<tr><td>${escapeHtml(item.name)}</td></tr>`).join("");
+  return `<table><thead><tr><th>Nombre</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function getCurrentServiceStats() {
+  if (!serviceReady) {
+    return { yesRows: [], noRows: [], total: state.servers.length, yesPct: 0, noPct: 0 };
+  }
+  const key = getServiceKey(getCurrentServiceMeta());
+  const rows = state.attendance[key] || {};
+  const yesRows = state.servers.filter((server) => rows[server.id]?.status === "Si");
+  const noRows = state.servers.filter((server) => rows[server.id]?.status === "No");
+  const total = state.servers.length;
+  const yesPct = total ? Math.round((yesRows.length / total) * 100) : 0;
+  const noPct = total ? Math.round((noRows.length / total) * 100) : 0;
+  return { yesRows, noRows, total, yesPct, noPct };
+}
+
+function renderServiceMetrics() {
+  const stats = getCurrentServiceStats();
+  if (!serviceReady) {
+    serviceTotalsText.textContent = "Aun sin datos para este servicio.";
+  } else {
+    serviceTotalsText.textContent = `Total servidores: ${stats.total}. Llegaron: ${stats.yesRows.length}. Faltaron: ${stats.noRows.length}.`;
+  }
+  yesBar.style.width = `${stats.yesPct}%`;
+  noBar.style.width = `${stats.noPct}%`;
+  yesPctText.textContent = `Si: ${stats.yesPct}%`;
+  noPctText.textContent = `No: ${stats.noPct}%`;
+}
+
+function finalizeCurrentService() {
+  if (!serviceReady) return;
+  const stats = getCurrentServiceStats();
+  if (stats.yesPct < 50) {
+    window.alert(
+      `Alerta: la asistencia es menor al 50% (${stats.yesPct}%). Llegaron ${stats.yesRows.length} de ${stats.total}.`
+    );
+  } else {
+    window.alert(
+      `Servicio finalizado. Asistencia: ${stats.yesPct}%. Llegaron ${stats.yesRows.length} y faltaron ${stats.noRows.length}.`
+    );
+  }
+}
+
+function generateConciliationList() {
+  if (!serviceReady) return;
+  const shuffled = shuffleServers(state.servers);
+  const signature = shuffled.map((server) => server.id).join("|");
+  if (signature === lastConciliationSignature) {
+    shuffled.reverse();
+  }
+
+  const groups = CONCILIATION_LEADERS.map((leader) => ({ leader, members: [] }));
+  shuffled.forEach((server, index) => {
+    groups[index % groups.length].members.push(server);
+  });
+
+  currentConciliation = groups;
+  lastConciliationSignature = shuffled.map((server) => server.id).join("|");
+  renderConciliationBoard();
+}
+
+function renderConciliationBoard() {
+  if (!serviceReady) {
+    conciliationBoard.innerHTML = `<p class="result-empty">Primero guarda un servicio.</p>`;
+    return;
+  }
+  if (!currentConciliation) {
+    conciliationBoard.innerHTML = `<p class="result-empty">Pulsa "Generar listado de conciliacion".</p>`;
+    return;
+  }
+
+  conciliationBoard.innerHTML = currentConciliation
+    .map((group) => {
+      const items = group.members
+        .map(
+          (member) =>
+            `<li>${escapeHtml(member.name)} - ${escapeHtml(member.phone)}</li>`
+        )
+        .join("");
+      return `
+        <article class="conciliation-card">
+          <h4>${escapeHtml(group.leader)}</h4>
+          <ol>${items}</ol>
+        </article>
+      `;
+    })
     .join("");
-  return `<table><thead><tr><th>Nombre</th><th>Telefono</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function shuffleServers(items) {
+  const copied = items.map((item) => ({ ...item }));
+  for (let i = copied.length - 1; i > 0; i -= 1) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [copied[i], copied[randomIndex]] = [copied[randomIndex], copied[i]];
+  }
+  return copied;
 }
 
 function escapeHtml(value) {

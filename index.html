@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260430a" />
+    <link rel="stylesheet" href="./styles.css?v=20260430b" />
   </head>
   <body>
     <div class="app-shell">
@@ -36,8 +36,8 @@
         <button class="tab-button is-active" type="button" data-view-target="servidores">
           SERVIDORES
         </button>
-        <button class="tab-button" type="button" data-view-target="asistencia">
-          LISTADO DE SERVIDORES
+        <button class="tab-button" type="button" data-view-target="checklist">
+          CHECKLIST DE SERVICIO
         </button>
       </nav>
 
@@ -134,7 +134,7 @@
           </section>
         </section>
 
-        <section class="view" data-view="asistencia">
+        <section class="view" data-view="checklist">
           <section class="panel">
             <div class="panel__header panel__header--split">
               <div>
@@ -147,6 +147,9 @@
                 </button>
                 <button id="exportPdfButton" type="button" class="primary-button">
                   Generar PDF
+                </button>
+                <button id="finalizeServiceButton" type="button" class="primary-button">
+                  Finalizar servicio
                 </button>
               </div>
             </div>
@@ -196,6 +199,36 @@
                 <div id="noList" class="result-list"></div>
               </article>
             </div>
+
+            <section class="panel panel--summary metrics-panel">
+              <div class="panel__header">
+                <h3>Resumen del servicio</h3>
+                <p id="serviceTotalsText">Aun sin datos para este servicio.</p>
+              </div>
+              <div class="chart-wrap">
+                <div class="chart-bar">
+                  <div id="yesBar" class="chart-segment chart-segment--yes"></div>
+                  <div id="noBar" class="chart-segment chart-segment--no"></div>
+                </div>
+                <div class="chart-legend">
+                  <span id="yesPctText">Si: 0%</span>
+                  <span id="noPctText">No: 0%</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel__header panel__header--split">
+                <div>
+                  <h3>Listado de conciliacion</h3>
+                  <p>Grupos mezclados para seguimiento telefonico.</p>
+                </div>
+                <button id="generateConciliationButton" type="button" class="primary-button">
+                  Generar listado de conciliacion
+                </button>
+              </div>
+              <div id="conciliationBoard" class="conciliation-board"></div>
+            </section>
           </section>
         </section>
       </main>
@@ -228,6 +261,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260430a"></script>
+    <script src="./app.js?v=20260430b"></script>
   </body>
 </html>
