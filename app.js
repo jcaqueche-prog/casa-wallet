@@ -106,6 +106,7 @@ serviceShift.addEventListener("change", syncShiftVisibility);
 exportPdfButton.addEventListener("click", exportCurrentChecklistPdf);
 finalizeServiceButton.addEventListener("click", finalizeCurrentService);
 generateConciliationButton.addEventListener("click", generateConciliationList);
+conciliationBoard.addEventListener("click", handleConciliationBoardClick);
 summaryMonth.addEventListener("change", renderSummaryView);
 summaryServiceSelect.addEventListener("change", renderSummaryView);
 summaryPdfButton.addEventListener("click", exportMonthlySummaryPdf);
@@ -681,7 +682,7 @@ function renderConciliationBoard() {
   }
 
   conciliationBoard.innerHTML = currentConciliation
-    .map((group) => {
+    .map((group, index) => {
       const items = group.members
         .map(
           (member) =>
@@ -690,12 +691,69 @@ function renderConciliationBoard() {
         .join("");
       return `
         <article class="conciliation-card">
-          <h4>${escapeHtml(group.leader)}</h4>
+          <div class="conciliation-card__head">
+            <h4>${escapeHtml(group.leader)}</h4>
+            <button type="button" class="primary-button conciliation-pdf-btn" data-group-index="${index}">
+              PDF
+            </button>
+          </div>
           <ol>${items}</ol>
         </article>
       `;
     })
     .join("");
+}
+
+function handleConciliationBoardClick(event) {
+  const button = event.target.closest(".conciliation-pdf-btn");
+  if (!button) return;
+  const index = Number(button.dataset.groupIndex);
+  exportConciliationGroupPdf(index);
+}
+
+function exportConciliationGroupPdf(groupIndex) {
+  if (!currentConciliation || Number.isNaN(groupIndex)) return;
+  const group = currentConciliation[groupIndex];
+  if (!group) return;
+
+  const meta = getCurrentServiceMeta();
+  const shiftText = meta.shift === "NA" ? "" : ` - Turno ${meta.shift}`;
+  const rows = group.members
+    .map((member) => `<tr><td>${escapeHtml(member.name)}</td><td>${escapeHtml(member.phone)}</td></tr>`)
+    .join("");
+  const printable = window.open("", "_blank", "width=900,height=800");
+  if (!printable) return;
+
+  printable.document.write(`
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Conciliacion - ${escapeHtml(group.leader)}</title>
+      <style>
+        @page { size: A4 portrait; margin: 14mm; }
+        body { font-family: Arial, sans-serif; color: #1b2940; margin: 0; }
+        h1 { margin: 0 0 8px; font-size: 22px; }
+        p { margin: 0 0 10px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #c8d2e5; padding: 6px; text-align: left; }
+        th { background: #eef4ff; }
+      </style>
+    </head>
+    <body>
+      <h1>Listado de Conciliacion</h1>
+      <p><strong>Encargado:</strong> ${escapeHtml(group.leader)}</p>
+      <p><strong>Servicio:</strong> ${escapeHtml(formatDate(meta.date))} - ${escapeHtml(meta.day)}${escapeHtml(shiftText)}</p>
+      <table>
+        <thead><tr><th>Servidor</th><th>Telefono</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </body>
+    </html>
+  `);
+  printable.document.close();
+  printable.focus();
+  printable.print();
 }
 
 function shuffleServers(items) {

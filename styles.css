@@ -471,6 +471,18 @@ textarea {
   font-family: "Manrope", sans-serif;
 }
 
+.conciliation-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.conciliation-pdf-btn {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
 .conciliation-card ol {
   margin: 0;
   padding-left: 20px;
