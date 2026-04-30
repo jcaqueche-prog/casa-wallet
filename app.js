@@ -87,7 +87,8 @@ const conciliationBoard = document.getElementById("conciliationBoard");
 const summaryDateFrom = document.getElementById("summaryDateFrom");
 const summaryDateTo = document.getElementById("summaryDateTo");
 const summarySaveGeneralButton = document.getElementById("summarySaveGeneralButton");
-const summaryShareButton = document.getElementById("summaryShareButton");
+const summarySharePdfButton = document.getElementById("summarySharePdfButton");
+const summaryShareExcelButton = document.getElementById("summaryShareExcelButton");
 const summaryCards = document.getElementById("summaryCards");
 const summaryGeneralCards = document.getElementById("summaryGeneralCards");
 const alfolisShareButton = document.getElementById("alfolisShareButton");
@@ -129,7 +130,8 @@ summaryDateTo.addEventListener("change", renderSummary);
 summarySaveGeneralButton.addEventListener("click", saveGeneralSummarySnapshot);
 summaryCards.addEventListener("click", handleSummaryCardClick);
 summaryGeneralCards.addEventListener("click", handleSummarySnapshotClick);
-summaryShareButton.addEventListener("click", shareSummaryRange);
+summarySharePdfButton.addEventListener("click", shareSummaryRangePdf);
+summaryShareExcelButton.addEventListener("click", shareSummaryRangeExcel);
 addMaleLineButton.addEventListener("click", () => addAlfoliLine("male"));
 addFemaleLineButton.addEventListener("click", () => addAlfoliLine("female"));
 newIngresoButton.addEventListener("click", () => addAlfoliLine(newIngresoType.value));
@@ -797,21 +799,109 @@ function handleSummaryCardClick(event) {
   renderSummary();
 }
 
-function shareSummaryRange() {
+function getSummaryRangeRecords() {
+  const from = summaryDateFrom.value;
+  const to = summaryDateTo.value;
+  return state.services
+    .filter((s) => s.statsSaved)
+    .filter((s) => (!from || s.date >= from) && (!to || s.date <= to));
+}
+
+function shareSummaryRangePdf() {
   const from = summaryDateFrom.value || "(sin inicio)";
   const to = summaryDateTo.value || "(sin fin)";
-  const records = state.services
-    .filter((s) => s.statsSaved)
-    .filter((s) => (!summaryDateFrom.value || s.date >= summaryDateFrom.value) && (!summaryDateTo.value || s.date <= summaryDateTo.value));
+  const records = getSummaryRangeRecords();
+  if (!records.length) {
+    window.alert("No hay datos en el rango seleccionado.");
+    return;
+  }
 
-  const lines = [`Resumen por rango: ${from} a ${to}`];
-  records.forEach((s) => {
+  const rows = records
+    .map((s) => {
+      const st = getServiceStats(s);
+      return `<tr>
+        <td>${escapeHtml(formatDate(s.date))}</td>
+        <td>${escapeHtml(s.lines.join(" / "))}</td>
+        <td>${st.yesCount}</td>
+        <td>${st.noCount}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const printable = window.open("", "_blank", "width=1100,height=860");
+  if (!printable) return;
+  printable.document.write(`
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Resumen por rango</title>
+      <style>
+        @page { size: A4 portrait; margin: 14mm; }
+        body { font-family: "Segoe UI", Arial, sans-serif; color: #1e2d46; margin: 0; background: #f4f7fc; }
+        .actions { display:flex; gap:10px; margin: 0 0 10px; }
+        button { padding:10px 14px; border:0; border-radius:999px; background:#2f5ca8; color:#fff; font-weight:700; cursor:pointer; }
+        .sheet { background:#fff; border:1px solid #d6e0f0; border-radius:14px; padding:18px; }
+        h1 { margin:0 0 10px; font-size:24px; color:#1f3f75; }
+        p { margin:0 0 8px; font-size:13px; }
+        table { width:100%; border-collapse:collapse; margin-top:10px; font-size:12px; }
+        th, td { border:1px solid #c5d2e8; padding:7px; text-align:left; }
+        th { background:#e8effc; color:#24467f; }
+      </style>
+    </head>
+    <body>
+      <div class="actions">
+        <button onclick="window.print()">Imprimir PDF</button>
+        <button id="shareBtn" type="button">Compartir</button>
+      </div>
+      <div class="sheet">
+        <h1>Resumen de Servicios</h1>
+        <p><strong>Rango:</strong> ${escapeHtml(from)} a ${escapeHtml(to)}</p>
+        <p><strong>Total servicios:</strong> ${records.length}</p>
+        <table>
+          <thead><tr><th>Fecha</th><th>Servicio</th><th>Asistieron</th><th>No asistieron</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <script>
+        document.getElementById("shareBtn").addEventListener("click", async () => {
+          if (!navigator.share) {
+            alert("Compartir no disponible en este navegador.");
+            return;
+          }
+          try {
+            await navigator.share({
+              title: "Resumen por rango",
+              text: "Rango: ${escapeHtml(from)} a ${escapeHtml(to)}. Servicios: ${records.length}.",
+            });
+          } catch {}
+        });
+      </script>
+    </body>
+    </html>
+  `);
+  printable.document.close();
+  printable.focus();
+}
+
+function shareSummaryRangeExcel() {
+  const from = summaryDateFrom.value || "";
+  const to = summaryDateTo.value || "";
+  const records = getSummaryRangeRecords();
+  if (!records.length) {
+    window.alert("No hay datos en el rango seleccionado.");
+    return;
+  }
+
+  const headers = ["Fecha", "Servicio", "Asistieron", "No asistieron"];
+  const rows = records.map((s) => {
     const st = getServiceStats(s);
-    lines.push(`${s.date} | ${s.lines.join(" / ")} | Si ${st.yesCount} | No ${st.noCount}`);
+    return [s.date, s.lines.join(" / "), st.yesCount, st.noCount];
   });
-
-  openJpegPreview("Resumen", lines, true);
-  shareJpeg("Resumen", lines);
+  const csv = [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  const fileName = `resumen-${from || "inicio"}-${to || "fin"}.csv`;
+  shareFileBlob(blob, fileName, "text/csv;charset=utf-8;");
 }
 
 function renderAlfolis() {
