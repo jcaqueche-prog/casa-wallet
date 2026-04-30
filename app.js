@@ -438,6 +438,7 @@ function exportCurrentServicePdf() {
       <div class="actions">
         <button onclick="window.print()">Imprimir</button>
         <button id="shareBtn" type="button">Compartir</button>
+        <button type="button" onclick="window.close()">Regresar a la APP</button>
       </div>
       <div class="sheet">
         <h1>Asistencia por Servicio</h1>
@@ -854,6 +855,7 @@ function shareSummaryRangePdf() {
       <div class="actions">
         <button onclick="window.print()">Imprimir PDF</button>
         <button id="shareBtn" type="button">Compartir</button>
+        <button type="button" onclick="window.close()">Regresar a la APP</button>
       </div>
       <div class="sheet">
         <h1>Resumen de Servicios</h1>
@@ -992,13 +994,18 @@ function openJpegPreview(title, lines, includeShareHint = false) {
       <div class="actions">
         <a href="${jpeg.dataUrl}" download="${escapeHtml(jpeg.fileName)}">Descargar JPG</a>
         <button id="shareJpgBtn" type="button">Compartir JPG</button>
+        <button id="backToAppBtn" type="button">Regresar a la APP</button>
       </div>
       ${hint}
       <script>
         (function () {
           const btn = document.getElementById("shareJpgBtn");
+          const backBtn = document.getElementById("backToAppBtn");
           const dataUrl = ${JSON.stringify(jpeg.dataUrl)};
           const fileName = ${JSON.stringify(jpeg.fileName)};
+          backBtn.addEventListener("click", function () {
+            window.close();
+          });
           btn.addEventListener("click", async function () {
             if (!navigator.share || typeof navigator.canShare !== "function") {
               alert("Este navegador no permite compartir archivos directamente.");
