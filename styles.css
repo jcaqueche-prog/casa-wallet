@@ -155,6 +155,15 @@ textarea { resize: vertical; }
 .cards-grid { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
 .server-card { border-radius: var(--radius-md); padding: 14px; }
 .server-card__top { display: flex; justify-content: space-between; align-items: start; gap: 10px; margin-bottom: 10px; }
+.server-card__head { display: flex; align-items: center; gap: 10px; }
+.server-card__photo {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  background: #dfeaff;
+}
 .server-card__name { font-size: 1.05rem; }
 .server-card__details { color: var(--muted); }
 .server-card__details p { margin: 7px 0 0; }

@@ -58,6 +58,7 @@ const state = loadState();
 
 const serverForm = document.getElementById("serverForm");
 const serverBirthday = document.getElementById("serverBirthday");
+const serverPhoto = document.getElementById("serverPhoto");
 const serviceForm = document.getElementById("serviceForm");
 const serviceDate = document.getElementById("serviceDate");
 const serviceLines = document.getElementById("serviceLines");
@@ -172,19 +173,22 @@ function setActiveView(viewName) {
   views.forEach((view) => view.classList.toggle("view--active", view.dataset.view === viewName));
 }
 
-function handleCreateServer(event) {
+async function handleCreateServer(event) {
   event.preventDefault();
   const fd = new FormData(serverForm);
   const name = String(fd.get("name") || "").trim();
   const birthday = String(fd.get("birthday") || "");
   const phone = String(fd.get("phone") || "").trim();
   const address = String(fd.get("address") || "").trim();
+  const photoFile = fd.get("photo");
   if (!name || !birthday || !phone || !address) return;
+  const photo = await fileToDataUrl(photoFile);
 
-  state.servers.unshift({ id: createId("srv"), name, birthday, phone, address });
+  state.servers.unshift({ id: createId("srv"), name, birthday, phone, address, photo });
   saveState();
   serverForm.reset();
   serverBirthday.value = getTodayIso();
+  serverPhoto.value = "";
   renderAll();
 }
 
@@ -207,6 +211,8 @@ function renderServers() {
   list.forEach((server) => {
     const fragment = serverCardTemplate.content.cloneNode(true);
     fragment.querySelector(".server-card__name").textContent = server.name;
+    const photoEl = fragment.querySelector(".server-card__photo");
+    photoEl.src = server.photo || createAvatarDataUrl(server.name);
     fragment.querySelector(".server-card__birthday").textContent = formatDate(server.birthday);
     fragment.querySelector(".server-card__phone").textContent = server.phone;
     fragment.querySelector(".server-card__address").textContent = server.address;
@@ -837,4 +843,38 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve) => {
+    if (!(file instanceof File) || !file.size) {
+      resolve("");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+    reader.onerror = () => resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+
+function createAvatarDataUrl(name) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = 180;
+  canvas.height = 180;
+  if (!ctx) return "";
+  ctx.fillStyle = "#dfeaff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#2e5fc1";
+  ctx.beginPath();
+  ctx.arc(90, 90, 90, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 68px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const first = (String(name || "").trim()[0] || "?").toUpperCase();
+  ctx.fillText(first, 90, 95);
+  return canvas.toDataURL("image/png");
 }
