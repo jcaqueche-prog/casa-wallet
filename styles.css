@@ -267,6 +267,12 @@ textarea { resize: vertical; }
 .chart-legend { display: flex; justify-content: space-between; color: var(--muted); font-weight: 600; }
 
 .conciliation-board { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.conciliation-leaders {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
 .conciliation-card {
   border: 1px solid var(--line);
   border-radius: var(--radius-md);

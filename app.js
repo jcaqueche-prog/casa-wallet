@@ -84,6 +84,7 @@ const shareServicePdfButton = document.getElementById("shareServicePdfButton");
 const shareServiceExcelButton = document.getElementById("shareServiceExcelButton");
 const generateConciliationButton = document.getElementById("generateConciliationButton");
 const conciliationGroupCount = document.getElementById("conciliationGroupCount");
+const conciliationLeaders = document.getElementById("conciliationLeaders");
 const conciliationBoard = document.getElementById("conciliationBoard");
 const summaryDateFrom = document.getElementById("summaryDateFrom");
 const summaryDateTo = document.getElementById("summaryDateTo");
@@ -115,6 +116,7 @@ const views = Array.from(document.querySelectorAll(".view"));
 let currentServiceId = state.services[0]?.id || "";
 let currentConciliation = null;
 let lastConciliationSignature = "";
+let conciliationLeaderByGroup = {};
 let expandedSummaryServiceId = "";
 
 serverForm.addEventListener("submit", handleCreateServer);
@@ -125,6 +127,10 @@ exportServiceExcelButton.addEventListener("click", exportCurrentServiceExcel);
 shareServicePdfButton.addEventListener("click", shareCurrentServicePdf);
 shareServiceExcelButton.addEventListener("click", shareCurrentServiceExcel);
 generateConciliationButton.addEventListener("click", generateConciliation);
+conciliationGroupCount.addEventListener("change", () => {
+  normalizeConciliationLeaders();
+  renderConciliationLeaderSelectors();
+});
 conciliationBoard.addEventListener("click", handleConciliationActions);
 summaryDateFrom.addEventListener("change", renderSummary);
 summaryDateTo.addEventListener("change", renderSummary);
@@ -195,6 +201,8 @@ function renderAll() {
   renderServers();
   renderServiceAttendance();
   renderServiceStats();
+  normalizeConciliationLeaders();
+  renderConciliationLeaderSelectors();
   renderConciliation();
   renderSummary();
   renderAlfolis();
@@ -570,15 +578,91 @@ function generateConciliation() {
   const groupCount = Math.max(1, Math.min(5, Number.isFinite(requested) ? requested : 4));
   const groups = Array.from({ length: groupCount }, (_, i) => ({
     name: `Grupo ${i + 1}`,
+    leaderId: conciliationLeaderByGroup[String(i + 1)] || "",
+    leaderName: "",
     members: [],
   }));
 
-  list.forEach((server, idx) => {
+  const leaderIds = new Set(
+    groups
+      .map((group) => group.leaderId)
+      .filter(Boolean)
+  );
+  const memberPool = list.filter((server) => !leaderIds.has(server.id));
+
+  groups.forEach((group) => {
+    if (!group.leaderId) return;
+    const leader = state.servers.find((server) => server.id === group.leaderId);
+    group.leaderName = leader ? leader.name : "";
+  });
+
+  memberPool.forEach((server, idx) => {
     groups[idx % groups.length].members.push(server);
   });
 
   currentConciliation = groups;
   renderConciliation();
+}
+
+function normalizeConciliationLeaders() {
+  const requested = Number(conciliationGroupCount?.value || 4);
+  const groupCount = Math.max(1, Math.min(5, Number.isFinite(requested) ? requested : 4));
+  const next = {};
+  for (let i = 1; i <= groupCount; i += 1) {
+    const key = String(i);
+    if (conciliationLeaderByGroup[key]) {
+      next[key] = conciliationLeaderByGroup[key];
+    }
+  }
+  conciliationLeaderByGroup = next;
+}
+
+function renderConciliationLeaderSelectors() {
+  if (!conciliationLeaders) return;
+  const requested = Number(conciliationGroupCount?.value || 4);
+  const groupCount = Math.max(1, Math.min(5, Number.isFinite(requested) ? requested : 4));
+  const selectedSet = new Set(Object.values(conciliationLeaderByGroup).filter(Boolean));
+
+  conciliationLeaders.innerHTML = Array.from({ length: groupCount }, (_, index) => {
+    const groupNumber = index + 1;
+    const key = String(groupNumber);
+    const currentSelected = conciliationLeaderByGroup[key] || "";
+    const options = state.servers
+      .filter((server) => server.id === currentSelected || !selectedSet.has(server.id))
+      .map((server) => `<option value="${server.id}" ${server.id === currentSelected ? "selected" : ""}>${escapeHtml(server.name)}</option>`)
+      .join("");
+
+    return `
+      <label>
+        Encargado Grupo ${groupNumber}
+        <select class="conciliation-leader-select" data-group="${groupNumber}">
+          <option value="">Sin encargado</option>
+          ${options}
+        </select>
+      </label>
+    `;
+  }).join("");
+
+  conciliationLeaders.querySelectorAll(".conciliation-leader-select").forEach((select) => {
+    select.addEventListener("change", (event) => {
+      const group = event.target.dataset.group;
+      const nextLeaderId = event.target.value;
+      const usedByOtherGroup = Object.entries(conciliationLeaderByGroup).some(
+        ([g, leaderId]) => g !== group && leaderId === nextLeaderId && nextLeaderId
+      );
+      if (usedByOtherGroup) {
+        event.target.value = "";
+        window.alert("Ese servidor ya esta asignado como encargado en otro grupo.");
+        return;
+      }
+      if (nextLeaderId) {
+        conciliationLeaderByGroup[group] = nextLeaderId;
+      } else {
+        delete conciliationLeaderByGroup[group];
+      }
+      renderConciliationLeaderSelectors();
+    });
+  });
 }
 
 function renderConciliation() {
@@ -599,6 +683,7 @@ function renderConciliation() {
               <button class="primary-button conciliation-share-btn" data-index="${idx}">Compartir</button>
             </div>
           </div>
+          <p><strong>Encargado:</strong> ${escapeHtml(group.leaderName || "Sin encargado")}</p>
           <ol>${rows}</ol>
         </article>
       `;
