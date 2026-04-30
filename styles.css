@@ -83,14 +83,6 @@ textarea {
   font-family: "Manrope", sans-serif;
 }
 
-.hero__logo {
-  width: clamp(112px, 22vw, 170px);
-  height: auto;
-  display: block;
-  margin-bottom: 14px;
-  filter: drop-shadow(0 8px 22px rgba(36, 79, 158, 0.2));
-}
-
 .hero h1 {
   font-size: clamp(2rem, 4vw, 3.4rem);
   line-height: 1.02;
@@ -109,16 +101,6 @@ label,
   margin: 14px 0 0;
   max-width: 54ch;
   line-height: 1.65;
-}
-
-.hero__banner {
-  width: 100%;
-  max-width: 520px;
-  margin-top: 16px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-soft);
-  display: block;
 }
 
 .hero__panel {
@@ -372,15 +354,6 @@ textarea {
   .hero,
   .panel {
     padding: 14px;
-  }
-
-  .hero__logo {
-    width: clamp(96px, 36vw, 138px);
-    margin-bottom: 10px;
-  }
-
-  .hero__banner {
-    margin-top: 12px;
   }
 
   .tabbar,
