@@ -1,11 +1,49 @@
 const STORAGE_KEY = "iglesia-servidores-app";
-const DATABASE_SOURCE_VERSION = "grupo-5-excel-2026-04-30-checklist-v2";
+const DATABASE_SOURCE_VERSION = "grupo-5-excel-2026-04-30-checklist-v3";
 const CONCILIATION_LEADERS = [
   "Juan Carlos Aqueche",
   "Giovany Alvarado",
   "Rafael Ortiz",
   "Freddy garcia",
 ];
+const AREA_CHECKLISTS = {
+  puertas: {
+    title: "1- Puertas y Bienvenida",
+    instructions: [
+      "Ingreso principal limpio y ordenado.",
+      "Equipo de bienvenida en posicion 15 min antes.",
+      "Se entrego saludo y orientacion a visitantes.",
+      "Puertas laterales supervisadas durante el servicio.",
+    ],
+  },
+  anexo_ab: {
+    title: "2- Anexo A y B",
+    instructions: [
+      "Sillas alineadas y pasillos despejados.",
+      "Audio y ventilacion revisados.",
+      "Limpieza general completada.",
+      "Cierre de area al finalizar.",
+    ],
+  },
+  anexo_cm: {
+    title: "3- Anexo C y M",
+    instructions: [
+      "Materiales listos para uso.",
+      "Control de ingreso en accesos.",
+      "Orden y seguridad durante la actividad.",
+      "Entrega de area en buen estado.",
+    ],
+  },
+  anexo_def: {
+    title: "4- Anexo D, E y F",
+    instructions: [
+      "Revision de iluminacion y energia.",
+      "Apoyo de servidores asignados completo.",
+      "Limpieza y recoleccion de desechos.",
+      "Cierre final con reporte de pendientes.",
+    ],
+  },
+};
 
 const SEED_SERVERS = [
   { id: "seed-1", name: "Freddy Armando Figueroa Enriquez", birthday: "1970-02-15", phone: "45240179", address: "3 av 3-15 Fuentes 1 chinautla" },
@@ -78,10 +116,15 @@ const yesPctText = document.getElementById("yesPctText");
 const noPctText = document.getElementById("noPctText");
 const yesList = document.getElementById("yesList");
 const noList = document.getElementById("noList");
+const areaButtons = document.getElementById("areaButtons");
+const areaChecklistTitle = document.getElementById("areaChecklistTitle");
+const areaChecklistBody = document.getElementById("areaChecklistBody");
 const summaryMonth = document.getElementById("summaryMonth");
 const summaryServiceSelect = document.getElementById("summaryServiceSelect");
 const summaryPdfButton = document.getElementById("summaryPdfButton");
 const summaryPreview = document.getElementById("summaryPreview");
+const savedServicesSelect = document.getElementById("savedServicesSelect");
+const deleteServiceButton = document.getElementById("deleteServiceButton");
 const serverSearch = document.getElementById("serverSearch");
 const todayLabel = document.getElementById("todayLabel");
 const totalServers = document.getElementById("totalServers");
@@ -96,6 +139,7 @@ const views = Array.from(document.querySelectorAll(".view"));
 let serviceReady = false;
 let currentConciliation = null;
 let lastConciliationSignature = "";
+let activeAreaKey = "puertas";
 
 serverForm.addEventListener("submit", handleCreateServer);
 addServiceButton.addEventListener("click", handleAddServiceClick);
@@ -110,6 +154,9 @@ conciliationBoard.addEventListener("click", handleConciliationBoardClick);
 summaryMonth.addEventListener("change", renderSummaryView);
 summaryServiceSelect.addEventListener("change", renderSummaryView);
 summaryPdfButton.addEventListener("click", exportMonthlySummaryPdf);
+savedServicesSelect.addEventListener("change", handleSavedServiceSelection);
+deleteServiceButton.addEventListener("click", handleDeleteService);
+areaButtons.addEventListener("click", handleAreaButtonClick);
 serverSearch.addEventListener("input", renderApp);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
@@ -222,6 +269,8 @@ function renderApp() {
   generateConciliationButton.disabled = !serviceReady;
   renderSummary();
   renderServerCards();
+  renderSavedServices();
+  renderAreaChecklist();
   renderAttendanceList();
   renderResultLists();
   renderServiceMetrics();
@@ -241,14 +290,152 @@ function getServiceKey(meta) {
   return `${meta.date}__${meta.day}__${meta.shift}`;
 }
 
+function applyServiceKeyToControls(serviceKey) {
+  const meta = parseServiceKey(serviceKey);
+  if (!meta.date || !meta.day) return;
+  attendanceDate.value = meta.date;
+  serviceDay.value = meta.day;
+  serviceShift.value = meta.shift || "NA";
+  syncShiftVisibility();
+}
+
+function renderSavedServices() {
+  const keys = Object.keys(state.attendance).sort().reverse();
+  const currentKey = getServiceKey(getCurrentServiceMeta());
+  savedServicesSelect.innerHTML = "";
+
+  if (!keys.length) {
+    savedServicesSelect.innerHTML = `<option value="">Sin servicios guardados</option>`;
+    deleteServiceButton.disabled = true;
+    return;
+  }
+
+  keys.forEach((key) => {
+    const option = document.createElement("option");
+    option.value = key;
+    option.textContent = formatServiceKeyLabel(key);
+    savedServicesSelect.appendChild(option);
+  });
+
+  if (keys.includes(currentKey)) {
+    savedServicesSelect.value = currentKey;
+  } else {
+    savedServicesSelect.value = keys[0];
+  }
+
+  deleteServiceButton.disabled = false;
+}
+
+function handleSavedServiceSelection() {
+  const selectedKey = savedServicesSelect.value;
+  if (!selectedKey) return;
+  applyServiceKeyToControls(selectedKey);
+  serviceReady = true;
+  renderApp();
+}
+
+function handleDeleteService() {
+  const selectedKey = savedServicesSelect.value;
+  if (!selectedKey || !state.attendance[selectedKey]) return;
+
+  const confirmDelete = window.confirm(
+    `Seguro que quieres borrar este servicio?\n${formatServiceKeyLabel(selectedKey)}`
+  );
+  if (!confirmDelete) return;
+
+  delete state.attendance[selectedKey];
+  if (currentConciliation) {
+    currentConciliation = null;
+  }
+  saveState();
+
+  const remaining = Object.keys(state.attendance).sort().reverse();
+  if (!remaining.length) {
+    serviceReady = false;
+    activeServiceText.textContent = "No hay servicio seleccionado.";
+  } else {
+    applyServiceKeyToControls(remaining[0]);
+    serviceReady = true;
+  }
+
+  renderApp();
+}
+
 function ensureAttendanceRecord(serviceKey, serverId) {
   if (!state.attendance[serviceKey]) {
     state.attendance[serviceKey] = {};
   }
   if (!state.attendance[serviceKey][serverId]) {
-    state.attendance[serviceKey][serverId] = { status: "" };
+    state.attendance[serviceKey][serverId] = { status: "", checks: {} };
+  } else if (!state.attendance[serviceKey][serverId].checks) {
+    state.attendance[serviceKey][serverId].checks = {};
   }
   return state.attendance[serviceKey][serverId];
+}
+
+function handleAreaButtonClick(event) {
+  const button = event.target.closest(".area-button");
+  if (!button) return;
+  activeAreaKey = button.dataset.areaKey || "puertas";
+  renderAreaChecklist();
+}
+
+function renderAreaChecklist() {
+  const area = AREA_CHECKLISTS[activeAreaKey] || AREA_CHECKLISTS.puertas;
+  areaChecklistTitle.textContent = area.title;
+  Array.from(areaButtons.querySelectorAll(".area-button")).forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.areaKey === activeAreaKey);
+  });
+
+  if (!serviceReady) {
+    areaChecklistBody.innerHTML = `
+      <tr>
+        <td colspan="4">Primero crea o selecciona un servicio para activar el checklist de area.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  const serviceKey = getServiceKey(getCurrentServiceMeta());
+  areaChecklistBody.innerHTML = area.instructions
+    .map((instruction, index) => {
+      const checkKey = `${activeAreaKey}-${index + 1}`;
+      const checked = getAreaCheckStatus(serviceKey, checkKey);
+      const radioName = `area-check-${serviceKey}-${checkKey}`;
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(instruction)}</td>
+          <td><input type="radio" name="${radioName}" value="Si" data-check-key="${checkKey}" ${checked === "Si" ? "checked" : ""} /></td>
+          <td><input type="radio" name="${radioName}" value="No" data-check-key="${checkKey}" ${checked === "No" ? "checked" : ""} /></td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  areaChecklistBody.querySelectorAll("input[type='radio']").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      const checkKey = event.target.dataset.checkKey;
+      updateAreaCheck(serviceKey, checkKey, event.target.value);
+    });
+  });
+}
+
+function getAreaCheckStatus(serviceKey, checkKey) {
+  const control = state.attendance[serviceKey]?.__area_control__;
+  return control?.checks?.[checkKey] || "";
+}
+
+function updateAreaCheck(serviceKey, checkKey, status) {
+  if (!state.attendance[serviceKey]) {
+    state.attendance[serviceKey] = {};
+  }
+  const controlId = "__area_control__";
+  if (!state.attendance[serviceKey][controlId]) {
+    state.attendance[serviceKey][controlId] = { status: "", checks: {} };
+  }
+  state.attendance[serviceKey][controlId].checks[checkKey] = status;
+  saveState();
 }
 
 function renderSummary() {
@@ -655,10 +842,13 @@ function finalizeCurrentService() {
 
 function generateConciliationList() {
   if (!serviceReady) return;
-  const shuffled = shuffleServers(state.servers);
-  const signature = shuffled.map((server) => server.id).join("|");
-  if (signature === lastConciliationSignature) {
-    shuffled.reverse();
+  let shuffled = shuffleServers(state.servers);
+  let signature = shuffled.map((server) => server.id).join("|");
+  let attempts = 0;
+  while (signature === lastConciliationSignature && attempts < 5) {
+    shuffled = shuffleServers(state.servers);
+    signature = shuffled.map((server) => server.id).join("|");
+    attempts += 1;
   }
 
   const groups = CONCILIATION_LEADERS.map((leader) => ({ leader, members: [] }));
@@ -667,7 +857,7 @@ function generateConciliationList() {
   });
 
   currentConciliation = groups;
-  lastConciliationSignature = shuffled.map((server) => server.id).join("|");
+  lastConciliationSignature = signature;
   renderConciliationBoard();
 }
 
@@ -718,6 +908,8 @@ function exportConciliationGroupPdf(groupIndex) {
 
   const meta = getCurrentServiceMeta();
   const shiftText = meta.shift === "NA" ? "" : ` - Turno ${meta.shift}`;
+  const printedOn = new Date().toISOString().slice(0, 10);
+  const fileLabel = `${group.leader} - ${printedOn}`;
   const rows = group.members
     .map((member) => `<tr><td>${escapeHtml(member.name)}</td><td>${escapeHtml(member.phone)}</td></tr>`)
     .join("");
@@ -729,7 +921,7 @@ function exportConciliationGroupPdf(groupIndex) {
     <html lang="es">
     <head>
       <meta charset="utf-8" />
-      <title>Conciliacion - ${escapeHtml(group.leader)}</title>
+      <title>${escapeHtml(fileLabel)}</title>
       <style>
         @page { size: A4 portrait; margin: 14mm; }
         body { font-family: Arial, sans-serif; color: #1b2940; margin: 0; }
@@ -741,7 +933,7 @@ function exportConciliationGroupPdf(groupIndex) {
       </style>
     </head>
     <body>
-      <h1>Listado de Conciliacion</h1>
+      <h1>${escapeHtml(fileLabel)}</h1>
       <p><strong>Encargado:</strong> ${escapeHtml(group.leader)}</p>
       <p><strong>Servicio:</strong> ${escapeHtml(formatDate(meta.date))} - ${escapeHtml(meta.day)}${escapeHtml(shiftText)}</p>
       <table>

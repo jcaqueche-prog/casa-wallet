@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=20260430c" />
+    <link rel="stylesheet" href="./styles.css?v=20260430e" />
   </head>
   <body>
     <div class="app-shell">
@@ -183,6 +183,16 @@
               </label>
               <button type="submit" class="primary-button">Guardar servicio</button>
             </form>
+
+            <div class="service-meta-grid">
+              <label>
+                Servicios guardados
+                <select id="savedServicesSelect"></select>
+              </label>
+              <button id="deleteServiceButton" type="button" class="ghost-button">
+                Borrar servicio seleccionado
+              </button>
+            </div>
           </section>
         </section>
 
@@ -201,6 +211,38 @@
                   Finalizar servicio
                 </button>
               </div>
+            </div>
+
+            <div class="area-buttons" id="areaButtons">
+              <button type="button" class="tab-button area-button is-active" data-area-key="puertas">
+                1- Puertas y Bienvenida
+              </button>
+              <button type="button" class="tab-button area-button" data-area-key="anexo_ab">
+                2- Anexo A y B
+              </button>
+              <button type="button" class="tab-button area-button" data-area-key="anexo_cm">
+                3- Anexo C y M
+              </button>
+              <button type="button" class="tab-button area-button" data-area-key="anexo_def">
+                4- Anexo D, E y F
+              </button>
+            </div>
+
+            <div class="panel">
+              <div class="panel__header">
+                <h3 id="areaChecklistTitle">Puertas y Bienvenida</h3>
+              </div>
+              <table class="result-table">
+                <thead>
+                  <tr>
+                    <th>Numero</th>
+                    <th>Instruccion</th>
+                    <th>Si</th>
+                    <th>No</th>
+                  </tr>
+                </thead>
+                <tbody id="areaChecklistBody"></tbody>
+              </table>
             </div>
 
             <div class="attendance-header">
@@ -308,6 +350,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260430c"></script>
+    <script src="./app.js?v=20260430e"></script>
   </body>
 </html>

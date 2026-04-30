@@ -223,6 +223,17 @@ label,
   flex-wrap: wrap;
 }
 
+.area-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.area-button {
+  text-align: left;
+}
+
 .service-active-text {
   margin: 0 0 12px;
   color: var(--muted);
@@ -521,6 +532,10 @@ textarea {
 
   .service-actions {
     width: 100%;
+  }
+
+  .area-buttons {
+    grid-template-columns: 1fr;
   }
 
   .panel__header--split,
