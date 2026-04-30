@@ -177,7 +177,7 @@ textarea { resize: vertical; }
 
 .attendance-header {
   display: grid;
-  grid-template-columns: 1fr 180px;
+  grid-template-columns: 1fr 80px 80px;
   gap: 10px;
   align-items: center;
   padding: 0 4px 10px;
@@ -190,15 +190,11 @@ textarea { resize: vertical; }
 
 .attendance-row {
   display: grid;
-  grid-template-columns: 1fr 180px;
+  grid-template-columns: 1fr 80px 80px;
   gap: 10px;
   align-items: center;
   padding: 10px;
   border-radius: var(--radius-md);
-}
-
-.attendance-row--3 {
-  grid-template-columns: 1fr 80px 80px;
 }
 
 .attendance-check-yes,
@@ -288,6 +284,5 @@ textarea { resize: vertical; }
   .panel__header--split, .server-card__top, .service-line-row { display: grid; align-items: stretch; }
   .search-input { min-width: 0; }
   .attendance-header, .attendance-row { grid-template-columns: 1fr; }
-  .attendance-row--3 { grid-template-columns: 1fr; }
   .alfolis-row { grid-template-columns: 1fr; }
 }
