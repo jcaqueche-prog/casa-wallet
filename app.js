@@ -581,7 +581,55 @@ function openJpegPreview(title, lines, includeShareHint = false) {
   const hint = includeShareHint ? "<p>Formato JPG listo para compartir por WhatsApp.</p>" : "";
   const win = window.open("", "_blank", "width=980,height=860");
   if (!win) return;
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font-family:Arial,sans-serif;padding:16px;color:#1b2940}img{width:100%;max-width:880px;border:1px solid #d9e3f5;border-radius:12px;display:block}a{display:inline-block;margin-top:12px;padding:10px 14px;background:#2e5fc1;color:#fff;text-decoration:none;border-radius:999px}p{color:#66758c}</style></head><body><img src="${jpeg.dataUrl}" alt="${escapeHtml(title)}" /><a href="${jpeg.dataUrl}" download="${escapeHtml(jpeg.fileName)}">Descargar JPG</a>${hint}</body></html>`);
+  win.document.write(`<!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>${escapeHtml(title)}</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:16px;color:#1b2940}
+        img{width:100%;max-width:880px;border:1px solid #d9e3f5;border-radius:12px;display:block}
+        .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+        a,button{display:inline-block;padding:10px 14px;background:#2e5fc1;color:#fff;text-decoration:none;border-radius:999px;border:0;cursor:pointer;font:inherit;font-weight:700}
+        p{color:#66758c}
+      </style>
+    </head>
+    <body>
+      <img src="${jpeg.dataUrl}" alt="${escapeHtml(title)}" />
+      <div class="actions">
+        <a href="${jpeg.dataUrl}" download="${escapeHtml(jpeg.fileName)}">Descargar JPG</a>
+        <button id="shareJpgBtn" type="button">Compartir JPG</button>
+      </div>
+      ${hint}
+      <script>
+        (function () {
+          const btn = document.getElementById("shareJpgBtn");
+          const dataUrl = ${JSON.stringify(jpeg.dataUrl)};
+          const fileName = ${JSON.stringify(jpeg.fileName)};
+          btn.addEventListener("click", async function () {
+            if (!navigator.share || typeof navigator.canShare !== "function") {
+              alert("Este navegador no permite compartir archivos directamente.");
+              return;
+            }
+            try {
+              const response = await fetch(dataUrl);
+              const blob = await response.blob();
+              const file = new File([blob], fileName, { type: "image/jpeg" });
+              const shareData = { files: [file], title: fileName };
+              if (!navigator.canShare(shareData)) {
+                alert("Tu dispositivo no permite compartir este archivo.");
+                return;
+              }
+              await navigator.share(shareData);
+            } catch (error) {
+              alert("No se pudo compartir el archivo JPG.");
+            }
+          });
+        })();
+      </script>
+    </body>
+  </html>`);
   win.document.close();
 }
 
