@@ -428,7 +428,10 @@ function handleConciliationActions(event) {
   }
   if (shareBtn) {
     const group = currentConciliation?.[Number(shareBtn.dataset.index)];
-    if (group) shareText(`${group.name}\n${group.members.map((m, i) => `${i + 1}. ${m.name} - ${m.phone}`).join("\n")}`);
+    if (group) {
+      const lines = group.members.map((m, i) => `${i + 1}. ${m.name} - ${m.phone}`);
+      shareJpeg(`${group.name}`, lines);
+    }
   }
 }
 
@@ -507,7 +510,7 @@ function shareSummaryRange() {
   });
 
   openJpegPreview("Resumen", lines, true);
-  shareText(lines.join("\n"));
+  shareJpeg("Resumen", lines);
 }
 
 function renderAlfolis() {
@@ -569,13 +572,41 @@ function shareAlfolis() {
   lines.push("", "Servidoras:");
   state.alfolis.female.forEach((r, i) => lines.push(`${i + 1}. ${r.name || "-"} | Posicion ${r.position || "-"}`));
   openJpegPreview("Alfolis", lines, true);
-  shareText(lines.join("\n"));
+  shareJpeg("Alfolis", lines);
 }
 
 function openJpegPreview(title, lines, includeShareHint = false) {
+  const jpeg = createJpegData(title, lines);
+  if (!jpeg) return;
+  const hint = includeShareHint ? "<p>Formato JPG listo para compartir por WhatsApp.</p>" : "";
+  const win = window.open("", "_blank", "width=980,height=860");
+  if (!win) return;
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font-family:Arial,sans-serif;padding:16px;color:#1b2940}img{width:100%;max-width:880px;border:1px solid #d9e3f5;border-radius:12px;display:block}a{display:inline-block;margin-top:12px;padding:10px 14px;background:#2e5fc1;color:#fff;text-decoration:none;border-radius:999px}p{color:#66758c}</style></head><body><img src="${jpeg.dataUrl}" alt="${escapeHtml(title)}" /><a href="${jpeg.dataUrl}" download="${escapeHtml(jpeg.fileName)}">Descargar JPG</a>${hint}</body></html>`);
+  win.document.close();
+}
+
+async function shareJpeg(title, lines) {
+  const jpeg = createJpegData(title, lines);
+  if (!jpeg) return;
+  if (!navigator.share || typeof navigator.canShare !== "function") {
+    return;
+  }
+
+  try {
+    const file = dataUrlToFile(jpeg.dataUrl, jpeg.fileName);
+    if (!file) return;
+    const shareData = { files: [file], title, text: title };
+    if (!navigator.canShare(shareData)) return;
+    await navigator.share(shareData);
+  } catch {
+    // Si el usuario cancela o el dispositivo falla, se mantiene la vista de descarga.
+  }
+}
+
+function createJpegData(title, lines) {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  if (!ctx) return null;
 
   const width = 1400;
   const lineHeight = 44;
@@ -600,13 +631,27 @@ function openJpegPreview(title, lines, includeShareHint = false) {
     y += lineHeight;
   });
 
-  const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.9);
-  const fileName = `${slugify(title)}-${new Date().toISOString().slice(0, 10)}.jpg`;
-  const hint = includeShareHint ? "<p>Formato JPG listo para compartir por WhatsApp.</p>" : "";
-  const win = window.open("", "_blank", "width=980,height=860");
-  if (!win) return;
-  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font-family:Arial,sans-serif;padding:16px;color:#1b2940}img{width:100%;max-width:880px;border:1px solid #d9e3f5;border-radius:12px;display:block}a{display:inline-block;margin-top:12px;padding:10px 14px;background:#2e5fc1;color:#fff;text-decoration:none;border-radius:999px}p{color:#66758c}</style></head><body><img src="${jpegDataUrl}" alt="${escapeHtml(title)}" /><a href="${jpegDataUrl}" download="${escapeHtml(fileName)}">Descargar JPG</a>${hint}</body></html>`);
-  win.document.close();
+  return {
+    dataUrl: canvas.toDataURL("image/jpeg", 0.9),
+    fileName: `${slugify(title)}-${new Date().toISOString().slice(0, 10)}.jpg`,
+  };
+}
+
+function dataUrlToFile(dataUrl, fileName) {
+  const parts = dataUrl.split(",");
+  if (parts.length !== 2) return null;
+  const header = parts[0];
+  const base64 = parts[1];
+  const mimeMatch = header.match(/data:(.*);base64/);
+  if (!mimeMatch) return null;
+  const mime = mimeMatch[1];
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new File([bytes], fileName, { type: mime });
 }
 
 function wrapText(text, maxChars) {
