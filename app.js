@@ -651,6 +651,7 @@ function renderSummary() {
           <p><strong>no asistieron:</strong> ${stats.noCount}</p>
           <div class="service-actions">
             <button type="button" class="primary-button summary-open-btn" data-service-id="${service.id}">${expanded ? "Ocultar detalle" : "Ver detalle"}</button>
+            <button type="button" class="primary-button summary-share-btn" data-service-id="${service.id}">Compartir</button>
             <button type="button" class="primary-button summary-edit-btn" data-service-id="${service.id}">Editar</button>
             <button type="button" class="ghost-button summary-delete-btn" data-service-id="${service.id}">Eliminar</button>
           </div>
@@ -767,6 +768,25 @@ function handleSummaryCardClick(event) {
     service.lines = nextLines.split(",").map((line) => line.trim()).filter(Boolean);
     saveState();
     renderSummary();
+    return;
+  }
+
+  const shareBtn = event.target.closest(".summary-share-btn");
+  if (shareBtn) {
+    const service = state.services.find((s) => s.id === shareBtn.dataset.serviceId);
+    if (!service) return;
+    const stats = getServiceStats(service);
+    const lines = [
+      `Servicio: ${formatDate(service.date)}`,
+      `Tipo: ${service.lines.join(" / ")}`,
+      `Asistieron: ${stats.yesCount}`,
+      `No asistieron: ${stats.noCount}`,
+      "",
+      "Listado de asistencia:",
+      ...state.servers.map((server) => `${server.name}: ${service.attendance[server.id] || "Pendiente"}`),
+    ];
+    openJpegPreview("Resumen de Servicio", lines, true);
+    shareJpeg("Resumen de Servicio", lines);
     return;
   }
 

@@ -16,7 +16,12 @@
   --radius-sm: 12px;
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; min-width: 0; }
+
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
 body {
   margin: 0;
@@ -354,5 +359,7 @@ textarea { resize: vertical; }
   .panel__header--split, .server-card__top, .service-line-row { display: grid; align-items: stretch; }
   .search-input { min-width: 0; }
   .attendance-header, .attendance-row { grid-template-columns: 1fr; }
+  .service-actions { width: 100%; }
+  .tabbar { grid-template-columns: 1fr 1fr; }
   .alfolis-row { grid-template-columns: 1fr; }
 }
