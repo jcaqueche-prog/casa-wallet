@@ -103,6 +103,7 @@ const homeVerseText = document.getElementById("homeVerseText");
 const homeVerseRef = document.getElementById("homeVerseRef");
 const generalSaveButton = document.getElementById("generalSaveButton");
 const heroBannerImage = document.getElementById("heroBannerImage");
+const appLogoImage = document.getElementById("appLogoImage");
 const headerImageInput = document.getElementById("headerImageInput");
 const logoImageInput = document.getElementById("logoImageInput");
 
@@ -196,8 +197,11 @@ async function handleLogoImageUpload(event) {
 
 function renderBranding() {
   const headerImage = state.branding?.headerImage || "";
+  const logoImage = state.branding?.logoImage || "";
   heroBannerImage.src = headerImage;
   heroBannerImage.style.display = headerImage ? "block" : "none";
+  appLogoImage.src = logoImage;
+  appLogoImage.style.display = logoImage ? "block" : "none";
 }
 
 function getPdfLogoBlock() {
