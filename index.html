@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20260502b" />
+    <link rel="stylesheet" href="./styles.css?v=20260502c" />
   </head>
   <body>
     <div class="app-shell">
@@ -36,6 +36,7 @@
         <button class="tab-button" type="button" data-view-target="conciliacion">CONCILIACION</button>
         <button class="tab-button" type="button" data-view-target="resumen">RESUMEN</button>
         <button class="tab-button" type="button" data-view-target="alfolis">ALFOLIS</button>
+        <button class="tab-button" type="button" data-view-target="configuracion">CONFIGURACION</button>
       </nav>
 
       <main class="views">
@@ -46,18 +47,6 @@
                 <p class="eyebrow">Versiculo del dia</p>
                 <blockquote id="homeVerseText" class="home-verse-text">--</blockquote>
                 <p id="homeVerseRef" class="home-verse-ref">--</p>
-              </article>
-              <article class="result-card">
-                <h3>Identidad Visual</h3>
-                <p class="hero__text">Sube imagen superior y logo oficial para incluirlo en toda la app y en todos los PDF.</p>
-                <label>
-                  Imagen superior (recomendado JPG horizontal)
-                  <input id="headerImageInput" type="file" accept="image/jpeg,image/png,image/webp" />
-                </label>
-                <label>
-                  Logo (recomendado PNG transparente)
-                  <input id="logoImageInput" type="file" accept="image/png,image/jpeg,image/webp, image/svg+xml" />
-                </label>
               </article>
             </div>
           </section>
@@ -288,6 +277,31 @@
             </div>
           </section>
         </section>
+
+        <section class="view" data-view="configuracion">
+          <section class="panel">
+            <div class="panel__header">
+              <h2>Configuracion</h2>
+              <p>Sube imagen superior y logo oficial para toda la Web App y para todos los PDF.</p>
+            </div>
+            <div class="config-grid">
+              <article class="result-card">
+                <h3>Imagen Superior</h3>
+                <label>
+                  Archivo (JPG, PNG o WEBP)
+                  <input id="headerImageInput" type="file" accept="image/jpeg,image/png,image/webp" />
+                </label>
+              </article>
+              <article class="result-card">
+                <h3>Logo</h3>
+                <label>
+                  Archivo (recomendado PNG transparente)
+                  <input id="logoImageInput" type="file" accept="image/png,image/jpeg,image/webp, image/svg+xml" />
+                </label>
+              </article>
+            </div>
+          </section>
+        </section>
       </main>
     </div>
 
@@ -309,6 +323,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260502b"></script>
+    <script src="./app.js?v=20260502c"></script>
   </body>
 </html>
