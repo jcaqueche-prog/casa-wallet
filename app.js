@@ -61,6 +61,10 @@ const defaultState = {
     male: [{ id: "m-1", name: "", position: "" }],
     female: [{ id: "f-1", name: "", position: "" }],
   },
+  branding: {
+    headerImage: "",
+    logoImage: "",
+  },
 };
 
 const state = loadState();
@@ -98,6 +102,9 @@ const femaleAlfolisList = document.getElementById("femaleAlfolisList");
 const homeVerseText = document.getElementById("homeVerseText");
 const homeVerseRef = document.getElementById("homeVerseRef");
 const generalSaveButton = document.getElementById("generalSaveButton");
+const heroBannerImage = document.getElementById("heroBannerImage");
+const headerImageInput = document.getElementById("headerImageInput");
+const logoImageInput = document.getElementById("logoImageInput");
 
 const serverSearch = document.getElementById("serverSearch");
 const todayLabel = document.getElementById("todayLabel");
@@ -135,6 +142,8 @@ addFemaleLineButton.addEventListener("click", () => addAlfoliLine("female"));
 newIngresoButton.addEventListener("click", () => addAlfoliLine(newIngresoType.value));
 alfolisPdfButton.addEventListener("click", exportAlfolisPdf);
 generalSaveButton.addEventListener("click", handleGeneralSave);
+headerImageInput.addEventListener("change", handleHeaderImageUpload);
+logoImageInput.addEventListener("change", handleLogoImageUpload);
 serverSearch.addEventListener("input", renderServers);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
@@ -151,6 +160,7 @@ function initialize() {
   summaryDateFrom.value = today.slice(0, 8) + "01";
   summaryDateTo.value = today;
   renderHomeVerse();
+  renderBranding();
   setActiveView("inicio");
   renderAll();
 }
@@ -165,6 +175,35 @@ function renderHomeVerse() {
 function handleGeneralSave() {
   saveState();
   window.alert("Cambios guardados correctamente.");
+}
+
+async function handleHeaderImageUpload(event) {
+  const file = event.target.files?.[0];
+  const data = await fileToDataUrl(file);
+  if (!data) return;
+  state.branding.headerImage = data;
+  saveState();
+  renderBranding();
+}
+
+async function handleLogoImageUpload(event) {
+  const file = event.target.files?.[0];
+  const data = await fileToDataUrl(file);
+  if (!data) return;
+  state.branding.logoImage = data;
+  saveState();
+}
+
+function renderBranding() {
+  const headerImage = state.branding?.headerImage || "";
+  heroBannerImage.src = headerImage;
+  heroBannerImage.style.display = headerImage ? "block" : "none";
+}
+
+function getPdfLogoBlock() {
+  const logo = state.branding?.logoImage || "";
+  if (!logo) return "";
+  return `<div class="pdf-brand"><img src="${logo}" alt="Logo" /></div>`;
 }
 
 function loadState() {
@@ -184,6 +223,12 @@ function loadState() {
             female: Array.isArray(parsed.alfolis.female) && parsed.alfolis.female.length ? parsed.alfolis.female : [{ id: "f-1", name: "", position: "" }],
           }
         : structuredClone(defaultState.alfolis),
+      branding: parsed.branding && typeof parsed.branding === "object"
+        ? {
+            headerImage: typeof parsed.branding.headerImage === "string" ? parsed.branding.headerImage : "",
+            logoImage: typeof parsed.branding.logoImage === "string" ? parsed.branding.logoImage : "",
+          }
+        : structuredClone(defaultState.branding),
     };
   } catch {
     return structuredClone(defaultState);
@@ -422,6 +467,7 @@ function exportCurrentServicePdf() {
   const service = getCurrentService();
   if (!service) return;
   const stats = getServiceStats(service);
+  const logoBlock = getPdfLogoBlock();
   const rows = state.servers
     .map((server) => {
       const status = service.attendance[server.id] || "Pendiente";
@@ -441,6 +487,8 @@ function exportCurrentServicePdf() {
         @page { size: A4 portrait; margin: 14mm; }
         body { font-family: Arial, sans-serif; color: #1b2940; margin: 0; background:#f6f9ff; }
         .sheet { background:#fff; border:1px solid #d8e1f1; border-radius:14px; padding:18px; }
+        .pdf-brand { display:flex; justify-content:flex-end; margin-bottom:8px; }
+        .pdf-brand img { width:56px; height:56px; object-fit:contain; border:1px solid #d8e1f1; border-radius:10px; background:#fff; padding:4px; }
         h1 { margin: 0 0 10px; font-size: 24px; color:#23406d; }
         p { margin: 0 0 8px; font-size: 13px; }
         .meta { display:grid; gap:6px; margin-bottom:10px; }
@@ -457,6 +505,7 @@ function exportCurrentServicePdf() {
         <button type="button" onclick="window.close()">Regresar a la APP</button>
       </div>
       <div class="sheet">
+        ${logoBlock}
         <h1>Asistencia por Servicio</h1>
         <div class="meta">
           <p><strong>Fecha de servicio:</strong> ${escapeHtml(formatDate(service.date))}</p>
@@ -885,6 +934,7 @@ function shareSummaryRangePdf() {
     window.alert("No hay datos en el rango seleccionado.");
     return;
   }
+  const logoBlock = getPdfLogoBlock();
 
   const rows = records
     .map((s) => {
@@ -912,6 +962,8 @@ function shareSummaryRangePdf() {
         .actions { display:flex; gap:10px; margin: 0 0 10px; }
         button { padding:10px 14px; border:0; border-radius:999px; background:#2f5ca8; color:#fff; font-weight:700; cursor:pointer; }
         .sheet { background:#fff; border:1px solid #d6e0f0; border-radius:14px; padding:18px; }
+        .pdf-brand { display:flex; justify-content:flex-end; margin-bottom:8px; }
+        .pdf-brand img { width:56px; height:56px; object-fit:contain; border:1px solid #d8e1f1; border-radius:10px; background:#fff; padding:4px; }
         h1 { margin:0 0 10px; font-size:24px; color:#1f3f75; }
         p { margin:0 0 8px; font-size:13px; }
         table { width:100%; border-collapse:collapse; margin-top:10px; font-size:12px; }
@@ -926,6 +978,7 @@ function shareSummaryRangePdf() {
         <button type="button" onclick="window.close()">Regresar a la APP</button>
       </div>
       <div class="sheet">
+        ${logoBlock}
         <h1>Resumen de Servicios</h1>
         <p><strong>Rango:</strong> ${escapeHtml(from)} a ${escapeHtml(to)}</p>
         <p><strong>Total servicios:</strong> ${records.length}</p>
@@ -1039,6 +1092,7 @@ function addAlfoliLine(type) {
 }
 
 function exportAlfolisPdf() {
+  const logoBlock = getPdfLogoBlock();
   const maleRows = state.alfolis.male
     .map((row, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(row.name || "-")}</td><td>${escapeHtml(row.position || "-")}</td></tr>`)
     .join("");
@@ -1060,6 +1114,8 @@ function exportAlfolisPdf() {
         .actions { display:flex; gap:10px; margin:0 0 10px; }
         button { padding:10px 14px; border:0; border-radius:999px; background:#2f5ca8; color:#fff; font-weight:700; cursor:pointer; }
         .sheet { background:#fff; border:1px solid #d6e0f0; border-radius:14px; padding:18px; }
+        .pdf-brand { display:flex; justify-content:flex-end; margin-bottom:8px; }
+        .pdf-brand img { width:56px; height:56px; object-fit:contain; border:1px solid #d8e1f1; border-radius:10px; background:#fff; padding:4px; }
         h1 { margin:0 0 8px; color:#1f3f75; }
         h2 { margin:14px 0 6px; color:#24467f; font-size:16px; }
         table { width:100%; border-collapse:collapse; font-size:12px; }
@@ -1073,6 +1129,7 @@ function exportAlfolisPdf() {
         <button type="button" onclick="window.close()">Regresar a la APP</button>
       </div>
       <div class="sheet">
+        ${logoBlock}
         <h1>Alfolis</h1>
         <h2>Servidores</h2>
         <table>
@@ -1105,6 +1162,7 @@ function exportAlfolisExcel() {
 
 function exportSingleSummaryPdf(service) {
   const stats = getServiceStats(service);
+  const logoBlock = getPdfLogoBlock();
   const yesDeg = Math.round((stats.yesPct / 100) * 360);
   const rows = state.servers
     .map((server) => {
@@ -1127,6 +1185,8 @@ function exportSingleSummaryPdf(service) {
         .actions { display:flex; gap:10px; margin:0 0 10px; }
         button { padding:10px 14px; border:0; border-radius:999px; background:#2f5ca8; color:#fff; font-weight:700; cursor:pointer; }
         .sheet { background:#fff; border:1px solid #d6e0f0; border-radius:14px; padding:18px; }
+        .pdf-brand { display:flex; justify-content:flex-end; margin-bottom:8px; }
+        .pdf-brand img { width:56px; height:56px; object-fit:contain; border:1px solid #d8e1f1; border-radius:10px; background:#fff; padding:4px; }
         h1 { margin:0 0 8px; color:#1f3f75; }
         p { margin:0 0 8px; font-size:13px; }
         .preview { display:flex; align-items:center; gap:12px; margin:8px 0 12px; }
@@ -1142,6 +1202,7 @@ function exportSingleSummaryPdf(service) {
         <button type="button" onclick="window.close()">Regresar a la APP</button>
       </div>
       <div class="sheet">
+        ${logoBlock}
         <h1>Resumen de Servicio</h1>
         <p><strong>Fecha de servicio:</strong> ${escapeHtml(formatDate(service.date))}</p>
         <p><strong>Tipo de servicio:</strong> ${escapeHtml(service.lines.join(" / "))}</p>

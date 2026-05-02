@@ -1,14 +1,15 @@
 :root {
-  --bg: #eef4ff;
-  --bg-soft: #f7faff;
+  --bg: #edf1f8;
+  --bg-soft: #f7f9fd;
   --surface: rgba(255, 255, 255, 0.95);
-  --text: #1b2940;
-  --muted: #66758c;
+  --text: #162338;
+  --muted: #5d6a80;
   --line: rgba(27, 41, 64, 0.1);
-  --shadow: 0 18px 45px rgba(45, 86, 156, 0.12);
-  --shadow-soft: 0 10px 25px rgba(45, 86, 156, 0.08);
-  --brand: #3c73d9;
-  --brand-dark: #244f9e;
+  --shadow: 0 18px 45px rgba(15, 36, 75, 0.14);
+  --shadow-soft: 0 10px 25px rgba(15, 36, 75, 0.1);
+  --brand: #1f4f8f;
+  --brand-dark: #12376a;
+  --brand-gold: #c9a34e;
   --danger: #cc5b5b;
   --radius-xl: 30px;
   --radius-lg: 22px;
@@ -30,8 +31,8 @@ body {
   font-family: "Outfit", sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at top left, rgba(60, 115, 217, 0.14), transparent 22%),
-    linear-gradient(180deg, #dfeaff 0%, var(--bg) 42%, var(--bg-soft) 100%);
+    radial-gradient(circle at top left, rgba(31, 79, 143, 0.12), transparent 24%),
+    linear-gradient(180deg, #e4ebf7 0%, var(--bg) 45%, var(--bg-soft) 100%);
 }
 
 button, input, select, textarea { font: inherit; }
@@ -50,11 +51,30 @@ button, input, select, textarea { font: inherit; }
 
 .hero {
   display: grid;
-  grid-template-columns: 1.15fr .85fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   padding: 20px;
   border-radius: var(--radius-xl);
   margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-banner {
+  grid-column: 1 / -1;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-soft);
+  min-height: 150px;
+  background: linear-gradient(120deg, #173968, #1f4f8f 55%, #4a76ad);
+}
+
+.hero-banner img {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  display: block;
 }
 
 .hero h1, .panel h2, .panel h3, .server-card__name {
@@ -103,7 +123,11 @@ button, input, select, textarea { font: inherit; }
   cursor: pointer;
 }
 
-.tab-button.is-active { background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: #fff; }
+.tab-button.is-active {
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(15, 36, 75, 0.28);
+}
 
 .view { display: none; }
 .view--active { display: block; }
@@ -194,7 +218,15 @@ textarea { resize: vertical; }
   font-weight: 700;
 }
 
-.primary-button { padding: 12px 16px; background: linear-gradient(135deg, var(--brand), var(--brand-dark)); color: #fff; }
+.primary-button {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(15, 36, 75, 0.28);
+  border: 1px solid rgba(255,255,255,.2);
+}
+.primary-button:hover { transform: translateY(-1px); }
+.primary-button:active { transform: translateY(0); }
 .ghost-button { padding: 10px 14px; background: rgba(204,91,91,.12); color: var(--danger); }
 
 .search-input { min-width: 240px; }
@@ -203,9 +235,9 @@ textarea { resize: vertical; }
 .server-card__top { display: flex; justify-content: space-between; align-items: start; gap: 10px; margin-bottom: 10px; }
 .server-card__head { display: flex; align-items: center; gap: 10px; }
 .server-card__photo {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
   object-fit: cover;
   border: 1px solid var(--line);
   background: #dfeaff;
@@ -357,6 +389,7 @@ textarea { resize: vertical; }
   .hero, .layout-grid, .stats-grid, .service-meta-grid, .conciliation-board, .alfolis-groups, .home-grid {
     grid-template-columns: 1fr;
   }
+  .hero-banner img { height: 190px; }
 }
 
 @media (max-width: 720px) {

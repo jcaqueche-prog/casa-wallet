@@ -7,11 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20260430x" />
+    <link rel="stylesheet" href="./styles.css?v=20260502b" />
   </head>
   <body>
     <div class="app-shell">
       <header class="hero">
+        <div class="hero-banner">
+          <img id="heroBannerImage" alt="Imagen superior" />
+        </div>
         <div class="hero__copy">
           <p class="eyebrow">Ministerio y seguimiento</p>
           <h1>Control de Servidores</h1>
@@ -42,6 +45,18 @@
                 <p class="eyebrow">Versiculo del dia</p>
                 <blockquote id="homeVerseText" class="home-verse-text">--</blockquote>
                 <p id="homeVerseRef" class="home-verse-ref">--</p>
+              </article>
+              <article class="result-card">
+                <h3>Identidad Visual</h3>
+                <p class="hero__text">Sube imagen superior y logo oficial para incluirlo en toda la app y en todos los PDF.</p>
+                <label>
+                  Imagen superior (recomendado JPG horizontal)
+                  <input id="headerImageInput" type="file" accept="image/jpeg,image/png,image/webp" />
+                </label>
+                <label>
+                  Logo (recomendado PNG transparente)
+                  <input id="logoImageInput" type="file" accept="image/png,image/jpeg,image/webp, image/svg+xml" />
+                </label>
               </article>
             </div>
           </section>
@@ -293,6 +308,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260502a"></script>
+    <script src="./app.js?v=20260502b"></script>
   </body>
 </html>
