@@ -147,8 +147,7 @@
               </label>
               <div class="service-actions">
                 <button type="submit" class="primary-button">Guardar</button>
-                <button id="shareServicePdfButton" type="button" class="primary-button">Compartir PDF</button>
-                <button id="shareServiceExcelButton" type="button" class="primary-button">Compartir Excel</button>
+                <button id="printServicePdfButton" type="button" class="primary-button">Imprimir PDF</button>
               </div>
             </form>
             <p id="activeServiceText" class="service-active-text">No hay servicio activo.</p>
@@ -167,9 +166,7 @@
                   <p id="serviceTotalsText">Aun sin datos para este servicio.</p>
                 </div>
                 <div class="service-actions">
-                  <button id="exportServicePdfButton" type="button" class="primary-button">Exportar PDF</button>
-                  <button id="exportServiceExcelButton" type="button" class="primary-button">Exportar Excel</button>
-                  <button id="saveServiceStatsButton" type="button" class="primary-button">Guardar estadistica</button>
+                  <button id="exportServicePdfButton" type="button" class="primary-button">Imprimir PDF</button>
                 </div>
               </div>
               <div class="chart-wrap">
@@ -227,8 +224,6 @@
               </label>
               <div class="service-actions">
                 <button id="summarySaveGeneralButton" type="button" class="primary-button">Guardar en general</button>
-                <button id="summarySharePdfButton" type="button" class="primary-button">Compartir PDF</button>
-                <button id="summaryShareExcelButton" type="button" class="primary-button">Compartir Excel</button>
               </div>
             </div>
 
@@ -254,7 +249,6 @@
                 </label>
                 <button id="newIngresoButton" type="button" class="primary-button">Nuevo ingreso</button>
                 <button id="alfolisPdfButton" type="button" class="primary-button">Imprimir PDF</button>
-                <button id="alfolisExcelButton" type="button" class="primary-button">Imprimir Excel</button>
               </div>
             </div>
 
@@ -293,10 +287,11 @@
           <p><strong>Cumpleaños:</strong> <span class="server-card__birthday"></span></p>
           <p><strong>Telefono:</strong> <span class="server-card__phone"></span></p>
           <p><strong>Direccion:</strong> <span class="server-card__address"></span></p>
+          <label><strong>Foto ID:</strong> <input class="server-card__photo-input" type="file" accept="image/*" capture="environment" /></label>
         </div>
       </article>
     </template>
 
-    <script src="./app.js?v=20260430y"></script>
+    <script src="./app.js?v=20260502a"></script>
   </body>
 </html>

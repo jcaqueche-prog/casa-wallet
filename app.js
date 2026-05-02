@@ -77,11 +77,8 @@ const serviceTotalsText = document.getElementById("serviceTotalsText");
 const pieChart = document.getElementById("pieChart");
 const yesPctText = document.getElementById("yesPctText");
 const noPctText = document.getElementById("noPctText");
-const saveServiceStatsButton = document.getElementById("saveServiceStatsButton");
 const exportServicePdfButton = document.getElementById("exportServicePdfButton");
-const exportServiceExcelButton = document.getElementById("exportServiceExcelButton");
-const shareServicePdfButton = document.getElementById("shareServicePdfButton");
-const shareServiceExcelButton = document.getElementById("shareServiceExcelButton");
+const printServicePdfButton = document.getElementById("printServicePdfButton");
 const generateConciliationButton = document.getElementById("generateConciliationButton");
 const conciliationGroupCount = document.getElementById("conciliationGroupCount");
 const conciliationLeaders = document.getElementById("conciliationLeaders");
@@ -89,12 +86,9 @@ const conciliationBoard = document.getElementById("conciliationBoard");
 const summaryDateFrom = document.getElementById("summaryDateFrom");
 const summaryDateTo = document.getElementById("summaryDateTo");
 const summarySaveGeneralButton = document.getElementById("summarySaveGeneralButton");
-const summarySharePdfButton = document.getElementById("summarySharePdfButton");
-const summaryShareExcelButton = document.getElementById("summaryShareExcelButton");
 const summaryCards = document.getElementById("summaryCards");
 const summaryGeneralCards = document.getElementById("summaryGeneralCards");
 const alfolisPdfButton = document.getElementById("alfolisPdfButton");
-const alfolisExcelButton = document.getElementById("alfolisExcelButton");
 const newIngresoType = document.getElementById("newIngresoType");
 const newIngresoButton = document.getElementById("newIngresoButton");
 const addMaleLineButton = document.getElementById("addMaleLineButton");
@@ -122,11 +116,8 @@ let expandedSummaryServiceId = "";
 
 serverForm.addEventListener("submit", handleCreateServer);
 serviceForm.addEventListener("submit", handleSaveService);
-saveServiceStatsButton.addEventListener("click", handleSaveServiceStats);
 exportServicePdfButton.addEventListener("click", exportCurrentServicePdf);
-exportServiceExcelButton.addEventListener("click", exportCurrentServiceExcel);
-shareServicePdfButton.addEventListener("click", shareCurrentServicePdf);
-shareServiceExcelButton.addEventListener("click", shareCurrentServiceExcel);
+printServicePdfButton.addEventListener("click", exportCurrentServicePdf);
 generateConciliationButton.addEventListener("click", generateConciliation);
 conciliationGroupCount.addEventListener("change", () => {
   normalizeConciliationLeaders();
@@ -138,13 +129,10 @@ summaryDateTo.addEventListener("change", renderSummary);
 summarySaveGeneralButton.addEventListener("click", saveGeneralSummarySnapshot);
 summaryCards.addEventListener("click", handleSummaryCardClick);
 summaryGeneralCards.addEventListener("click", handleSummarySnapshotClick);
-summarySharePdfButton.addEventListener("click", shareSummaryRangePdf);
-summaryShareExcelButton.addEventListener("click", shareSummaryRangeExcel);
 addMaleLineButton.addEventListener("click", () => addAlfoliLine("male"));
 addFemaleLineButton.addEventListener("click", () => addAlfoliLine("female"));
 newIngresoButton.addEventListener("click", () => addAlfoliLine(newIngresoType.value));
 alfolisPdfButton.addEventListener("click", exportAlfolisPdf);
-alfolisExcelButton.addEventListener("click", exportAlfolisExcel);
 serverSearch.addEventListener("input", renderServers);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
@@ -259,6 +247,14 @@ function renderServers() {
     fragment.querySelector(".server-card__phone").textContent = server.phone;
     fragment.querySelector(".server-card__address").textContent = server.address;
     fragment.querySelector(".server-card__delete").addEventListener("click", () => deleteServer(server.id));
+    fragment.querySelector(".server-card__photo-input").addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      const photoDataUrl = await fileToDataUrl(file);
+      if (!photoDataUrl) return;
+      server.photo = photoDataUrl;
+      saveState();
+      renderServers();
+    });
     serverCards.appendChild(fragment);
   });
 }
@@ -293,6 +289,10 @@ function handleSaveService(event) {
     statsSaved: false,
     createdAt: new Date().toISOString(),
   };
+
+  if (current && isServiceAttendanceComplete(current)) {
+    current.statsSaved = true;
+  }
 
   state.services.unshift(service);
   currentServiceId = service.id;
@@ -337,10 +337,10 @@ function renderServiceAttendance() {
     row.innerHTML = `
       <div class="attendance-cell attendance-name">${escapeHtml(server.name)}</div>
       <div class="attendance-cell">
-        <input type="checkbox" class="attendance-check-yes" data-server-id="${server.id}" ${status === "Si" ? "checked" : ""} />
+        <label><input type="checkbox" class="attendance-check-yes" data-server-id="${server.id}" ${status === "Si" ? "checked" : ""} /> Si</label>
       </div>
       <div class="attendance-cell">
-        <input type="checkbox" class="attendance-check-no" data-server-id="${server.id}" ${status === "No" ? "checked" : ""} />
+        <label><input type="checkbox" class="attendance-check-no" data-server-id="${server.id}" ${status === "No" ? "checked" : ""} /> No</label>
       </div>
     `;
     attendanceList.appendChild(row);
@@ -353,6 +353,7 @@ function renderServiceAttendance() {
       service.attendance[serverId] = checked ? "Si" : "";
       const other = attendanceList.querySelector(`.attendance-check-no[data-server-id="${serverId}"]`);
       if (other && checked) other.checked = false;
+      if (isServiceAttendanceComplete(service)) service.statsSaved = true;
       saveState();
       renderServiceStats();
       renderServers();
@@ -366,6 +367,7 @@ function renderServiceAttendance() {
       service.attendance[serverId] = checked ? "No" : "";
       const other = attendanceList.querySelector(`.attendance-check-yes[data-server-id="${serverId}"]`);
       if (other && checked) other.checked = false;
+      if (isServiceAttendanceComplete(service)) service.statsSaved = true;
       saveState();
       renderServiceStats();
       renderServers();
@@ -392,9 +394,7 @@ function renderServiceStats() {
   const service = getCurrentService();
   const stats = getServiceStats(service);
   exportServicePdfButton.disabled = !service;
-  exportServiceExcelButton.disabled = !service;
-  shareServicePdfButton.disabled = !service;
-  shareServiceExcelButton.disabled = !service;
+  printServicePdfButton.disabled = !service;
 
   if (!service) {
     serviceTotalsText.textContent = "Aun sin datos para este servicio.";
@@ -447,7 +447,6 @@ function exportCurrentServicePdf() {
     <body>
       <div class="actions">
         <button onclick="window.print()">Imprimir</button>
-        <button id="shareBtn" type="button">Compartir</button>
         <button type="button" onclick="window.close()">Regresar a la APP</button>
       </div>
       <div class="sheet">
@@ -462,20 +461,6 @@ function exportCurrentServicePdf() {
           <tbody>${rows}</tbody>
         </table>
       </div>
-      <script>
-        document.getElementById("shareBtn").addEventListener("click", async () => {
-          if (!navigator.share) {
-            alert("Compartir no disponible en este navegador.");
-            return;
-          }
-          try {
-            await navigator.share({
-              title: "Asistencia ${escapeHtml(service.date)}",
-              text: "Servicio: ${escapeHtml(service.lines.join(" / "))}. Asistieron: ${stats.yesCount}. No asistieron: ${stats.noCount}.",
-            });
-          } catch {}
-        });
-      </script>
     </body>
     </html>
   `);
@@ -742,8 +727,7 @@ function renderSummary() {
           <p><strong>no asistieron:</strong> ${stats.noCount}</p>
           <div class="service-actions">
             <button type="button" class="primary-button summary-open-btn" data-service-id="${service.id}">${expanded ? "Ocultar detalle" : "Ver detalle"}</button>
-            <button type="button" class="primary-button summary-share-pdf-btn" data-service-id="${service.id}">Compartir PDF</button>
-            <button type="button" class="primary-button summary-share-excel-btn" data-service-id="${service.id}">Compartir Excel</button>
+            <button type="button" class="primary-button summary-print-pdf-btn" data-service-id="${service.id}">Imprimir PDF</button>
             <button type="button" class="primary-button summary-edit-btn" data-service-id="${service.id}">Editar</button>
             <button type="button" class="ghost-button summary-delete-btn" data-service-id="${service.id}">Eliminar</button>
           </div>
@@ -863,19 +847,11 @@ function handleSummaryCardClick(event) {
     return;
   }
 
-  const sharePdfBtn = event.target.closest(".summary-share-pdf-btn");
-  if (sharePdfBtn) {
-    const service = state.services.find((s) => s.id === sharePdfBtn.dataset.serviceId);
+  const printPdfBtn = event.target.closest(".summary-print-pdf-btn");
+  if (printPdfBtn) {
+    const service = state.services.find((s) => s.id === printPdfBtn.dataset.serviceId);
     if (!service) return;
     exportSingleSummaryPdf(service);
-    return;
-  }
-
-  const shareExcelBtn = event.target.closest(".summary-share-excel-btn");
-  if (shareExcelBtn) {
-    const service = state.services.find((s) => s.id === shareExcelBtn.dataset.serviceId);
-    if (!service) return;
-    exportSingleSummaryExcel(service);
     return;
   }
 
