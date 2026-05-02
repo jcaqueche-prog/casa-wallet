@@ -97,6 +97,7 @@ const maleAlfolisList = document.getElementById("maleAlfolisList");
 const femaleAlfolisList = document.getElementById("femaleAlfolisList");
 const homeVerseText = document.getElementById("homeVerseText");
 const homeVerseRef = document.getElementById("homeVerseRef");
+const generalSaveButton = document.getElementById("generalSaveButton");
 
 const serverSearch = document.getElementById("serverSearch");
 const todayLabel = document.getElementById("todayLabel");
@@ -133,6 +134,7 @@ addMaleLineButton.addEventListener("click", () => addAlfoliLine("male"));
 addFemaleLineButton.addEventListener("click", () => addAlfoliLine("female"));
 newIngresoButton.addEventListener("click", () => addAlfoliLine(newIngresoType.value));
 alfolisPdfButton.addEventListener("click", exportAlfolisPdf);
+generalSaveButton.addEventListener("click", handleGeneralSave);
 serverSearch.addEventListener("input", renderServers);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
@@ -158,6 +160,11 @@ function renderHomeVerse() {
   const verse = ENCOURAGEMENT_VERSES[index];
   homeVerseText.textContent = verse.text;
   homeVerseRef.textContent = verse.ref;
+}
+
+function handleGeneralSave() {
+  saveState();
+  window.alert("Cambios guardados correctamente.");
 }
 
 function loadState() {
