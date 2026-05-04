@@ -490,31 +490,19 @@ function renderServiceStats() {
 
   if (!service) {
     serviceTotalsText.textContent = "Aun sin datos para este servicio.";
-    pieChart.innerHTML = buildBarChartHtml({ yesCount: 0, noCount: 0, yesPct: 0, noPct: 0 });
+    pieChart.innerHTML = "";
+    pieChart.style.background = "conic-gradient(#2cae7a 0deg, #2cae7a 0deg, #d97878 0deg, #d97878 360deg)";
     yesPctText.textContent = "Si: 0%";
     noPctText.textContent = "No: 0%";
     return;
   }
 
   serviceTotalsText.textContent = `Asistieron: ${stats.yesCount} | No asistieron: ${stats.noCount}`;
-  pieChart.innerHTML = buildBarChartHtml(stats);
+  const yesDeg = Math.round((stats.yesPct / 100) * 360);
+  pieChart.innerHTML = "";
+  pieChart.style.background = `conic-gradient(#2cae7a 0deg, #2cae7a ${yesDeg}deg, #d97878 ${yesDeg}deg, #d97878 360deg)`;
   yesPctText.textContent = `Si: ${stats.yesPct}%`;
   noPctText.textContent = `No: ${stats.noPct}%`;
-}
-
-function buildBarChartHtml(stats) {
-  return `
-    <div class="bar-chart">
-      <div class="bar-row">
-        <span class="bar-label">Asistieron (${stats.yesCount})</span>
-        <div class="bar-track"><div class="bar-fill bar-fill--yes" style="width:${stats.yesPct}%"></div></div>
-      </div>
-      <div class="bar-row">
-        <span class="bar-label">No asistieron (${stats.noCount})</span>
-        <div class="bar-track"><div class="bar-fill bar-fill--no" style="width:${stats.noPct}%"></div></div>
-      </div>
-    </div>
-  `;
 }
 
 function exportCurrentServicePdf() {
@@ -528,12 +516,11 @@ function exportCurrentServicePdf() {
       return `<tr><td>${escapeHtml(server.name)}</td><td>${escapeHtml(status)}</td></tr>`;
     })
     .join("");
-  const bars = `
-    <div style="margin:10px 0 14px;">
-      <p style="margin:0 0 6px;"><strong>Asistieron (${stats.yesCount})</strong></p>
-      <div style="height:14px;border-radius:999px;background:#dce5f5;overflow:hidden;"><div style="height:100%;width:${stats.yesPct}%;background:linear-gradient(90deg,#2cae7a,#44c58f);"></div></div>
-      <p style="margin:10px 0 6px;"><strong>No asistieron (${stats.noCount})</strong></p>
-      <div style="height:14px;border-radius:999px;background:#dce5f5;overflow:hidden;"><div style="height:100%;width:${stats.noPct}%;background:linear-gradient(90deg,#d97878,#e49090);"></div></div>
+  const yesDeg = Math.round((stats.yesPct / 100) * 360);
+  const pie = `
+    <div style="display:grid;justify-items:center;gap:8px;margin:10px 0 14px;">
+      <div style="width:130px;height:130px;border-radius:50%;border:1px solid #c8d2e5;background:conic-gradient(#2cae7a 0deg,#2cae7a ${yesDeg}deg,#d97878 ${yesDeg}deg,#d97878 360deg);"></div>
+      <p style="margin:0;color:#5d6a80;"><strong>Si:</strong> ${stats.yesPct}% | <strong>No:</strong> ${stats.noPct}%</p>
     </div>
   `;
 
@@ -575,7 +562,7 @@ function exportCurrentServicePdf() {
           <p><strong>Tipo de servicio:</strong> ${escapeHtml(service.lines.join(" / "))}</p>
           <p><strong>Asistieron:</strong> ${stats.yesCount} | <strong>No asistieron:</strong> ${stats.noCount}</p>
         </div>
-        ${bars}
+        ${pie}
         <table>
           <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
           <tbody>${rows}</tbody>
@@ -860,7 +847,13 @@ function renderSummary() {
             <button type="button" class="primary-button summary-edit-btn" data-service-id="${service.id}">Editar</button>
             <button type="button" class="ghost-button summary-delete-btn" data-service-id="${service.id}">Eliminar</button>
           </div>
-          ${buildBarChartHtml(stats)}
+          <div class="summary-preview-row">
+            <div class="pie-chart" style="background: conic-gradient(#2cae7a 0deg, #2cae7a ${Math.round((stats.yesPct / 100) * 360)}deg, #d97878 ${Math.round((stats.yesPct / 100) * 360)}deg, #d97878 360deg)"></div>
+            <div class="chart-legend">
+              <span>Si: ${stats.yesPct}%</span>
+              <span>No: ${stats.noPct}%</span>
+            </div>
+          </div>
           <div class="summary-detail ${expanded ? "is-open" : ""}">
             <table class="result-table">
               <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
