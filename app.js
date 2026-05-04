@@ -90,6 +90,7 @@ const yesPctText = document.getElementById("yesPctText");
 const noPctText = document.getElementById("noPctText");
 const exportServicePdfButton = document.getElementById("exportServicePdfButton");
 const printServicePdfButton = document.getElementById("printServicePdfButton");
+const saveServiceButton = document.getElementById("saveServiceButton");
 const generateConciliationButton = document.getElementById("generateConciliationButton");
 const conciliationGroupCount = document.getElementById("conciliationGroupCount");
 const conciliationLeaders = document.getElementById("conciliationLeaders");
@@ -135,6 +136,7 @@ loginForm.addEventListener("submit", handleLogin);
 serviceForm.addEventListener("submit", handleSaveService);
 exportServicePdfButton.addEventListener("click", exportCurrentServicePdf);
 printServicePdfButton.addEventListener("click", exportCurrentServicePdf);
+saveServiceButton.addEventListener("click", saveCurrentServiceToSummary);
 generateConciliationButton.addEventListener("click", generateConciliation);
 conciliationGroupCount.addEventListener("change", () => {
   normalizeConciliationLeaders();
@@ -487,6 +489,7 @@ function renderServiceStats() {
   const stats = getServiceStats(service);
   exportServicePdfButton.disabled = !service;
   printServicePdfButton.disabled = !service;
+  saveServiceButton.disabled = !service;
 
   if (!service) {
     serviceTotalsText.textContent = "Aun sin datos para este servicio.";
@@ -503,6 +506,19 @@ function renderServiceStats() {
   pieChart.style.background = `conic-gradient(#2cae7a 0deg, #2cae7a ${yesDeg}deg, #d97878 ${yesDeg}deg, #d97878 360deg)`;
   yesPctText.textContent = `Si: ${stats.yesPct}%`;
   noPctText.textContent = `No: ${stats.noPct}%`;
+}
+
+function saveCurrentServiceToSummary() {
+  const service = getCurrentService();
+  if (!service) return;
+  if (!isServiceAttendanceComplete(service)) {
+    window.alert("Completa la asistencia (Si/No) para todos antes de guardar servicio.");
+    return;
+  }
+  service.statsSaved = true;
+  saveState();
+  renderSummary();
+  setActiveView("resumen");
 }
 
 function exportCurrentServicePdf() {
@@ -1145,7 +1161,7 @@ function renderAlfolisGroup(type, container, label) {
       const typeKey = button.dataset.type;
       const id = button.dataset.id;
       state.alfolis[typeKey] = state.alfolis[typeKey].filter((x) => x.id !== id);
-      if (!state.alfolis[typeKey].length) state.alfolis[typeKey] = [{ id: createId(typeKey), name: "", position: "" }];
+      if (!state.alfolis[typeKey].length) state.alfolis[typeKey] = [{ id: createId(typeKey), name: "", position: "1", anexo: "Anexo A" }];
       saveState();
       renderAlfolis();
     });
@@ -1160,9 +1176,9 @@ function addAlfoliLine(type) {
 
 function exportAlfolisPdf() {
   const lines = ["ALFOLIS", "", "SERVIDORES"];
-  state.alfolis.male.forEach((row, i) => lines.push(`${i + 1}. ${row.name || "-"} | Pos ${row.position || "-"} | ${row.anexo || "-"}`));
+  state.alfolis.male.forEach((row, i) => lines.push(`${i + 1}. ${row.name || "-"} - ${row.position || "-"} - ${row.anexo || "-"}`));
   lines.push("", "SERVIDORAS");
-  state.alfolis.female.forEach((row, i) => lines.push(`${i + 1}. ${row.name || "-"} | Pos ${row.position || "-"} | ${row.anexo || "-"}`));
+  state.alfolis.female.forEach((row, i) => lines.push(`${i + 1}. ${row.name || "-"} - ${row.position || "-"} - ${row.anexo || "-"}`));
   openJpegPreview("Alfolis", lines, false);
 }
 
