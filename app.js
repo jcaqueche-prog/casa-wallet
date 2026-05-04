@@ -1,5 +1,6 @@
 const STORAGE_KEY = "iglesia-servidores-app";
 const DATABASE_SOURCE_VERSION = "v5-replanteado-2026-04-30";
+const USERS = [{ username: "Juan Carlos Aqueche Estrada", password: "jcae" }];
 const ENCOURAGEMENT_VERSES = [
   { text: "Este es el dia que hizo Jehova; nos gozaremos y alegraremos en el.", ref: "Salmos 118:24" },
   { text: "El gozo de Jehova es vuestra fuerza.", ref: "Nehemias 8:10" },
@@ -58,8 +59,8 @@ const defaultState = {
   services: [],
   summarySnapshots: [],
   alfolis: {
-    male: [{ id: "m-1", name: "", position: "" }],
-    female: [{ id: "f-1", name: "", position: "" }],
+    male: [{ id: "m-1", name: "", position: "1", anexo: "Anexo A" }],
+    female: [{ id: "f-1", name: "", position: "1", anexo: "Anexo A" }],
   },
   branding: {
     headerImage: "",
@@ -68,6 +69,12 @@ const defaultState = {
 };
 
 const state = loadState();
+window.state = state;
+
+const loginView = document.getElementById("loginView");
+const loginForm = document.getElementById("loginForm");
+const loginUser = document.getElementById("loginUser");
+const loginPass = document.getElementById("loginPass");
 
 const serverForm = document.getElementById("serverForm");
 const serverBirthday = document.getElementById("serverBirthday");
@@ -124,6 +131,7 @@ let conciliationLeaderByGroup = {};
 let expandedSummaryServiceId = "";
 
 serverForm.addEventListener("submit", handleCreateServer);
+loginForm.addEventListener("submit", handleLogin);
 serviceForm.addEventListener("submit", handleSaveService);
 exportServicePdfButton.addEventListener("click", exportCurrentServicePdf);
 printServicePdfButton.addEventListener("click", exportCurrentServicePdf);
@@ -163,7 +171,26 @@ function initialize() {
   renderHomeVerse();
   renderBranding();
   setActiveView("inicio");
+  setLoginState(Boolean(sessionStorage.getItem("iglesia-auth")));
   renderAll();
+}
+
+function handleLogin(event) {
+  event.preventDefault();
+  const user = String(loginUser.value || "").trim();
+  const pass = String(loginPass.value || "").trim();
+  const ok = USERS.some((u) => u.username === user && u.password === pass);
+  if (!ok) {
+    window.alert("Usuario o clave incorrecta.");
+    return;
+  }
+  sessionStorage.setItem("iglesia-auth", user);
+  setLoginState(true);
+}
+
+function setLoginState(isAuth) {
+  loginView.style.display = isAuth ? "none" : "grid";
+  document.querySelector(".app-shell").classList.toggle("is-locked", !isAuth);
 }
 
 function renderHomeVerse() {
@@ -223,8 +250,8 @@ function loadState() {
       summarySnapshots: Array.isArray(parsed.summarySnapshots) ? parsed.summarySnapshots : [],
       alfolis: parsed.alfolis && typeof parsed.alfolis === "object"
         ? {
-            male: Array.isArray(parsed.alfolis.male) && parsed.alfolis.male.length ? parsed.alfolis.male : [{ id: "m-1", name: "", position: "" }],
-            female: Array.isArray(parsed.alfolis.female) && parsed.alfolis.female.length ? parsed.alfolis.female : [{ id: "f-1", name: "", position: "" }],
+            male: Array.isArray(parsed.alfolis.male) && parsed.alfolis.male.length ? parsed.alfolis.male : [{ id: "m-1", name: "", position: "1", anexo: "Anexo A" }],
+            female: Array.isArray(parsed.alfolis.female) && parsed.alfolis.female.length ? parsed.alfolis.female : [{ id: "f-1", name: "", position: "1", anexo: "Anexo A" }],
           }
         : structuredClone(defaultState.alfolis),
       branding: parsed.branding && typeof parsed.branding === "object"
@@ -258,6 +285,15 @@ function setActiveView(viewName) {
   tabButtons.forEach((button) => button.classList.toggle("is-active", button.dataset.viewTarget === viewName));
   views.forEach((view) => view.classList.toggle("view--active", view.dataset.view === viewName));
 }
+
+window.saveServiceAndGoSummary = function saveServiceAndGoSummary(serviceId) {
+  const service = state.services.find((s) => s.id === serviceId);
+  if (!service) return;
+  service.statsSaved = true;
+  saveState();
+  renderSummary();
+  setActiveView("resumen");
+};
 
 async function handleCreateServer(event) {
   event.preventDefault();
@@ -454,17 +490,31 @@ function renderServiceStats() {
 
   if (!service) {
     serviceTotalsText.textContent = "Aun sin datos para este servicio.";
-    pieChart.style.background = "conic-gradient(#2cae7a 0deg, #2cae7a 0deg, #d97878 0deg, #d97878 360deg)";
+    pieChart.innerHTML = buildBarChartHtml({ yesCount: 0, noCount: 0, yesPct: 0, noPct: 0 });
     yesPctText.textContent = "Si: 0%";
     noPctText.textContent = "No: 0%";
     return;
   }
 
   serviceTotalsText.textContent = `Asistieron: ${stats.yesCount} | No asistieron: ${stats.noCount}`;
-  const yesDeg = Math.round((stats.yesPct / 100) * 360);
-  pieChart.style.background = `conic-gradient(#2cae7a 0deg, #2cae7a ${yesDeg}deg, #d97878 ${yesDeg}deg, #d97878 360deg)`;
+  pieChart.innerHTML = buildBarChartHtml(stats);
   yesPctText.textContent = `Si: ${stats.yesPct}%`;
   noPctText.textContent = `No: ${stats.noPct}%`;
+}
+
+function buildBarChartHtml(stats) {
+  return `
+    <div class="bar-chart">
+      <div class="bar-row">
+        <span class="bar-label">Asistieron (${stats.yesCount})</span>
+        <div class="bar-track"><div class="bar-fill bar-fill--yes" style="width:${stats.yesPct}%"></div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">No asistieron (${stats.noCount})</span>
+        <div class="bar-track"><div class="bar-fill bar-fill--no" style="width:${stats.noPct}%"></div></div>
+      </div>
+    </div>
+  `;
 }
 
 function exportCurrentServicePdf() {
@@ -478,6 +528,14 @@ function exportCurrentServicePdf() {
       return `<tr><td>${escapeHtml(server.name)}</td><td>${escapeHtml(status)}</td></tr>`;
     })
     .join("");
+  const bars = `
+    <div style="margin:10px 0 14px;">
+      <p style="margin:0 0 6px;"><strong>Asistieron (${stats.yesCount})</strong></p>
+      <div style="height:14px;border-radius:999px;background:#dce5f5;overflow:hidden;"><div style="height:100%;width:${stats.yesPct}%;background:linear-gradient(90deg,#2cae7a,#44c58f);"></div></div>
+      <p style="margin:10px 0 6px;"><strong>No asistieron (${stats.noCount})</strong></p>
+      <div style="height:14px;border-radius:999px;background:#dce5f5;overflow:hidden;"><div style="height:100%;width:${stats.noPct}%;background:linear-gradient(90deg,#d97878,#e49090);"></div></div>
+    </div>
+  `;
 
   const printable = window.open("", "_blank", "width=1100,height=860");
   if (!printable) return;
@@ -506,6 +564,7 @@ function exportCurrentServicePdf() {
     <body>
       <div class="actions">
         <button onclick="window.print()">Imprimir</button>
+        <button id="saveSvcBtn" type="button">Guardar servicio</button>
         <button type="button" onclick="window.close()">Regresar a la APP</button>
       </div>
       <div class="sheet">
@@ -516,11 +575,22 @@ function exportCurrentServicePdf() {
           <p><strong>Tipo de servicio:</strong> ${escapeHtml(service.lines.join(" / "))}</p>
           <p><strong>Asistieron:</strong> ${stats.yesCount} | <strong>No asistieron:</strong> ${stats.noCount}</p>
         </div>
+        ${bars}
         <table>
           <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
+      <script>
+        document.getElementById("saveSvcBtn").addEventListener("click", () => {
+          if (window.opener && typeof window.opener.saveServiceAndGoSummary === "function") {
+            window.opener.saveServiceAndGoSummary(${JSON.stringify(service.id)});
+            window.close();
+          } else {
+            alert("No se pudo guardar desde esta vista.");
+          }
+        });
+      </script>
     </body>
     </html>
   `);
@@ -773,7 +843,6 @@ function renderSummary() {
     .map((service) => {
       const stats = getServiceStats(service);
       const expanded = expandedSummaryServiceId === service.id;
-      const yesDeg = Math.round((stats.yesPct / 100) * 360);
       const attendanceRows = state.servers
         .map((server) => {
           const status = service.attendance[server.id] || "Pendiente";
@@ -791,14 +860,8 @@ function renderSummary() {
             <button type="button" class="primary-button summary-edit-btn" data-service-id="${service.id}">Editar</button>
             <button type="button" class="ghost-button summary-delete-btn" data-service-id="${service.id}">Eliminar</button>
           </div>
+          ${buildBarChartHtml(stats)}
           <div class="summary-detail ${expanded ? "is-open" : ""}">
-            <div class="summary-preview-row">
-              <div class="pie-chart" style="background: conic-gradient(#2cae7a 0deg, #2cae7a ${yesDeg}deg, #d97878 ${yesDeg}deg, #d97878 360deg)"></div>
-              <div class="chart-legend">
-                <span>Si: ${stats.yesPct}%</span>
-                <span>No: ${stats.noPct}%</span>
-              </div>
-            </div>
             <table class="result-table">
               <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
               <tbody>${attendanceRows}</tbody>
@@ -1048,8 +1111,12 @@ function renderAlfolis() {
 }
 
 function renderAlfolisGroup(type, container, label) {
+  const anexos = ["Anexo A", "Anexo B", "Anexo C", "Anexo M", "Anexo D", "Anexo E", "Anexo F"];
+  const posiciones = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
   container.innerHTML = "";
   state.alfolis[type].forEach((row, idx) => {
+    const positionOptions = posiciones.map((p) => `<option value="${p}" ${String(row.position || "1") === p ? "selected" : ""}>${p}</option>`).join("");
+    const anexoOptions = anexos.map((a) => `<option value="${a}" ${String(row.anexo || "Anexo A") === a ? "selected" : ""}>${a}</option>`).join("");
     const el = document.createElement("div");
     el.className = "alfolis-row";
     el.innerHTML = `
@@ -1057,7 +1124,10 @@ function renderAlfolisGroup(type, container, label) {
         <input type="text" data-type="${type}" data-field="name" data-id="${row.id}" value="${escapeHtml(row.name)}" />
       </label>
       <label>Posicion
-        <input type="text" data-type="${type}" data-field="position" data-id="${row.id}" value="${escapeHtml(row.position)}" />
+        <select data-type="${type}" data-field="position" data-id="${row.id}">${positionOptions}</select>
+      </label>
+      <label>Anexo
+        <select data-type="${type}" data-field="anexo" data-id="${row.id}">${anexoOptions}</select>
       </label>
       <button type="button" class="ghost-button alfolis-remove" data-type="${type}" data-id="${row.id}" ${state.alfolis[type].length <= 1 ? "disabled" : ""}>Quitar</button>
       <span class="alfolis-index">Linea ${idx + 1}</span>
@@ -1090,67 +1160,17 @@ function renderAlfolisGroup(type, container, label) {
 }
 
 function addAlfoliLine(type) {
-  state.alfolis[type].push({ id: createId(type), name: "", position: "" });
+  state.alfolis[type].push({ id: createId(type), name: "", position: "1", anexo: "Anexo A" });
   saveState();
   renderAlfolis();
 }
 
 function exportAlfolisPdf() {
-  const logoBlock = getPdfLogoBlock();
-  const maleRows = state.alfolis.male
-    .map((row, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(row.name || "-")}</td><td>${escapeHtml(row.position || "-")}</td></tr>`)
-    .join("");
-  const femaleRows = state.alfolis.female
-    .map((row, i) => `<tr><td>${i + 1}</td><td>${escapeHtml(row.name || "-")}</td><td>${escapeHtml(row.position || "-")}</td></tr>`)
-    .join("");
-
-  const printable = window.open("", "_blank", "width=1100,height=860");
-  if (!printable) return;
-  printable.document.write(`
-    <!doctype html>
-    <html lang="es">
-    <head>
-      <meta charset="utf-8" />
-      <title>Alfolis</title>
-      <style>
-        @page { size: A4 portrait; margin: 14mm; }
-        body { font-family: "Segoe UI", Arial, sans-serif; color:#1f2b42; margin:0; background:#f4f7fc; }
-        .actions { display:flex; gap:10px; margin:0 0 10px; }
-        button { padding:10px 14px; border:0; border-radius:999px; background:#2f5ca8; color:#fff; font-weight:700; cursor:pointer; }
-        .sheet { background:#fff; border:1px solid #d6e0f0; border-radius:14px; padding:18px; }
-        .pdf-brand { display:flex; justify-content:flex-end; margin-bottom:8px; }
-        .pdf-brand img { width:56px; height:56px; object-fit:contain; border:1px solid #d8e1f1; border-radius:10px; background:#fff; padding:4px; }
-        h1 { margin:0 0 8px; color:#1f3f75; }
-        h2 { margin:14px 0 6px; color:#24467f; font-size:16px; }
-        table { width:100%; border-collapse:collapse; font-size:12px; }
-        th, td { border:1px solid #c5d2e8; padding:7px; text-align:left; }
-        th { background:#e8effc; color:#24467f; }
-      </style>
-    </head>
-    <body>
-      <div class="actions">
-        <button onclick="window.print()">Imprimir PDF</button>
-        <button type="button" onclick="window.close()">Regresar a la APP</button>
-      </div>
-      <div class="sheet">
-        ${logoBlock}
-        <h1>Alfolis</h1>
-        <h2>Servidores</h2>
-        <table>
-          <thead><tr><th>#</th><th>Nombre</th><th>Posicion</th></tr></thead>
-          <tbody>${maleRows}</tbody>
-        </table>
-        <h2>Servidoras</h2>
-        <table>
-          <thead><tr><th>#</th><th>Nombre</th><th>Posicion</th></tr></thead>
-          <tbody>${femaleRows}</tbody>
-        </table>
-      </div>
-    </body>
-    </html>
-  `);
-  printable.document.close();
-  printable.focus();
+  const lines = ["ALFOLIS", "", "SERVIDORES"];
+  state.alfolis.male.forEach((row, i) => lines.push(`${i + 1}. ${row.name || "-"} | Pos ${row.position || "-"} | ${row.anexo || "-"}`));
+  lines.push("", "SERVIDORAS");
+  state.alfolis.female.forEach((row, i) => lines.push(`${i + 1}. ${row.name || "-"} | Pos ${row.position || "-"} | ${row.anexo || "-"}`));
+  openJpegPreview("Alfolis", lines, false);
 }
 
 function exportAlfolisExcel() {

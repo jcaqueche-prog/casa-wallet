@@ -7,10 +7,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Manrope:wght@700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20260502c" />
+    <link rel="stylesheet" href="./styles.css?v=20260503a" />
   </head>
   <body>
-    <div class="app-shell">
+    <section id="loginView" class="login-view">
+      <article class="login-card">
+        <h2>Ingreso de Usuario</h2>
+        <form id="loginForm" class="form-grid">
+          <label>Usuario
+            <input id="loginUser" type="text" required />
+          </label>
+          <label>Clave
+            <input id="loginPass" type="password" required />
+          </label>
+          <button type="submit" class="primary-button">Entrar</button>
+        </form>
+      </article>
+    </section>
+    <div class="app-shell is-locked">
       <header class="hero">
         <div class="hero-banner">
           <img id="heroBannerImage" alt="Imagen superior" />
@@ -146,13 +160,22 @@
                   <option value="Lunes - Servicio Familiar">Lunes - Servicio Familiar</option>
                   <option value="Miercoles - Servicio Devocional">Miercoles - Servicio Devocional</option>
                   <option value="Viernes - Servicio Devocional">Viernes - Servicio Devocional</option>
-                  <option value="Sabado - Santa Cena">Sabado - Santa Cena</option>
-                  <option value="Domingo - Santa Cena">Domingo - Santa Cena</option>
-                  <option value="Domingo - Servicio Devocional">Domingo - Servicio Devocional</option>
+                  <option value="Sabado - Santa Cena 1">Sabado - Santa Cena 1</option>
+                  <option value="Sabado - Santa Cena 2">Sabado - Santa Cena 2</option>
+                  <option value="Sabado - Santa Cena 3">Sabado - Santa Cena 3</option>
+                  <option value="Sabado - Santa Cena 4">Sabado - Santa Cena 4</option>
+                  <option value="Domingo - Santa Cena 1">Domingo - Santa Cena 1</option>
+                  <option value="Domingo - Santa Cena 2">Domingo - Santa Cena 2</option>
+                  <option value="Domingo - Santa Cena 3">Domingo - Santa Cena 3</option>
+                  <option value="Domingo - Santa Cena 4">Domingo - Santa Cena 4</option>
+                  <option value="Domingo - Servicio Devocional 1">Domingo - Servicio Devocional 1</option>
+                  <option value="Domingo - Servicio Devocional 2">Domingo - Servicio Devocional 2</option>
+                  <option value="Domingo - Servicio Devocional 3">Domingo - Servicio Devocional 3</option>
+                  <option value="Domingo - Servicio Devocional 4">Domingo - Servicio Devocional 4</option>
                 </select>
               </label>
               <div class="service-actions">
-                <button type="submit" class="primary-button">Guardar</button>
+                <button type="submit" class="primary-button">Crear servicio</button>
                 <button id="printServicePdfButton" type="button" class="primary-button">Imprimir PDF</button>
               </div>
             </form>
@@ -243,7 +266,7 @@
             <div class="panel__header panel__header--split">
               <div>
                 <h2>Alfolis</h2>
-                <p>Registra servidores y servidoras con posicion.</p>
+                <p>Registra servidores y servidoras con posicion y anexo.</p>
               </div>
               <div class="service-actions">
                 <label class="inline-select">
@@ -254,7 +277,7 @@
                   </select>
                 </label>
                 <button id="newIngresoButton" type="button" class="primary-button">Nuevo ingreso</button>
-                <button id="alfolisPdfButton" type="button" class="primary-button">Imprimir PDF</button>
+                <button id="alfolisPdfButton" type="button" class="primary-button">Guardar imagen</button>
               </div>
             </div>
 
@@ -323,6 +346,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260502c"></script>
+    <script src="./app.js?v=20260503a"></script>
   </body>
 </html>
