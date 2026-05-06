@@ -1265,16 +1265,16 @@ function exportAlfolisPdf() {
 function createAlfolisTableJpegData() {
   const maleRows = state.alfolis.male.map((row) => [row.name || "-", row.position || "-", row.anexo || "-"]);
   const femaleRows = state.alfolis.female.map((row) => [row.name || "-", row.position || "-", row.anexo || "-"]);
-  const rowHeight = 36;
+  const rowHeight = 46;
   const sectionGap = 24;
-  const headerHeight = 52;
-  const tableHeaderHeight = 34;
+  const headerHeight = 62;
+  const tableHeaderHeight = 42;
   const sidePad = 44;
   const width = 1400;
   const colWidths = [760, 180, 320];
   const maleTableHeight = tableHeaderHeight + maleRows.length * rowHeight;
   const femaleTableHeight = tableHeaderHeight + femaleRows.length * rowHeight;
-  const height = 80 + headerHeight + maleTableHeight + sectionGap + headerHeight + femaleTableHeight + 70;
+  const height = 100 + headerHeight + maleTableHeight + sectionGap + headerHeight + femaleTableHeight + 90;
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -1285,10 +1285,10 @@ function createAlfolisTableJpegData() {
   ctx.fillStyle = "#f4f7fc";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = "#1f3f75";
-  ctx.font = "700 46px Arial";
-  ctx.fillText("ALFOLIS", sidePad, 62);
+  ctx.font = "700 56px Arial";
+  ctx.fillText("ALFOLIS", sidePad, 72);
 
-  let y = 92;
+  let y = 110;
   y = drawAlfolisSectionTable(ctx, sidePad, y, width - sidePad * 2, "SERVIDORES", maleRows, colWidths, rowHeight, headerHeight, tableHeaderHeight);
   y += sectionGap;
   drawAlfolisSectionTable(ctx, sidePad, y, width - sidePad * 2, "SERVIDORAS", femaleRows, colWidths, rowHeight, headerHeight, tableHeaderHeight);
@@ -1306,8 +1306,8 @@ function drawAlfolisSectionTable(ctx, x, y, tableWidth, title, rows, colWidths, 
   ctx.fillRect(x, y, tableWidth, headerHeight);
   ctx.strokeRect(x, y, tableWidth, headerHeight);
   ctx.fillStyle = "#24467f";
-  ctx.font = "700 24px Arial";
-  ctx.fillText(title, x + 14, y + 34);
+  ctx.font = "700 30px Arial";
+  ctx.fillText(title, x + 14, y + 40);
 
   let currentY = y + headerHeight;
   const headers = ["Nombre", "Posicion", "Anexo"];
@@ -1317,8 +1317,8 @@ function drawAlfolisSectionTable(ctx, x, y, tableWidth, title, rows, colWidths, 
   headers.forEach((label, i) => {
     ctx.strokeRect(colX, currentY, colWidths[i], tableHeaderHeight);
     ctx.fillStyle = "#24467f";
-    ctx.font = "700 16px Arial";
-    ctx.fillText(label, colX + 10, currentY + 22);
+    ctx.font = "700 20px Arial";
+    ctx.fillText(label, colX + 10, currentY + 28);
     colX += colWidths[i];
   });
   currentY += tableHeaderHeight;
@@ -1331,9 +1331,9 @@ function drawAlfolisSectionTable(ctx, x, y, tableWidth, title, rows, colWidths, 
       ctx.strokeStyle = "#c5d2e8";
       ctx.strokeRect(rowX, currentY, colWidths[i], rowHeight);
       ctx.fillStyle = "#1f2b42";
-      ctx.font = "400 15px Arial";
+      ctx.font = "700 20px Arial";
       const text = String(cell);
-      ctx.fillText(text.length > 46 ? `${text.slice(0, 46)}...` : text, rowX + 10, currentY + 23);
+      ctx.fillText(text.length > 34 ? `${text.slice(0, 34)}...` : text, rowX + 10, currentY + 30);
       rowX += colWidths[i];
     });
     currentY += rowHeight;
