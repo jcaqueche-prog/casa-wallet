@@ -97,12 +97,11 @@ const conciliationLeaders = document.getElementById("conciliationLeaders");
 const conciliationBoard = document.getElementById("conciliationBoard");
 const summaryDateFrom = document.getElementById("summaryDateFrom");
 const summaryDateTo = document.getElementById("summaryDateTo");
+const summaryServiceSelect = document.getElementById("summaryServiceSelect");
 const summarySaveGeneralButton = document.getElementById("summarySaveGeneralButton");
 const summaryCards = document.getElementById("summaryCards");
 const summaryGeneralCards = document.getElementById("summaryGeneralCards");
 const alfolisPdfButton = document.getElementById("alfolisPdfButton");
-const newIngresoType = document.getElementById("newIngresoType");
-const newIngresoButton = document.getElementById("newIngresoButton");
 const addMaleLineButton = document.getElementById("addMaleLineButton");
 const addFemaleLineButton = document.getElementById("addFemaleLineButton");
 const maleAlfolisList = document.getElementById("maleAlfolisList");
@@ -143,14 +142,20 @@ conciliationGroupCount.addEventListener("change", () => {
   renderConciliationLeaderSelectors();
 });
 conciliationBoard.addEventListener("click", handleConciliationActions);
-summaryDateFrom.addEventListener("change", renderSummary);
-summaryDateTo.addEventListener("change", renderSummary);
-summarySaveGeneralButton.addEventListener("click", saveGeneralSummarySnapshot);
+summaryDateFrom.addEventListener("change", () => {
+  renderSummary();
+  renderServers();
+});
+summaryDateTo.addEventListener("change", () => {
+  renderSummary();
+  renderServers();
+});
+summaryServiceSelect.addEventListener("change", renderSummary);
+if (summarySaveGeneralButton) summarySaveGeneralButton.addEventListener("click", saveGeneralSummarySnapshot);
 summaryCards.addEventListener("click", handleSummaryCardClick);
 summaryGeneralCards.addEventListener("click", handleSummarySnapshotClick);
 addMaleLineButton.addEventListener("click", () => addAlfoliLine("male"));
 addFemaleLineButton.addEventListener("click", () => addAlfoliLine("female"));
-newIngresoButton.addEventListener("click", () => addAlfoliLine(newIngresoType.value));
 alfolisPdfButton.addEventListener("click", exportAlfolisPdf);
 generalSaveButton.addEventListener("click", handleGeneralSave);
 headerImageInput.addEventListener("change", handleHeaderImageUpload);
@@ -280,6 +285,7 @@ function renderAll() {
   renderConciliationLeaderSelectors();
   renderConciliation();
   renderSummary();
+  renderSummaryServiceSelect();
   renderAlfolis();
 }
 
@@ -340,6 +346,11 @@ function renderServers() {
     fragment.querySelector(".server-card__birthday").textContent = formatDate(server.birthday);
     fragment.querySelector(".server-card__phone").textContent = server.phone;
     fragment.querySelector(".server-card__address").textContent = server.address;
+    const rangeStats = getServerRangeAttendance(server.id);
+    const rangeText = fragment.querySelector(".server-card__range");
+    if (rangeText) {
+      rangeText.textContent = `${rangeStats.pct}% (${rangeStats.yes}/${rangeStats.total})`;
+    }
     fragment.querySelector(".server-card__delete").addEventListener("click", () => deleteServer(server.id));
     fragment.querySelector(".server-card__photo-input").addEventListener("change", async (event) => {
       const file = event.target.files?.[0];
@@ -351,6 +362,19 @@ function renderServers() {
     });
     serverCards.appendChild(fragment);
   });
+}
+
+function getServerRangeAttendance(serverId) {
+  const from = summaryDateFrom?.value || "";
+  const to = summaryDateTo?.value || "";
+  const services = state.services.filter((s) => (!from || s.date >= from) && (!to || s.date <= to));
+  const total = services.length;
+  if (!total) return { yes: 0, total: 0, pct: 0 };
+  let yes = 0;
+  services.forEach((service) => {
+    if (service.attendance[serverId] === "Si") yes += 1;
+  });
+  return { yes, total, pct: Math.round((yes / total) * 100) };
 }
 
 function deleteServer(serverId) {
@@ -828,11 +852,14 @@ function handleConciliationActions(event) {
 }
 
 function renderSummary() {
+  renderSummaryServiceSelect();
   const from = summaryDateFrom.value;
   const to = summaryDateTo.value;
+  const selectedServiceId = summaryServiceSelect.value;
   const records = state.services
     .filter((s) => s.statsSaved)
     .filter((s) => (!from || s.date >= from) && (!to || s.date <= to))
+    .filter((s) => !selectedServiceId || s.id === selectedServiceId)
     .sort((a, b) => b.date.localeCompare(a.date));
 
   summaryCards.innerHTML = "";
@@ -846,11 +873,13 @@ function renderSummary() {
     .map((service) => {
       const stats = getServiceStats(service);
       const expanded = expandedSummaryServiceId === service.id;
-      const attendanceRows = state.servers
-        .map((server) => {
-          const status = service.attendance[server.id] || "Pendiente";
-          return `<tr><td>${escapeHtml(server.name)}</td><td>${escapeHtml(status)}</td></tr>`;
-        })
+      const yesList = state.servers
+        .filter((server) => service.attendance[server.id] === "Si")
+        .map((server) => `<li>${escapeHtml(server.name)}</li>`)
+        .join("");
+      const noList = state.servers
+        .filter((server) => service.attendance[server.id] === "No")
+        .map((server) => `<li>${escapeHtml(server.name)}</li>`)
         .join("");
       return `
         <article class="summary-card">
@@ -871,16 +900,34 @@ function renderSummary() {
             </div>
           </div>
           <div class="summary-detail ${expanded ? "is-open" : ""}">
-            <table class="result-table">
-              <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
-              <tbody>${attendanceRows}</tbody>
-            </table>
+            <div class="conciliation-board">
+              <div class="result-card">
+                <h4>Asistieron</h4>
+                <ol>${yesList || "<li>-</li>"}</ol>
+              </div>
+              <div class="result-card">
+                <h4>No asistieron</h4>
+                <ol>${noList || "<li>-</li>"}</ol>
+              </div>
+            </div>
           </div>
         </article>
       `;
     })
     .join("");
   renderSummarySnapshots();
+}
+
+function renderSummaryServiceSelect() {
+  if (!summaryServiceSelect) return;
+  const previous = summaryServiceSelect.value;
+  const records = state.services
+    .filter((s) => s.statsSaved)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  summaryServiceSelect.innerHTML = `<option value="">Todos</option>${records
+    .map((s) => `<option value="${s.id}">${escapeHtml(formatDate(s.date))} - ${escapeHtml(s.lines.join(" / "))}</option>`)
+    .join("")}`;
+  if (records.some((s) => s.id === previous)) summaryServiceSelect.value = previous;
 }
 
 function saveGeneralSummarySnapshot() {
@@ -1156,6 +1203,18 @@ function renderAlfolisGroup(type, container, label) {
     });
   });
 
+  container.querySelectorAll("select").forEach((select) => {
+    select.addEventListener("change", (event) => {
+      const typeKey = event.target.dataset.type;
+      const field = event.target.dataset.field;
+      const id = event.target.dataset.id;
+      const item = state.alfolis[typeKey].find((x) => x.id === id);
+      if (!item) return;
+      item[field] = event.target.value;
+      saveState();
+    });
+  });
+
   container.querySelectorAll(".alfolis-remove").forEach((button) => {
     button.addEventListener("click", () => {
       const typeKey = button.dataset.type;
@@ -1175,10 +1234,10 @@ function addAlfoliLine(type) {
 }
 
 function exportAlfolisPdf() {
-  const lines = ["ALFOLIS", "", "SERVIDORES"];
-  state.alfolis.male.forEach((row, i) => lines.push(`${i + 1}. ${row.name || "-"} - ${row.position || "-"} - ${row.anexo || "-"}`));
-  lines.push("", "SERVIDORAS");
-  state.alfolis.female.forEach((row, i) => lines.push(`${i + 1}. ${row.name || "-"} - ${row.position || "-"} - ${row.anexo || "-"}`));
+  const lines = ["ALFOLIS", "", "SERVIDORES", "Servidor Nombre - Posicion - Anexo"];
+  state.alfolis.male.forEach((row) => lines.push(`${row.name || "-"} - ${row.position || "-"} - ${row.anexo || "-"}`));
+  lines.push("", "SERVIDORAS", "Servidora Nombre - Posicion - Anexo");
+  state.alfolis.female.forEach((row) => lines.push(`${row.name || "-"} - ${row.position || "-"} - ${row.anexo || "-"}`));
   openJpegPreview("Alfolis", lines, false);
 }
 
@@ -1197,11 +1256,13 @@ function exportSingleSummaryPdf(service) {
   const stats = getServiceStats(service);
   const logoBlock = getPdfLogoBlock();
   const yesDeg = Math.round((stats.yesPct / 100) * 360);
-  const rows = state.servers
-    .map((server) => {
-      const status = service.attendance[server.id] || "Pendiente";
-      return `<tr><td>${escapeHtml(server.name)}</td><td>${escapeHtml(status)}</td></tr>`;
-    })
+  const yesRows = state.servers
+    .filter((server) => service.attendance[server.id] === "Si")
+    .map((server) => `<tr><td>${escapeHtml(server.name)}</td></tr>`)
+    .join("");
+  const noRows = state.servers
+    .filter((server) => service.attendance[server.id] === "No")
+    .map((server) => `<tr><td>${escapeHtml(server.name)}</td></tr>`)
     .join("");
   const printable = window.open("", "_blank", "width=1100,height=860");
   if (!printable) return;
@@ -1227,6 +1288,7 @@ function exportSingleSummaryPdf(service) {
         table { width:100%; border-collapse:collapse; font-size:12px; }
         th, td { border:1px solid #c5d2e8; padding:7px; text-align:left; }
         th { background:#e8effc; color:#24467f; }
+        .cols { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
       </style>
     </head>
     <body>
@@ -1243,10 +1305,16 @@ function exportSingleSummaryPdf(service) {
           <div class="pie"></div>
           <p><strong>Asistieron:</strong> ${stats.yesCount} | <strong>No asistieron:</strong> ${stats.noCount}</p>
         </div>
-        <table>
-          <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <div class="cols">
+          <table>
+            <thead><tr><th>Asistieron</th></tr></thead>
+            <tbody>${yesRows || "<tr><td>-</td></tr>"}</tbody>
+          </table>
+          <table>
+            <thead><tr><th>No asistieron</th></tr></thead>
+            <tbody>${noRows || "<tr><td>-</td></tr>"}</tbody>
+          </table>
+        </div>
       </div>
     </body>
     </html>

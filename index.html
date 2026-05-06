@@ -249,9 +249,12 @@
                 Fecha fin
                 <input id="summaryDateTo" type="date" />
               </label>
-              <div class="service-actions">
-                <button id="summarySaveGeneralButton" type="button" class="primary-button">Guardar en general</button>
-              </div>
+              <label>
+                Servicio guardado
+                <select id="summaryServiceSelect">
+                  <option value="">Todos</option>
+                </select>
+              </label>
             </div>
 
             <div id="summaryCards" class="summary-cards"></div>
@@ -267,14 +270,6 @@
                 <p>Registra servidores y servidoras con posicion y anexo.</p>
               </div>
               <div class="service-actions">
-                <label class="inline-select">
-                  Nuevo ingreso
-                  <select id="newIngresoType">
-                    <option value="male">Servidor</option>
-                    <option value="female">Servidora</option>
-                  </select>
-                </label>
-                <button id="newIngresoButton" type="button" class="primary-button">Nuevo ingreso</button>
                 <button id="alfolisPdfButton" type="button" class="primary-button">Guardar imagen</button>
               </div>
             </div>
@@ -339,6 +334,7 @@
           <p><strong>Cumpleaños:</strong> <span class="server-card__birthday"></span></p>
           <p><strong>Telefono:</strong> <span class="server-card__phone"></span></p>
           <p><strong>Direccion:</strong> <span class="server-card__address"></span></p>
+          <p><strong>% asistencia (rango):</strong> <span class="server-card__range">0%</span></p>
           <label><strong>Foto ID:</strong> <input class="server-card__photo-input" type="file" accept="image/*" capture="environment" /></label>
         </div>
       </article>
