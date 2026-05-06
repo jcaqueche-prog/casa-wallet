@@ -121,6 +121,14 @@ const presentToday = document.getElementById("presentToday");
 const absentToday = document.getElementById("absentToday");
 const serverCards = document.getElementById("serverCards");
 const serverCardTemplate = document.getElementById("serverCardTemplate");
+const serverDetailModal = document.getElementById("serverDetailModal");
+const serverDetailName = document.getElementById("serverDetailName");
+const serverDetailClose = document.getElementById("serverDetailClose");
+const serverDetailFrom = document.getElementById("serverDetailFrom");
+const serverDetailTo = document.getElementById("serverDetailTo");
+const serverDetailPie = document.getElementById("serverDetailPie");
+const serverDetailPct = document.getElementById("serverDetailPct");
+const serverDetailTotals = document.getElementById("serverDetailTotals");
 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const views = Array.from(document.querySelectorAll(".view"));
 
@@ -129,6 +137,7 @@ let currentConciliation = null;
 let lastConciliationSignature = "";
 let conciliationLeaderByGroup = {};
 let expandedSummaryServiceId = "";
+let selectedServerDetailId = "";
 
 serverForm.addEventListener("submit", handleCreateServer);
 loginForm.addEventListener("submit", handleLogin);
@@ -161,6 +170,12 @@ generalSaveButton.addEventListener("click", handleGeneralSave);
 headerImageInput.addEventListener("change", handleHeaderImageUpload);
 logoImageInput.addEventListener("change", handleLogoImageUpload);
 serverSearch.addEventListener("input", renderServers);
+serverDetailClose.addEventListener("click", () => {
+  serverDetailModal.style.display = "none";
+  selectedServerDetailId = "";
+});
+serverDetailFrom.addEventListener("change", renderServerDetailChart);
+serverDetailTo.addEventListener("change", renderServerDetailChart);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
 });
@@ -340,6 +355,8 @@ function renderServers() {
 
   list.forEach((server) => {
     const fragment = serverCardTemplate.content.cloneNode(true);
+    const card = fragment.querySelector(".server-card");
+    card.classList.add("server-card--clickable");
     fragment.querySelector(".server-card__name").textContent = server.name;
     const photoEl = fragment.querySelector(".server-card__photo");
     photoEl.src = server.photo || createAvatarDataUrl(server.name);
@@ -351,8 +368,12 @@ function renderServers() {
     if (rangeText) {
       rangeText.textContent = `${rangeStats.pct}% (${rangeStats.yes}/${rangeStats.total})`;
     }
-    fragment.querySelector(".server-card__delete").addEventListener("click", () => deleteServer(server.id));
+    fragment.querySelector(".server-card__delete").addEventListener("click", (event) => {
+      event.stopPropagation();
+      deleteServer(server.id);
+    });
     fragment.querySelector(".server-card__photo-input").addEventListener("change", async (event) => {
+      event.stopPropagation();
       const file = event.target.files?.[0];
       const photoDataUrl = await fileToDataUrl(file);
       if (!photoDataUrl) return;
@@ -360,8 +381,40 @@ function renderServers() {
       saveState();
       renderServers();
     });
+    card.addEventListener("click", (event) => {
+      if (event.target.closest(".server-card__delete") || event.target.closest(".server-card__photo-input")) return;
+      openServerDetail(server.id);
+    });
     serverCards.appendChild(fragment);
   });
+}
+
+function openServerDetail(serverId) {
+  const server = state.servers.find((s) => s.id === serverId);
+  if (!server) return;
+  selectedServerDetailId = serverId;
+  serverDetailName.textContent = server.name;
+  serverDetailFrom.value = summaryDateFrom?.value || "";
+  serverDetailTo.value = summaryDateTo?.value || "";
+  renderServerDetailChart();
+  serverDetailModal.style.display = "grid";
+}
+
+function renderServerDetailChart() {
+  if (!selectedServerDetailId) return;
+  const from = serverDetailFrom.value || "";
+  const to = serverDetailTo.value || "";
+  const services = state.services.filter((s) => (!from || s.date >= from) && (!to || s.date <= to));
+  const total = services.length;
+  let yes = 0;
+  services.forEach((service) => {
+    if (service.attendance[selectedServerDetailId] === "Si") yes += 1;
+  });
+  const pct = total ? Math.round((yes / total) * 100) : 0;
+  const yesDeg = Math.round((pct / 100) * 360);
+  serverDetailPie.style.background = `conic-gradient(#2cae7a 0deg, #2cae7a ${yesDeg}deg, #d97878 ${yesDeg}deg, #d97878 360deg)`;
+  serverDetailPct.textContent = `Asistencia: ${pct}%`;
+  serverDetailTotals.textContent = `${yes}/${total} servicios`;
 }
 
 function getServerRangeAttendance(serverId) {

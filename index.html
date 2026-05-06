@@ -321,6 +321,30 @@
       </main>
     </div>
 
+    <section id="serverDetailModal" class="login-view" style="display:none;">
+      <article class="login-card" style="width:min(760px,100%);">
+        <div class="panel__header panel__header--split">
+          <h3 id="serverDetailName">Detalle</h3>
+          <button id="serverDetailClose" type="button" class="ghost-button">Cerrar</button>
+        </div>
+        <div class="service-meta-grid">
+          <label>Fecha inicio
+            <input id="serverDetailFrom" type="date" />
+          </label>
+          <label>Fecha fin
+            <input id="serverDetailTo" type="date" />
+          </label>
+        </div>
+        <div class="summary-preview-row">
+          <div id="serverDetailPie" class="pie-chart"></div>
+          <div class="chart-legend">
+            <span id="serverDetailPct">Asistencia: 0%</span>
+            <span id="serverDetailTotals">0/0 servicios</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
     <template id="serverCardTemplate">
       <article class="server-card">
         <div class="server-card__top">
