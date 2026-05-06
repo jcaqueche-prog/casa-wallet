@@ -1234,11 +1234,112 @@ function addAlfoliLine(type) {
 }
 
 function exportAlfolisPdf() {
-  const lines = ["ALFOLIS", "", "SERVIDORES", "Servidor Nombre - Posicion - Anexo"];
-  state.alfolis.male.forEach((row) => lines.push(`${row.name || "-"} - ${row.position || "-"} - ${row.anexo || "-"}`));
-  lines.push("", "SERVIDORAS", "Servidora Nombre - Posicion - Anexo");
-  state.alfolis.female.forEach((row) => lines.push(`${row.name || "-"} - ${row.position || "-"} - ${row.anexo || "-"}`));
-  openJpegPreview("Alfolis", lines, false);
+  const jpeg = createAlfolisTableJpegData();
+  if (!jpeg) return;
+  const win = window.open("", "_blank", "width=980,height=860");
+  if (!win) return;
+  win.document.write(`<!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Alfolis</title>
+      <style>
+        body{font-family:Arial,sans-serif;padding:16px;color:#1b2940}
+        img{width:100%;max-width:920px;border:1px solid #d9e3f5;border-radius:12px;display:block}
+        .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+        a,button{display:inline-block;padding:10px 14px;background:#2e5fc1;color:#fff;text-decoration:none;border-radius:999px;border:0;cursor:pointer;font:inherit;font-weight:700}
+      </style>
+    </head>
+    <body>
+      <img src="${jpeg.dataUrl}" alt="Alfolis tabla" />
+      <div class="actions">
+        <a href="${jpeg.dataUrl}" download="${escapeHtml(jpeg.fileName)}">Descargar JPG</a>
+        <button type="button" onclick="window.close()">Regresar a la APP</button>
+      </div>
+    </body>
+  </html>`);
+  win.document.close();
+}
+
+function createAlfolisTableJpegData() {
+  const maleRows = state.alfolis.male.map((row) => [row.name || "-", row.position || "-", row.anexo || "-"]);
+  const femaleRows = state.alfolis.female.map((row) => [row.name || "-", row.position || "-", row.anexo || "-"]);
+  const rowHeight = 36;
+  const sectionGap = 24;
+  const headerHeight = 52;
+  const tableHeaderHeight = 34;
+  const sidePad = 44;
+  const width = 1400;
+  const colWidths = [760, 180, 320];
+  const maleTableHeight = tableHeaderHeight + maleRows.length * rowHeight;
+  const femaleTableHeight = tableHeaderHeight + femaleRows.length * rowHeight;
+  const height = 80 + headerHeight + maleTableHeight + sectionGap + headerHeight + femaleTableHeight + 70;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = Math.max(height, 780);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.fillStyle = "#f4f7fc";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#1f3f75";
+  ctx.font = "700 46px Arial";
+  ctx.fillText("ALFOLIS", sidePad, 62);
+
+  let y = 92;
+  y = drawAlfolisSectionTable(ctx, sidePad, y, width - sidePad * 2, "SERVIDORES", maleRows, colWidths, rowHeight, headerHeight, tableHeaderHeight);
+  y += sectionGap;
+  drawAlfolisSectionTable(ctx, sidePad, y, width - sidePad * 2, "SERVIDORAS", femaleRows, colWidths, rowHeight, headerHeight, tableHeaderHeight);
+
+  return {
+    dataUrl: canvas.toDataURL("image/jpeg", 0.92),
+    fileName: `alfolis-tabla-${getTodayIso()}.jpg`,
+  };
+}
+
+function drawAlfolisSectionTable(ctx, x, y, tableWidth, title, rows, colWidths, rowHeight, headerHeight, tableHeaderHeight) {
+  ctx.fillStyle = "#e8effc";
+  ctx.strokeStyle = "#c5d2e8";
+  ctx.lineWidth = 1;
+  ctx.fillRect(x, y, tableWidth, headerHeight);
+  ctx.strokeRect(x, y, tableWidth, headerHeight);
+  ctx.fillStyle = "#24467f";
+  ctx.font = "700 24px Arial";
+  ctx.fillText(title, x + 14, y + 34);
+
+  let currentY = y + headerHeight;
+  const headers = ["Nombre", "Posicion", "Anexo"];
+  let colX = x;
+  ctx.fillStyle = "#f0f5ff";
+  ctx.fillRect(x, currentY, tableWidth, tableHeaderHeight);
+  headers.forEach((label, i) => {
+    ctx.strokeRect(colX, currentY, colWidths[i], tableHeaderHeight);
+    ctx.fillStyle = "#24467f";
+    ctx.font = "700 16px Arial";
+    ctx.fillText(label, colX + 10, currentY + 22);
+    colX += colWidths[i];
+  });
+  currentY += tableHeaderHeight;
+
+  rows.forEach((row) => {
+    let rowX = x;
+    row.forEach((cell, i) => {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(rowX, currentY, colWidths[i], rowHeight);
+      ctx.strokeStyle = "#c5d2e8";
+      ctx.strokeRect(rowX, currentY, colWidths[i], rowHeight);
+      ctx.fillStyle = "#1f2b42";
+      ctx.font = "400 15px Arial";
+      const text = String(cell);
+      ctx.fillText(text.length > 46 ? `${text.slice(0, 46)}...` : text, rowX + 10, currentY + 23);
+      rowX += colWidths[i];
+    });
+    currentY += rowHeight;
+  });
+
+  return currentY;
 }
 
 function exportAlfolisExcel() {
