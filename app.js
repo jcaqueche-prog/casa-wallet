@@ -129,6 +129,7 @@ const serverDetailTo = document.getElementById("serverDetailTo");
 const serverDetailPie = document.getElementById("serverDetailPie");
 const serverDetailPct = document.getElementById("serverDetailPct");
 const serverDetailTotals = document.getElementById("serverDetailTotals");
+const serverDetailReportBtn = document.getElementById("serverDetailReportBtn");
 const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
 const views = Array.from(document.querySelectorAll(".view"));
 
@@ -176,6 +177,7 @@ serverDetailClose.addEventListener("click", () => {
 });
 serverDetailFrom.addEventListener("change", renderServerDetailChart);
 serverDetailTo.addEventListener("change", renderServerDetailChart);
+serverDetailReportBtn.addEventListener("click", exportServerRangeReportPdf);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
 });
@@ -417,6 +419,65 @@ function renderServerDetailChart() {
   serverDetailTotals.textContent = `${yes}/${total} servicios`;
 }
 
+function exportServerRangeReportPdf() {
+  if (!selectedServerDetailId) return;
+  const server = state.servers.find((s) => s.id === selectedServerDetailId);
+  if (!server) return;
+  const from = serverDetailFrom.value || "";
+  const to = serverDetailTo.value || "";
+  const services = state.services
+    .filter((s) => (!from || s.date >= from) && (!to || s.date <= to))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const total = services.length;
+  let yes = 0;
+  const rows = services.map((service) => {
+    const status = service.attendance[selectedServerDetailId] || "Pendiente";
+    if (status === "Si") yes += 1;
+    return `<tr><td>${escapeHtml(formatDate(service.date))}</td><td>${escapeHtml(service.lines.join(" / "))}</td><td>${escapeHtml(status)}</td></tr>`;
+  }).join("");
+  const pct = total ? Math.round((yes / total) * 100) : 0;
+  const yesDeg = Math.round((pct / 100) * 360);
+  const printable = window.open("", "_blank", "width=1100,height=860");
+  if (!printable) return;
+  printable.document.write(`
+    <!doctype html>
+    <html lang="es">
+    <head>
+      <meta charset="utf-8" />
+      <title>Reporte de ${escapeHtml(server.name)}</title>
+      <style>
+        @page { size: A4 portrait; margin: 14mm; }
+        body { font-family: "Segoe UI", Arial, sans-serif; color:#1f2b42; margin:0; background:#f4f7fc; }
+        .actions { display:flex; gap:10px; margin:0 0 10px; }
+        button { padding:10px 14px; border:0; border-radius:999px; background:#2f5ca8; color:#fff; font-weight:700; cursor:pointer; }
+        .sheet { background:#fff; border:1px solid #d6e0f0; border-radius:14px; padding:18px; }
+        table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+        th, td { border:1px solid #c5d2e8; padding:7px; text-align:left; }
+        th { background:#e8effc; color:#24467f; }
+      </style>
+    </head>
+    <body>
+      <div class="actions">
+        <button onclick="window.print()">Imprimir PDF</button>
+        <button type="button" onclick="window.close()">Regresar a la APP</button>
+      </div>
+      <div class="sheet">
+        <h1>Reporte de Asistencia por Servidor</h1>
+        <p><strong>Servidor:</strong> ${escapeHtml(server.name)}</p>
+        <p><strong>Rango:</strong> ${escapeHtml(from ? formatDate(from) : "sin inicio")} a ${escapeHtml(to ? formatDate(to) : "sin fin")}</p>
+        <p><strong>Asistencia:</strong> ${pct}% (${yes}/${total})</p>
+        <div style="width:110px;height:110px;border-radius:50%;border:1px solid #c5d2e8;background:conic-gradient(#2cae7a 0deg,#2cae7a ${yesDeg}deg,#d97878 ${yesDeg}deg,#d97878 360deg);"></div>
+        <table>
+          <thead><tr><th>Fecha</th><th>Servicio</th><th>Asistencia</th></tr></thead>
+          <tbody>${rows || "<tr><td colspan='3'>Sin servicios en el rango.</td></tr>"}</tbody>
+        </table>
+      </div>
+    </body>
+    </html>
+  `);
+  printable.document.close();
+}
+
 function getServerRangeAttendance(serverId) {
   const from = summaryDateFrom?.value || "";
   const to = summaryDateTo?.value || "";
@@ -471,6 +532,7 @@ function handleSaveService(event) {
   serviceDate.value = getTodayIso();
   serviceType.selectedIndex = 0;
   renderAll();
+  attendanceList.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function getCurrentService() {
