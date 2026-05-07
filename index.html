@@ -177,6 +177,13 @@
                 <button id="printServicePdfButton" type="button" class="primary-button">Imprimir PDF</button>
               </div>
             </form>
+            <section class="result-card">
+              <div class="panel__header">
+                <h3>Servicios creados</h3>
+                <p>Selecciona un servicio para registrar asistencia.</p>
+              </div>
+              <div id="serviceButtonsList" class="service-actions"></div>
+            </section>
             <p id="activeServiceText" class="service-active-text">No hay servicio activo.</p>
 
             <div class="attendance-header">
@@ -254,6 +261,10 @@
                 <select id="summaryServiceSelect">
                   <option value="">Todos</option>
                 </select>
+              </label>
+              <label>
+                Mes
+                <input id="summaryMonth" type="month" />
               </label>
             </div>
 
@@ -334,6 +345,10 @@
           <label>Fecha fin
             <input id="serverDetailTo" type="date" />
           </label>
+          <div>
+            <p><strong>Telefono:</strong> <span id="serverDetailPhone">--</span></p>
+            <p><strong>Cumpleaños:</strong> <span id="serverDetailBirthday">--</span></p>
+          </div>
           <div class="service-actions">
             <button id="serverDetailReportBtn" type="button" class="primary-button">Reporte PDF</button>
           </div>
@@ -358,15 +373,12 @@
           <button type="button" class="ghost-button server-card__delete">Eliminar</button>
         </div>
         <div class="server-card__details">
-          <p><strong>Cumpleaños:</strong> <span class="server-card__birthday"></span></p>
-          <p><strong>Telefono:</strong> <span class="server-card__phone"></span></p>
-          <p><strong>Direccion:</strong> <span class="server-card__address"></span></p>
           <p><strong>% asistencia (rango):</strong> <span class="server-card__range">0%</span></p>
-          <label><strong>Foto ID:</strong> <input class="server-card__photo-input" type="file" accept="image/*" capture="environment" /></label>
+          <label class="server-card__photo-wrap"><strong>Foto ID:</strong> <input class="server-card__photo-input" type="file" accept="image/*" capture="environment" /></label>
         </div>
       </article>
     </template>
 
-    <script src="./app.js?v=20260506a"></script>
+    <script src="./app.js?v=20260506b"></script>
   </body>
 </html>

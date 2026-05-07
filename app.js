@@ -82,6 +82,7 @@ const serverPhoto = document.getElementById("serverPhoto");
 const serviceForm = document.getElementById("serviceForm");
 const serviceDate = document.getElementById("serviceDate");
 const serviceType = document.getElementById("serviceType");
+const serviceButtonsList = document.getElementById("serviceButtonsList");
 const attendanceList = document.getElementById("attendanceList");
 const activeServiceText = document.getElementById("activeServiceText");
 const serviceTotalsText = document.getElementById("serviceTotalsText");
@@ -98,6 +99,7 @@ const conciliationBoard = document.getElementById("conciliationBoard");
 const summaryDateFrom = document.getElementById("summaryDateFrom");
 const summaryDateTo = document.getElementById("summaryDateTo");
 const summaryServiceSelect = document.getElementById("summaryServiceSelect");
+const summaryMonth = document.getElementById("summaryMonth");
 const summarySaveGeneralButton = document.getElementById("summarySaveGeneralButton");
 const summaryCards = document.getElementById("summaryCards");
 const summaryGeneralCards = document.getElementById("summaryGeneralCards");
@@ -126,6 +128,8 @@ const serverDetailName = document.getElementById("serverDetailName");
 const serverDetailClose = document.getElementById("serverDetailClose");
 const serverDetailFrom = document.getElementById("serverDetailFrom");
 const serverDetailTo = document.getElementById("serverDetailTo");
+const serverDetailPhone = document.getElementById("serverDetailPhone");
+const serverDetailBirthday = document.getElementById("serverDetailBirthday");
 const serverDetailPie = document.getElementById("serverDetailPie");
 const serverDetailPct = document.getElementById("serverDetailPct");
 const serverDetailTotals = document.getElementById("serverDetailTotals");
@@ -161,6 +165,15 @@ summaryDateTo.addEventListener("change", () => {
   renderServers();
 });
 summaryServiceSelect.addEventListener("change", renderSummary);
+summaryMonth.addEventListener("change", () => {
+  if (summaryMonth.value) {
+    summaryDateFrom.value = `${summaryMonth.value}-01`;
+    const [y, m] = summaryMonth.value.split("-").map(Number);
+    summaryDateTo.value = new Date(y, m, 0).toISOString().slice(0, 10);
+  }
+  renderSummary();
+  renderServers();
+});
 if (summarySaveGeneralButton) summarySaveGeneralButton.addEventListener("click", saveGeneralSummarySnapshot);
 summaryCards.addEventListener("click", handleSummaryCardClick);
 summaryGeneralCards.addEventListener("click", handleSummarySnapshotClick);
@@ -296,6 +309,7 @@ function saveState() {
 
 function renderAll() {
   renderServers();
+  renderServiceButtons();
   renderServiceAttendance();
   renderServiceStats();
   normalizeConciliationLeaders();
@@ -362,9 +376,6 @@ function renderServers() {
     fragment.querySelector(".server-card__name").textContent = server.name;
     const photoEl = fragment.querySelector(".server-card__photo");
     photoEl.src = server.photo || createAvatarDataUrl(server.name);
-    fragment.querySelector(".server-card__birthday").textContent = formatDate(server.birthday);
-    fragment.querySelector(".server-card__phone").textContent = server.phone;
-    fragment.querySelector(".server-card__address").textContent = server.address;
     const rangeStats = getServerRangeAttendance(server.id);
     const rangeText = fragment.querySelector(".server-card__range");
     if (rangeText) {
@@ -383,6 +394,10 @@ function renderServers() {
       saveState();
       renderServers();
     });
+    if (server.photo) {
+      const wrap = fragment.querySelector(".server-card__photo-wrap");
+      if (wrap) wrap.style.display = "none";
+    }
     card.addEventListener("click", (event) => {
       if (event.target.closest(".server-card__delete") || event.target.closest(".server-card__photo-input")) return;
       openServerDetail(server.id);
@@ -391,11 +406,33 @@ function renderServers() {
   });
 }
 
+function renderServiceButtons() {
+  if (!serviceButtonsList) return;
+  const list = state.services.slice().sort((a, b) => b.date.localeCompare(a.date));
+  if (!list.length) {
+    serviceButtonsList.innerHTML = `<span class="result-empty">Sin servicios creados.</span>`;
+    return;
+  }
+  serviceButtonsList.innerHTML = list
+    .map((service) => `<button type="button" class="primary-button service-open-btn" data-service-id="${service.id}">${escapeHtml(formatDate(service.date))} - ${escapeHtml(service.lines.join(" / "))}</button>`)
+    .join("");
+  serviceButtonsList.querySelectorAll(".service-open-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      currentServiceId = button.dataset.serviceId;
+      renderServiceAttendance();
+      renderServiceStats();
+      attendanceList.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+}
+
 function openServerDetail(serverId) {
   const server = state.servers.find((s) => s.id === serverId);
   if (!server) return;
   selectedServerDetailId = serverId;
   serverDetailName.textContent = server.name;
+  serverDetailPhone.textContent = server.phone || "--";
+  serverDetailBirthday.textContent = formatDate(server.birthday);
   serverDetailFrom.value = summaryDateFrom?.value || "";
   serverDetailTo.value = summaryDateTo?.value || "";
   renderServerDetailChart();
@@ -665,11 +702,13 @@ function exportCurrentServicePdf() {
   if (!service) return;
   const stats = getServiceStats(service);
   const logoBlock = getPdfLogoBlock();
-  const rows = state.servers
-    .map((server) => {
-      const status = service.attendance[server.id] || "Pendiente";
-      return `<tr><td>${escapeHtml(server.name)}</td><td>${escapeHtml(status)}</td></tr>`;
-    })
+  const yesRows = state.servers
+    .filter((server) => service.attendance[server.id] === "Si")
+    .map((server) => `<tr><td>${escapeHtml(server.name)}</td></tr>`)
+    .join("");
+  const noRows = state.servers
+    .filter((server) => service.attendance[server.id] === "No")
+    .map((server) => `<tr><td>${escapeHtml(server.name)}</td></tr>`)
     .join("");
   const yesDeg = Math.round((stats.yesPct / 100) * 360);
   const pie = `
@@ -686,7 +725,7 @@ function exportCurrentServicePdf() {
     <html lang="es">
     <head>
       <meta charset="utf-8" />
-      <title>Asistencia - ${escapeHtml(service.date)}</title>
+      <title>Asistencia al servicio ${escapeHtml(service.lines.join(" / "))}</title>
       <style>
         @page { size: A4 portrait; margin: 14mm; }
         body { font-family: Arial, sans-serif; color: #1b2940; margin: 0; background:#f6f9ff; }
@@ -699,6 +738,7 @@ function exportCurrentServicePdf() {
         table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         th, td { border: 1px solid #c8d2e5; padding: 6px; text-align: left; }
         th { background: #e9f0ff; color:#23406d; }
+        .cols { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
         .actions { display:flex; gap:10px; margin:0 0 10px; }
         button { padding:10px 14px; border:0; border-radius:999px; background:#2e5fc1; color:#fff; font-weight:700; cursor:pointer; }
       </style>
@@ -718,10 +758,16 @@ function exportCurrentServicePdf() {
           <p><strong>Asistieron:</strong> ${stats.yesCount} | <strong>No asistieron:</strong> ${stats.noCount}</p>
         </div>
         ${pie}
-        <table>
-          <thead><tr><th>Servidor</th><th>Asistencia</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <div class="cols">
+          <table>
+            <thead><tr><th>Asistieron</th></tr></thead>
+            <tbody>${yesRows || "<tr><td>-</td></tr>"}</tbody>
+          </table>
+          <table>
+            <thead><tr><th>No asistieron</th></tr></thead>
+            <tbody>${noRows || "<tr><td>-</td></tr>"}</tbody>
+          </table>
+        </div>
       </div>
       <script>
         document.getElementById("saveSvcBtn").addEventListener("click", () => {
