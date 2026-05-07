@@ -339,6 +339,9 @@
           <button id="serverDetailClose" type="button" class="ghost-button">Cerrar</button>
         </div>
         <div class="service-meta-grid">
+          <label>Mes
+            <input id="serverDetailMonth" type="month" />
+          </label>
           <label>Fecha inicio
             <input id="serverDetailFrom" type="date" />
           </label>
@@ -368,13 +371,9 @@
         <div class="server-card__top">
           <div class="server-card__head">
             <img class="server-card__photo" alt="Foto del servidor" />
-            <h3 class="server-card__name"></h3>
+            <button type="button" class="server-card__name-btn"><h3 class="server-card__name"></h3></button>
           </div>
           <button type="button" class="ghost-button server-card__delete">Eliminar</button>
-        </div>
-        <div class="server-card__details">
-          <p><strong>% asistencia (rango):</strong> <span class="server-card__range">0%</span></p>
-          <label class="server-card__photo-wrap"><strong>Foto ID:</strong> <input class="server-card__photo-input" type="file" accept="image/*" capture="environment" /></label>
         </div>
       </article>
     </template>

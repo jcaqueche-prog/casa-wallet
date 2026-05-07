@@ -128,6 +128,7 @@ const serverDetailName = document.getElementById("serverDetailName");
 const serverDetailClose = document.getElementById("serverDetailClose");
 const serverDetailFrom = document.getElementById("serverDetailFrom");
 const serverDetailTo = document.getElementById("serverDetailTo");
+const serverDetailMonth = document.getElementById("serverDetailMonth");
 const serverDetailPhone = document.getElementById("serverDetailPhone");
 const serverDetailBirthday = document.getElementById("serverDetailBirthday");
 const serverDetailPie = document.getElementById("serverDetailPie");
@@ -190,6 +191,14 @@ serverDetailClose.addEventListener("click", () => {
 });
 serverDetailFrom.addEventListener("change", renderServerDetailChart);
 serverDetailTo.addEventListener("change", renderServerDetailChart);
+serverDetailMonth.addEventListener("change", () => {
+  if (serverDetailMonth.value) {
+    const [y, m] = serverDetailMonth.value.split("-").map(Number);
+    serverDetailFrom.value = `${serverDetailMonth.value}-01`;
+    serverDetailTo.value = new Date(y, m, 0).toISOString().slice(0, 10);
+  }
+  renderServerDetailChart();
+});
 serverDetailReportBtn.addEventListener("click", exportServerRangeReportPdf);
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveView(button.dataset.viewTarget));
@@ -372,34 +381,15 @@ function renderServers() {
   list.forEach((server) => {
     const fragment = serverCardTemplate.content.cloneNode(true);
     const card = fragment.querySelector(".server-card");
-    card.classList.add("server-card--clickable");
     fragment.querySelector(".server-card__name").textContent = server.name;
     const photoEl = fragment.querySelector(".server-card__photo");
     photoEl.src = server.photo || createAvatarDataUrl(server.name);
-    const rangeStats = getServerRangeAttendance(server.id);
-    const rangeText = fragment.querySelector(".server-card__range");
-    if (rangeText) {
-      rangeText.textContent = `${rangeStats.pct}% (${rangeStats.yes}/${rangeStats.total})`;
-    }
     fragment.querySelector(".server-card__delete").addEventListener("click", (event) => {
       event.stopPropagation();
       deleteServer(server.id);
     });
-    fragment.querySelector(".server-card__photo-input").addEventListener("change", async (event) => {
-      event.stopPropagation();
-      const file = event.target.files?.[0];
-      const photoDataUrl = await fileToDataUrl(file);
-      if (!photoDataUrl) return;
-      server.photo = photoDataUrl;
-      saveState();
-      renderServers();
-    });
-    if (server.photo) {
-      const wrap = fragment.querySelector(".server-card__photo-wrap");
-      if (wrap) wrap.style.display = "none";
-    }
-    card.addEventListener("click", (event) => {
-      if (event.target.closest(".server-card__delete") || event.target.closest(".server-card__photo-input")) return;
+    fragment.querySelector(".server-card__name-btn").addEventListener("click", (event) => {
+      event.preventDefault();
       openServerDetail(server.id);
     });
     serverCards.appendChild(fragment);
@@ -433,6 +423,7 @@ function openServerDetail(serverId) {
   serverDetailName.textContent = server.name;
   serverDetailPhone.textContent = server.phone || "--";
   serverDetailBirthday.textContent = formatDate(server.birthday);
+  serverDetailMonth.value = "";
   serverDetailFrom.value = summaryDateFrom?.value || "";
   serverDetailTo.value = summaryDateTo?.value || "";
   renderServerDetailChart();
