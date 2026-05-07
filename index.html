@@ -177,40 +177,33 @@
                 <button id="printServicePdfButton" type="button" class="primary-button">Imprimir PDF</button>
               </div>
             </form>
-            <section class="result-card">
-              <div class="panel__header">
-                <h3>Servicios creados</h3>
-                <p>Selecciona un servicio para registrar asistencia.</p>
+            <div id="serviceWorkArea" style="display:none;">
+              <p id="activeServiceText" class="service-active-text">No hay servicio activo.</p>
+              <div class="attendance-header">
+                <span>Servidor</span>
+                <span>Si</span>
+                <span>No</span>
               </div>
-              <div id="serviceButtonsList" class="service-actions"></div>
-            </section>
-            <p id="activeServiceText" class="service-active-text">No hay servicio activo.</p>
-
-            <div class="attendance-header">
-              <span>Servidor</span>
-              <span>Si</span>
-              <span>No</span>
+              <div id="attendanceList" class="attendance-list"></div>
+              <section class="panel panel--summary metrics-panel">
+                <div class="panel__header panel__header--split">
+                  <div>
+                    <h3>Estadistica del servicio</h3>
+                    <p id="serviceTotalsText">Aun sin datos para este servicio.</p>
+                  </div>
+                  <div class="service-actions">
+                    <button id="exportServicePdfButton" type="button" class="primary-button">Imprimir PDF</button>
+                  </div>
+                </div>
+                <div class="chart-wrap">
+                  <div id="pieChart" class="pie-chart"></div>
+                  <div class="chart-legend">
+                    <span id="yesPctText">Si: 0%</span>
+                    <span id="noPctText">No: 0%</span>
+                  </div>
+                </div>
+              </section>
             </div>
-            <div id="attendanceList" class="attendance-list"></div>
-
-            <section class="panel panel--summary metrics-panel">
-              <div class="panel__header panel__header--split">
-                <div>
-                  <h3>Estadistica del servicio</h3>
-                  <p id="serviceTotalsText">Aun sin datos para este servicio.</p>
-                </div>
-                <div class="service-actions">
-                  <button id="exportServicePdfButton" type="button" class="primary-button">Imprimir PDF</button>
-                </div>
-              </div>
-              <div class="chart-wrap">
-                <div id="pieChart" class="pie-chart"></div>
-                <div class="chart-legend">
-                  <span id="yesPctText">Si: 0%</span>
-                  <span id="noPctText">No: 0%</span>
-                </div>
-              </div>
-            </section>
           </section>
         </section>
 
@@ -248,28 +241,65 @@
             </div>
 
             <div class="service-meta-grid">
-              <label>
-                Fecha inicio
-                <input id="summaryDateFrom" type="date" />
-              </label>
-              <label>
-                Fecha fin
-                <input id="summaryDateTo" type="date" />
-              </label>
-              <label>
-                Servicio guardado
-                <select id="summaryServiceSelect">
-                  <option value="">Todos</option>
-                </select>
-              </label>
-              <label>
-                Mes
-                <input id="summaryMonth" type="month" />
-              </label>
+              <button id="summaryModeGeneralBtn" type="button" class="primary-button">Servicio General</button>
+              <button id="summaryModeServerBtn" type="button" class="primary-button">Por Servidor</button>
             </div>
 
-            <div id="summaryCards" class="summary-cards"></div>
-            <div id="summaryGeneralCards" class="summary-cards"></div>
+            <section id="summaryGeneralSection">
+              <div class="service-meta-grid">
+                <label>
+                  Fecha inicio
+                  <input id="summaryDateFrom" type="date" />
+                </label>
+                <label>
+                  Fecha fin
+                  <input id="summaryDateTo" type="date" />
+                </label>
+                <label>
+                  Servicio guardado
+                  <select id="summaryServiceSelect">
+                    <option value="">Todos</option>
+                  </select>
+                </label>
+                <label>
+                  Mes
+                  <input id="summaryMonth" type="month" />
+                </label>
+              </div>
+              <div id="summaryCards" class="summary-cards"></div>
+              <div id="summaryGeneralCards" class="summary-cards"></div>
+            </section>
+
+            <section id="summaryServerSection" style="display:none;">
+              <div id="summaryServerMonthButtons" class="service-actions"></div>
+              <div class="service-meta-grid">
+                <label>
+                  Servidor
+                  <select id="summaryServerSelect">
+                    <option value="">Selecciona servidor</option>
+                  </select>
+                </label>
+                <label>
+                  Mes
+                  <input id="summaryServerMonth" type="month" />
+                </label>
+                <label>
+                  Año
+                  <input id="summaryServerYear" type="number" min="2020" max="2100" />
+                </label>
+                <div class="service-actions">
+                  <button id="summaryServerPdfBtn" type="button" class="primary-button">Imprimir PDF</button>
+                </div>
+              </div>
+              <div class="summary-preview-row">
+                <div id="summaryServerPie" class="pie-chart"></div>
+                <div class="chart-legend">
+                  <span id="summaryServerPct">Asistencia: 0%</span>
+                  <span id="summaryServerTotals">0/0 servicios</span>
+                </div>
+              </div>
+              <div id="summaryServerList" class="result-card"></div>
+            </section>
           </section>
         </section>
 
@@ -378,6 +408,6 @@
       </article>
     </template>
 
-    <script src="./app.js?v=20260506b"></script>
+    <script src="./app.js?v=20260506c"></script>
   </body>
 </html>

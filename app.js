@@ -100,6 +100,19 @@ const summaryDateFrom = document.getElementById("summaryDateFrom");
 const summaryDateTo = document.getElementById("summaryDateTo");
 const summaryServiceSelect = document.getElementById("summaryServiceSelect");
 const summaryMonth = document.getElementById("summaryMonth");
+const summaryModeGeneralBtn = document.getElementById("summaryModeGeneralBtn");
+const summaryModeServerBtn = document.getElementById("summaryModeServerBtn");
+const summaryGeneralSection = document.getElementById("summaryGeneralSection");
+const summaryServerSection = document.getElementById("summaryServerSection");
+const summaryServerSelect = document.getElementById("summaryServerSelect");
+const summaryServerMonth = document.getElementById("summaryServerMonth");
+const summaryServerYear = document.getElementById("summaryServerYear");
+const summaryServerMonthButtons = document.getElementById("summaryServerMonthButtons");
+const summaryServerPdfBtn = document.getElementById("summaryServerPdfBtn");
+const summaryServerPie = document.getElementById("summaryServerPie");
+const summaryServerPct = document.getElementById("summaryServerPct");
+const summaryServerTotals = document.getElementById("summaryServerTotals");
+const summaryServerList = document.getElementById("summaryServerList");
 const summarySaveGeneralButton = document.getElementById("summarySaveGeneralButton");
 const summaryCards = document.getElementById("summaryCards");
 const summaryGeneralCards = document.getElementById("summaryGeneralCards");
@@ -144,6 +157,7 @@ let lastConciliationSignature = "";
 let conciliationLeaderByGroup = {};
 let expandedSummaryServiceId = "";
 let selectedServerDetailId = "";
+let summaryMode = "general";
 
 serverForm.addEventListener("submit", handleCreateServer);
 loginForm.addEventListener("submit", handleLogin);
@@ -166,6 +180,24 @@ summaryDateTo.addEventListener("change", () => {
   renderServers();
 });
 summaryServiceSelect.addEventListener("change", renderSummary);
+summaryModeGeneralBtn.addEventListener("click", () => {
+  summaryMode = "general";
+  renderSummary();
+});
+summaryModeServerBtn.addEventListener("click", () => {
+  summaryMode = "server";
+  renderSummary();
+});
+summaryServerSelect.addEventListener("change", renderSummaryServerView);
+summaryServerMonth.addEventListener("change", () => {
+  renderSummaryServerMonthButtons();
+  renderSummaryServerView();
+});
+summaryServerYear.addEventListener("input", () => {
+  renderSummaryServerMonthButtons();
+  renderSummaryServerView();
+});
+summaryServerPdfBtn.addEventListener("click", exportSummaryServerPdf);
 summaryMonth.addEventListener("change", () => {
   if (summaryMonth.value) {
     summaryDateFrom.value = `${summaryMonth.value}-01`;
@@ -318,7 +350,6 @@ function saveState() {
 
 function renderAll() {
   renderServers();
-  renderServiceButtons();
   renderServiceAttendance();
   renderServiceStats();
   normalizeConciliationLeaders();
@@ -326,6 +357,7 @@ function renderAll() {
   renderConciliation();
   renderSummary();
   renderSummaryServiceSelect();
+  renderSummaryServerOptions();
   renderAlfolis();
 }
 
@@ -546,7 +578,7 @@ function handleSaveService(event) {
     date,
     lines,
     attendance: {},
-    statsSaved: false,
+    statsSaved: true,
     createdAt: new Date().toISOString(),
   };
 
@@ -560,7 +592,6 @@ function handleSaveService(event) {
   serviceDate.value = getTodayIso();
   serviceType.selectedIndex = 0;
   renderAll();
-  attendanceList.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function getCurrentService() {
@@ -1004,6 +1035,13 @@ function handleConciliationActions(event) {
 }
 
 function renderSummary() {
+  summaryGeneralSection.style.display = summaryMode === "general" ? "block" : "none";
+  summaryServerSection.style.display = summaryMode === "server" ? "block" : "none";
+  if (summaryMode === "server") {
+    renderSummaryServerOptions();
+    renderSummaryServerView();
+    return;
+  }
   renderSummaryServiceSelect();
   const from = summaryDateFrom.value;
   const to = summaryDateTo.value;
@@ -1068,6 +1106,136 @@ function renderSummary() {
     })
     .join("");
   renderSummarySnapshots();
+}
+
+function renderSummaryServerOptions() {
+  if (!summaryServerSelect) return;
+  const prev = summaryServerSelect.value;
+  summaryServerSelect.innerHTML = `<option value="">Selecciona servidor</option>${state.servers
+    .map((s) => `<option value="${s.id}">${escapeHtml(s.name)}</option>`)
+    .join("")}`;
+  if (state.servers.some((s) => s.id === prev)) summaryServerSelect.value = prev;
+  renderSummaryServerMonthButtons();
+}
+
+function renderSummaryServerMonthButtons() {
+  if (!summaryServerMonthButtons) return;
+  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  const activeMonth = summaryServerMonth.value;
+  const year = String(summaryServerYear.value || new Date().getFullYear());
+  summaryServerMonthButtons.innerHTML = monthNames
+    .map((name, index) => {
+      const month = String(index + 1).padStart(2, "0");
+      const value = `${year}-${month}`;
+      const activeClass = value === activeMonth ? " is-active" : "";
+      return `<button type="button" class="tab-button${activeClass} summary-month-btn" data-month="${value}">${name}</button>`;
+    })
+    .join("");
+  summaryServerMonthButtons.querySelectorAll(".summary-month-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      summaryServerMonth.value = btn.dataset.month;
+      renderSummaryServerMonthButtons();
+      renderSummaryServerView();
+    });
+  });
+}
+
+function getSummaryServerServices() {
+  const serverId = summaryServerSelect.value;
+  if (!serverId) return { serverId: "", services: [] };
+  const month = summaryServerMonth.value || "";
+  const year = String(summaryServerYear.value || "").trim();
+  const services = state.services.filter((s) => {
+    if (month && !s.date.startsWith(month)) return false;
+    if (!month && year && !s.date.startsWith(year)) return false;
+    return s.statsSaved;
+  });
+  return { serverId, services };
+}
+
+function renderSummaryServerView() {
+  const { serverId, services } = getSummaryServerServices();
+  if (!serverId) {
+    summaryServerPie.style.background = "conic-gradient(#2cae7a 0deg,#2cae7a 0deg,#d97878 0deg,#d97878 360deg)";
+    summaryServerPct.textContent = "Asistencia: 0%";
+    summaryServerTotals.textContent = "0/0 servicios";
+    summaryServerList.innerHTML = "<p class='result-empty'>Selecciona un servidor.</p>";
+    return;
+  }
+  let yes = 0;
+  const yesList = [];
+  const noList = [];
+  services.forEach((service) => {
+    const status = service.attendance[serverId] || "Pendiente";
+    const label = `${formatDate(service.date)} - ${service.lines.join(" / ")}`;
+    if (status === "Si") {
+      yes += 1;
+      yesList.push(label);
+    } else if (status === "No") {
+      noList.push(label);
+    }
+  });
+  const total = services.length;
+  const pct = total ? Math.round((yes / total) * 100) : 0;
+  const deg = Math.round((pct / 100) * 360);
+  summaryServerPie.style.background = `conic-gradient(#2cae7a 0deg,#2cae7a ${deg}deg,#d97878 ${deg}deg,#d97878 360deg)`;
+  summaryServerPct.textContent = `Asistencia: ${pct}%`;
+  summaryServerTotals.textContent = `${yes}/${total} servicios`;
+  summaryServerList.innerHTML = `
+    <div class="conciliation-board">
+      <div class="result-card"><h4>Asistieron</h4><ol>${yesList.map((x) => `<li>${escapeHtml(x)}</li>`).join("") || "<li>-</li>"}</ol></div>
+      <div class="result-card"><h4>No asistieron</h4><ol>${noList.map((x) => `<li>${escapeHtml(x)}</li>`).join("") || "<li>-</li>"}</ol></div>
+    </div>
+  `;
+}
+
+function exportSummaryServerPdf() {
+  const { serverId, services } = getSummaryServerServices();
+  if (!serverId) return;
+  const server = state.servers.find((s) => s.id === serverId);
+  if (!server) return;
+  const yesRows = [];
+  const noRows = [];
+  services.forEach((service) => {
+    const status = service.attendance[serverId] || "Pendiente";
+    const text = `${formatDate(service.date)} - ${service.lines.join(" / ")}`;
+    if (status === "Si") yesRows.push(text);
+    if (status === "No") noRows.push(text);
+  });
+  const yes = yesRows.length;
+  const total = services.length;
+  const pct = total ? Math.round((yes / total) * 100) : 0;
+  const deg = Math.round((pct / 100) * 360);
+  const printable = window.open("", "_blank", "width=1100,height=860");
+  if (!printable) return;
+  printable.document.write(`
+    <!doctype html><html lang="es"><head><meta charset="utf-8" />
+    <title>Resumen por servidor ${escapeHtml(server.name)}</title>
+    <style>
+      @page { size: A4 portrait; margin: 14mm; }
+      body { font-family: "Segoe UI", Arial, sans-serif; color:#1f2b42; margin:0; background:#f4f7fc; }
+      .actions { display:flex; gap:10px; margin:0 0 10px; }
+      button { padding:10px 14px; border:0; border-radius:999px; background:#2f5ca8; color:#fff; font-weight:700; cursor:pointer; }
+      .sheet { background:#fff; border:1px solid #d6e0f0; border-radius:14px; padding:18px; }
+      .cols { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+      table { width:100%; border-collapse:collapse; font-size:12px; }
+      th, td { border:1px solid #c5d2e8; padding:7px; text-align:left; }
+      th { background:#e8effc; color:#24467f; }
+    </style></head><body>
+      <div class="actions"><button onclick="window.print()">Imprimir PDF</button><button type="button" onclick="window.close()">Regresar a la APP</button></div>
+      <div class="sheet">
+        <h1>Resumen por Servidor</h1>
+        <p><strong>Servidor:</strong> ${escapeHtml(server.name)}</p>
+        <p><strong>Asistencia:</strong> ${pct}% (${yes}/${total})</p>
+        <div style="width:96px;height:96px;border-radius:50%;border:1px solid #c5d2e8;background:conic-gradient(#2cae7a 0deg,#2cae7a ${deg}deg,#d97878 ${deg}deg,#d97878 360deg);"></div>
+        <div class="cols">
+          <table><thead><tr><th>Asistieron</th></tr></thead><tbody>${yesRows.map((x) => `<tr><td>${escapeHtml(x)}</td></tr>`).join("") || "<tr><td>-</td></tr>"}</tbody></table>
+          <table><thead><tr><th>No asistieron</th></tr></thead><tbody>${noRows.map((x) => `<tr><td>${escapeHtml(x)}</td></tr>`).join("") || "<tr><td>-</td></tr>"}</tbody></table>
+        </div>
+      </div>
+    </body></html>
+  `);
+  printable.document.close();
 }
 
 function renderSummaryServiceSelect() {
