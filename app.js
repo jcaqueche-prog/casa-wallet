@@ -1,4 +1,5 @@
 const STORAGE_KEY = "iglesia-servidores-app";
+const SERVICES_RESET_KEY = "iglesia-services-reset-20260506";
 const DATABASE_SOURCE_VERSION = "v5-replanteado-2026-04-30";
 const USERS = [{ username: "Juan Carlos Aqueche Estrada", password: "jcae" }];
 const ENCOURAGEMENT_VERSES = [
@@ -321,11 +322,15 @@ function loadState() {
     if (!raw) return structuredClone(defaultState);
     const parsed = JSON.parse(raw);
     if (parsed.sourceVersion !== DATABASE_SOURCE_VERSION) return structuredClone(defaultState);
+    const resetServicesNow = localStorage.getItem(SERVICES_RESET_KEY) !== "done";
+    if (resetServicesNow) {
+      localStorage.setItem(SERVICES_RESET_KEY, "done");
+    }
     return {
       sourceVersion: DATABASE_SOURCE_VERSION,
       servers: Array.isArray(parsed.servers) ? parsed.servers : [],
-      services: Array.isArray(parsed.services) ? parsed.services : [],
-      summarySnapshots: Array.isArray(parsed.summarySnapshots) ? parsed.summarySnapshots : [],
+      services: resetServicesNow ? [] : (Array.isArray(parsed.services) ? parsed.services : []),
+      summarySnapshots: resetServicesNow ? [] : (Array.isArray(parsed.summarySnapshots) ? parsed.summarySnapshots : []),
       alfolis: parsed.alfolis && typeof parsed.alfolis === "object"
         ? {
             male: Array.isArray(parsed.alfolis.male) && parsed.alfolis.male.length ? parsed.alfolis.male : [{ id: "m-1", name: "", position: "1", anexo: "Anexo A" }],
