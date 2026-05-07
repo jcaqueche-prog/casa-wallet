@@ -244,6 +244,8 @@ function initialize() {
   todayLabel.textContent = formatDate(today);
   serverBirthday.value = today;
   serviceDate.value = today;
+  serviceDate.min = "";
+  serviceDate.max = "";
   serviceType.selectedIndex = 0;
   summaryDateFrom.value = today.slice(0, 8) + "01";
   summaryDateTo.value = today;
@@ -1340,14 +1342,7 @@ function handleSummaryCardClick(event) {
     const serviceId = editBtn.dataset.serviceId;
     const service = state.services.find((s) => s.id === serviceId);
     if (!service) return;
-    const nextDate = window.prompt("Editar fecha de servicio (YYYY-MM-DD):", service.date);
-    if (!nextDate) return;
-    const nextLines = window.prompt("Editar lineas de servicio separadas por coma:", service.lines.join(", "));
-    if (!nextLines) return;
-    service.date = nextDate.trim();
-    service.lines = nextLines.split(",").map((line) => line.trim()).filter(Boolean);
-    saveState();
-    renderSummary();
+    openServiceAttendanceEditor(service);
     return;
   }
 
@@ -1365,6 +1360,68 @@ function handleSummaryCardClick(event) {
   expandedSummaryServiceId = expandedSummaryServiceId === targetId ? "" : targetId;
   renderSummary();
 }
+
+function openServiceAttendanceEditor(service) {
+  const rows = state.servers
+    .map((server) => {
+      const status = service.attendance[server.id] || "";
+      return `<tr>
+        <td>${escapeHtml(server.name)}</td>
+        <td><input type="radio" name="att-${server.id}" value="Si" ${status === "Si" ? "checked" : ""}></td>
+        <td><input type="radio" name="att-${server.id}" value="No" ${status === "No" ? "checked" : ""}></td>
+      </tr>`;
+    })
+    .join("");
+  const win = window.open("", "_blank", "width=980,height=860");
+  if (!win) return;
+  win.document.write(`
+    <!doctype html><html lang="es"><head><meta charset="utf-8" />
+    <title>Editar asistencia</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:14px;background:#f5f8ff;color:#1b2940}
+      .actions{display:flex;gap:10px;margin-bottom:10px}
+      button{padding:10px 14px;border:0;border-radius:999px;background:#2e5fc1;color:#fff;font-weight:700;cursor:pointer}
+      table{width:100%;border-collapse:collapse;background:#fff}
+      th,td{border:1px solid #c8d2e5;padding:8px;text-align:left}
+      th{background:#e9f0ff}
+    </style></head><body>
+      <div class="actions">
+        <button id="saveBtn" type="button">Guardar cambios</button>
+        <button type="button" onclick="window.close()">Cerrar</button>
+      </div>
+      <p><strong>Servicio:</strong> ${escapeHtml(formatDate(service.date))} - ${escapeHtml(service.lines.join(" / "))}</p>
+      <table>
+        <thead><tr><th>Servidor</th><th>Si</th><th>No</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <script>
+        document.getElementById("saveBtn").addEventListener("click", () => {
+          const result = {};
+          ${JSON.stringify(state.servers.map((s) => s.id))}.forEach((id) => {
+            const selected = document.querySelector('input[name="att-' + id + '"]:checked');
+            result[id] = selected ? selected.value : "";
+          });
+          if (window.opener && typeof window.opener.applyServiceAttendanceEdit === "function") {
+            window.opener.applyServiceAttendanceEdit(${JSON.stringify(service.id)}, result);
+            window.close();
+          }
+        });
+      </script>
+    </body></html>
+  `);
+  win.document.close();
+}
+
+window.applyServiceAttendanceEdit = function applyServiceAttendanceEdit(serviceId, attendanceMap) {
+  const service = state.services.find((s) => s.id === serviceId);
+  if (!service) return;
+  service.attendance = { ...service.attendance, ...attendanceMap };
+  service.statsSaved = true;
+  saveState();
+  renderSummary();
+  renderServers();
+  renderServiceStats();
+};
 
 function getSummaryRangeRecords() {
   const from = summaryDateFrom.value;
