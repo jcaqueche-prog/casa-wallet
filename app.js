@@ -218,6 +218,16 @@ generalSaveButton.addEventListener("click", handleGeneralSave);
 headerImageInput.addEventListener("change", handleHeaderImageUpload);
 logoImageInput.addEventListener("change", handleLogoImageUpload);
 serverSearch.addEventListener("input", renderServers);
+serviceDate.addEventListener("focus", () => {
+  setTimeout(() => {
+    serviceDate.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 120);
+});
+serviceDate.addEventListener("click", () => {
+  setTimeout(() => {
+    serviceDate.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 120);
+});
 serverDetailClose.addEventListener("click", () => {
   serverDetailModal.style.display = "none";
   selectedServerDetailId = "";
