@@ -570,10 +570,6 @@ function deleteServer(serverId) {
 function handleSaveService(event) {
   event.preventDefault();
   const current = getCurrentService();
-  if (current && !isServiceAttendanceComplete(current)) {
-    window.alert("Asistencia no completada. Marca Si o No para todos antes de agregar otro servicio.");
-    return;
-  }
 
   const date = serviceDate.value || getTodayIso();
   const selectedType = String(serviceType.value || "").trim();
