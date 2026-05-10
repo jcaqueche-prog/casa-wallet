@@ -483,7 +483,7 @@ function renderServerDetailChart() {
   if (!selectedServerDetailId) return;
   const from = serverDetailFrom.value || "";
   const to = serverDetailTo.value || "";
-  const services = state.services.filter((s) => (!from || s.date >= from) && (!to || s.date <= to));
+  const services = state.services.filter((s) => s.statsSaved).filter((s) => (!from || s.date >= from) && (!to || s.date <= to));
   const total = services.length;
   let yes = 0;
   services.forEach((service) => {
@@ -503,6 +503,7 @@ function exportServerRangeReportPdf() {
   const from = serverDetailFrom.value || "";
   const to = serverDetailTo.value || "";
   const services = state.services
+    .filter((s) => s.statsSaved)
     .filter((s) => (!from || s.date >= from) && (!to || s.date <= to))
     .sort((a, b) => a.date.localeCompare(b.date));
   const total = services.length;
@@ -558,7 +559,7 @@ function exportServerRangeReportPdf() {
 function getServerRangeAttendance(serverId) {
   const from = summaryDateFrom?.value || "";
   const to = summaryDateTo?.value || "";
-  const services = state.services.filter((s) => (!from || s.date >= from) && (!to || s.date <= to));
+  const services = state.services.filter((s) => s.statsSaved).filter((s) => (!from || s.date >= from) && (!to || s.date <= to));
   const total = services.length;
   if (!total) return { yes: 0, total: 0, pct: 0 };
   let yes = 0;
@@ -1337,9 +1338,18 @@ function handleSummaryCardClick(event) {
     if (!service) return;
     const confirmed = window.confirm(`Eliminar estadistica de ${formatDate(service.date)}?`);
     if (!confirmed) return;
-    service.statsSaved = false;
+    state.services = state.services.filter((item) => item.id !== serviceId);
+    if (currentServiceId === serviceId) {
+      currentServiceId = state.services[0]?.id || "";
+    }
+    expandedSummaryServiceId = expandedSummaryServiceId === serviceId ? "" : expandedSummaryServiceId;
     saveState();
+    renderServiceAttendance();
+    renderServiceStats();
+    renderSummaryServiceSelect();
+    renderSummaryServerOptions();
     renderSummary();
+    renderServers();
     return;
   }
 
